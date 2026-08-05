@@ -222,7 +222,15 @@ function traduireErreur(erreur: { code?: string; message?: string }): string {
   if (code === '42501' || message.includes('row-level security')) {
     return 'Seuls les contributeurs et les administrateurs peuvent enrichir la grande Histoire.';
   }
-  if (code === '23505') return 'Cette personne est déjà rattachée à ce fait.';
+  // Deux unicités peuvent lever un 23505 : le rattachement d'une personne déjà
+  // liée, et un fait portant le même titre la même année. Postgres nomme la
+  // contrainte fautive dans son message, ce qui permet de dire laquelle.
+  if (code === '23505') {
+    if (message.includes('faits_historiques_titre_annee')) {
+      return 'Un fait porte déjà ce titre pour cette année. Ouvrez-le plutôt que d’en créer un second : les personnes rattachées à l’un ne le seraient pas à l’autre.';
+    }
+    return 'Cette personne est déjà rattachée à ce fait.';
+  }
   if (code === '23503') return 'Le fait ou la personne visés n’existent plus.';
   if (code === '42P01' || code === 'PGRST205') {
     return 'La grande Histoire n’est pas encore installée en base. Prévenez un administrateur.';
