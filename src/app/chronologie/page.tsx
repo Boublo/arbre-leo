@@ -1,5 +1,7 @@
 import { Navigation } from '@/components/navigation';
 import { Alerte } from '@/components/ui/champs';
+import { BarreScroll } from '@/components/interactions/barre-scroll';
+import { RaccourciAccueil } from '@/components/interactions/raccourci-accueil';
 import { FriseChronologie } from '@/components/chronologie/frise-chronologie';
 import { BandeauLignee, type ResumeLignee } from '@/components/chronologie/bandeau-lignee';
 import { ChoixLignee, type PersonneChoisissable } from '@/components/chronologie/choix-lignee';
@@ -139,6 +141,7 @@ export default async function PageChronologie({ searchParams }: PageProps<'/chro
     console.error('Chronologie : chargement impossible.', erreur.message);
     return (
       <>
+        <RaccourciAccueil />
         <Navigation />
         <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-16 sm:px-6">
           <h1 className="text-3xl">Chronologie</h1>
@@ -358,6 +361,8 @@ export default async function PageChronologie({ searchParams }: PageProps<'/chro
 
   return (
     <>
+      <BarreScroll />
+      <RaccourciAccueil />
       <Navigation />
       <main className="flex-1 pb-24">
         <FriseChronologie

@@ -30,10 +30,14 @@ export function BarreScroll() {
   }, []);
 
   useEffect(() => {
-    mesurer();
+    // Première mesure repoussée à la frame suivante pour éviter un setState
+    // synchrone dans l'effet — le lint le refuse et cela évite un rendu en
+    // cascade au montage.
+    const id = window.requestAnimationFrame(mesurer);
     window.addEventListener('scroll', mesurer, { passive: true });
     window.addEventListener('resize', mesurer);
     return () => {
+      window.cancelAnimationFrame(id);
       window.removeEventListener('scroll', mesurer);
       window.removeEventListener('resize', mesurer);
     };

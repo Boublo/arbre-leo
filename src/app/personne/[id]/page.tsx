@@ -18,6 +18,8 @@ import { CommentairesPersonne } from '@/components/personne/commentaires';
 import { BarreDeSaisie } from '@/components/saisie/lien-ajout';
 import { BarreParente } from '@/components/portrait/barre-parente';
 import { NavigationContextuelle } from '@/components/decouverte/navigation-contextuelle';
+import { BarreScroll } from '@/components/interactions/barre-scroll';
+import { RaccourciAccueil } from '@/components/interactions/raccourci-accueil';
 import { chargerArbre } from '@/lib/arbre';
 
 /**
@@ -65,6 +67,8 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
 
   return (
     <>
+      <BarreScroll />
+      <RaccourciAccueil />
       <Navigation />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 sm:py-10">

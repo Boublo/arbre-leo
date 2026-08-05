@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { Navigation } from '@/components/navigation';
+import { BarreScroll } from '@/components/interactions/barre-scroll';
+import { RaccourciAccueil } from '@/components/interactions/raccourci-accueil';
 import { CarteSouvenir } from '@/components/souvenirs/carte-souvenir';
 import { ColonneLaterale } from '@/components/souvenirs/colonne-laterale';
 import { FiltresSouvenirs } from '@/components/souvenirs/filtres-souvenirs';
@@ -103,6 +105,8 @@ export default async function PageSouvenirs({ searchParams }: PageProps<'/souven
 
   return (
     <>
+      <BarreScroll />
+      <RaccourciAccueil />
       <Navigation />
 
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">

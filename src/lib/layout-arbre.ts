@@ -681,13 +681,6 @@ const ASCENDANCE = [
 
 const DESCENDANCE = ['Ses enfants', 'Ses petits-enfants', 'Ses arrière-petits-enfants'];
 
-/** Rang absolu (0 = racine, négatif = ancêtre, positif = descendant) → libellé. */
-function nommerRangFamille(delta: number): string {
-  if (delta === 0) return '';
-  if (delta < 0) return ASCENDANCE[-delta - 1] ?? `${-delta}ᵉ génération au-dessus`;
-  return DESCENDANCE[delta - 1] ?? `${delta}ᵉ génération en dessous`;
-}
-
 /**
  * Nom d'un rang, du point de vue de la personne choisie : « ses
  * arrière-grands-parents » plutôt que « génération 3 ».

@@ -71,7 +71,7 @@ export default async function PageImprimerPersonne({
 
       <article className="imprimer-page">
         <header className="imprimer-entete">
-          <p className="imprimer-suzerain">L’arbre de la famille — fiche imprimable</p>
+          <p className="imprimer-surtitre">L’arbre de la famille — fiche imprimable</p>
           <h1 className="imprimer-titre">{fiche.nomComplet}</h1>
           {vieResume && <p className="imprimer-vie">{vieResume}</p>}
           {fiche.personne.surnom && (
@@ -488,7 +488,7 @@ const stylesImprimables = `
     padding-bottom: 1rem;
     margin-bottom: 1.5rem;
   }
-  .imprimer-suzerain {
+  .imprimer-surtitre {
     font-size: 0.7rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;

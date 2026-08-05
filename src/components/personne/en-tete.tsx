@@ -1,4 +1,6 @@
+import Link from 'next/link';
 import { Branches, Etiquette, ListePreuves } from '@/components/personne/blocs';
+import { BoutonCopierLien } from '@/components/personne/bouton-copier-lien';
 import { LIBELLE_SEXE, accorder } from '@/components/personne/vocabulaire';
 import type { Fiche } from '@/components/personne/donnees';
 
@@ -23,7 +25,15 @@ export function EnTetePersonne({ fiche }: { fiche: Fiche }) {
     <header className="carte p-5 sm:p-6">
       <p className="text-xs uppercase tracking-wider text-encre-tres-douce">Fiche de famille</p>
 
-      <h1 className="mt-1 text-3xl leading-tight sm:text-4xl">{fiche.nomComplet}</h1>
+      <div className="mt-1 flex flex-wrap items-start justify-between gap-3">
+        <h1 className="text-3xl leading-tight sm:text-4xl">{fiche.nomComplet}</h1>
+        <div className="shrink-0 pt-1">
+          <BoutonCopierLien
+            chemin={`/personne/${personne.id}`}
+            libelle={fiche.nomComplet}
+          />
+        </div>
+      </div>
 
       {personne.surnom && (
         <p className="mt-1 text-encre-douce">
@@ -51,6 +61,17 @@ export function EnTetePersonne({ fiche }: { fiche: Fiche }) {
           <ListePreuves niveaux={personne.niveaux_preuve ?? []} />
         </div>
       )}
+
+      {/* Version imprimable : un lien discret plutôt qu’un gros bouton — on ne
+          l’active qu’à l’occasion, pour un cousin sans écran ou un classeur. */}
+      <div className="mt-4 border-t border-bordure pt-3 text-right">
+        <Link
+          href={`/personne/${personne.id}/imprimer`}
+          className="lien-discret text-sm"
+        >
+          Version imprimable
+        </Link>
+      </div>
     </header>
   );
   // La mention « présumée vivante » a migré dans `<BandeauVivant>`, posé
