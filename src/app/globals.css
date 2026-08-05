@@ -1,26 +1,231 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ===========================================================================
+   L'arbre de Léo — feuille de style de base
+   ---------------------------------------------------------------------------
+   Deux familles se rejoignent ici : une branche venue d'Andalousie puis
+   d'Oranie, une autre du Marais poitevin et du Dauphiné. Chacune porte sa
+   couleur dans tout le site — l'ocre pour la branche paternelle, l'ardoise
+   pour la maternelle — afin qu'un coup d'œil suffise à situer une personne.
+   =========================================================================== */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+:root {
+  /* Parchemin plutôt que blanc pur : moins dur à l'œil sur de longues lectures. */
+  --fond: #fbf8f3;
+  --fond-carte: #ffffff;
+  --fond-doux: #f3eee5;
+  --encre: #211c17;
+  --encre-douce: #5d5348;
+  --encre-tres-douce: #8a7f72;
+  --bordure: #e4dbcc;
+  --bordure-forte: #cfc2ad;
+
+  /* Vert profond : la couleur de l'arbre lui-même. */
+  --accent: #2f5d50;
+  --accent-clair: #dfeae5;
+  --accent-contraste: #ffffff;
+
+  /* Or patiné, pour ce qui est précieux : un acte retrouvé, un souvenir épinglé. */
+  --or: #b08d2f;
+
+  --paternelle: #b85c38;
+  --paternelle-douce: #f6e6de;
+  --maternelle: #3d6b8e;
+  --maternelle-douce: #e2ecf4;
+  --commune: #6b5b95;
+
+  --succes: #3f7d58;
+  --alerte: #b4762a;
+  --erreur: #a63d3d;
+
+  --ombre-douce: 0 1px 2px rgb(33 28 23 / 0.05), 0 4px 16px rgb(33 28 23 / 0.06);
+  --ombre-forte: 0 2px 4px rgb(33 28 23 / 0.07), 0 12px 32px rgb(33 28 23 / 0.12);
+
+  --rayon: 0.75rem;
+  --rayon-petit: 0.5rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --fond: #17130f;
+    --fond-carte: #211c17;
+    --fond-doux: #2b241d;
+    --encre: #f2ece3;
+    --encre-douce: #c0b5a6;
+    --encre-tres-douce: #8e8375;
+    --bordure: #362e26;
+    --bordure-forte: #4a4036;
+
+    --accent: #6aa892;
+    --accent-clair: #2a473e;
+    --accent-contraste: #10201b;
+
+    --or: #d9b455;
+
+    --paternelle: #e08b64;
+    --paternelle-douce: #3a241a;
+    --maternelle: #7aaed3;
+    --maternelle-douce: #1c2c3a;
+    --commune: #a08ecb;
+
+    --succes: #6fb98b;
+    --alerte: #dda453;
+    --erreur: #e07a7a;
+
+    --ombre-douce: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.35);
+    --ombre-forte: 0 2px 4px rgb(0 0 0 / 0.4), 0 12px 32px rgb(0 0 0 / 0.5);
   }
 }
 
+/* Le sélecteur de thème du site l'emporte sur la préférence du système. */
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --fond: #17130f;
+  --fond-carte: #211c17;
+  --fond-doux: #2b241d;
+  --encre: #f2ece3;
+  --encre-douce: #c0b5a6;
+  --encre-tres-douce: #8e8375;
+  --bordure: #362e26;
+  --bordure-forte: #4a4036;
+  --accent: #6aa892;
+  --accent-clair: #2a473e;
+  --accent-contraste: #10201b;
+  --or: #d9b455;
+  --paternelle: #e08b64;
+  --paternelle-douce: #3a241a;
+  --maternelle: #7aaed3;
+  --maternelle-douce: #1c2c3a;
+  --commune: #a08ecb;
+  --succes: #6fb98b;
+  --alerte: #dda453;
+  --erreur: #e07a7a;
+  --ombre-douce: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.35);
+  --ombre-forte: 0 2px 4px rgb(0 0 0 / 0.4), 0 12px 32px rgb(0 0 0 / 0.5);
+}
+
+@theme inline {
+  --color-fond: var(--fond);
+  --color-fond-carte: var(--fond-carte);
+  --color-fond-doux: var(--fond-doux);
+  --color-encre: var(--encre);
+  --color-encre-douce: var(--encre-douce);
+  --color-encre-tres-douce: var(--encre-tres-douce);
+  --color-bordure: var(--bordure);
+  --color-bordure-forte: var(--bordure-forte);
+  --color-accent: var(--accent);
+  --color-accent-clair: var(--accent-clair);
+  --color-accent-contraste: var(--accent-contraste);
+  --color-or: var(--or);
+  --color-paternelle: var(--paternelle);
+  --color-paternelle-douce: var(--paternelle-douce);
+  --color-maternelle: var(--maternelle);
+  --color-maternelle-douce: var(--maternelle-douce);
+  --color-commune: var(--commune);
+  --color-succes: var(--succes);
+  --color-alerte: var(--alerte);
+  --color-erreur: var(--erreur);
+
+  --font-titre: var(--police-titre), Georgia, "Times New Roman", serif;
+  --font-sans: var(--police-corps), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-carte: var(--rayon);
+  --shadow-douce: var(--ombre-douce);
+  --shadow-forte: var(--ombre-forte);
+}
+
+* {
+  min-width: 0;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--fond);
+  color: var(--encre);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-titre);
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* Le focus doit rester franchement visible : une partie de la famille
+   naviguera au clavier ou avec une vue fatiguée. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-contraste);
+}
+
+/* Barres de défilement discrètes, accordées au parchemin. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bordure-forte) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --- Éléments récurrents ------------------------------------------------- */
+
+@utility carte {
+  background: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  box-shadow: var(--ombre-douce);
+}
+
+/* Icône de la bascule de thème : montrer ce vers quoi le clic emmène, pas l'état
+   courant. En clair on propose la lune, en sombre le soleil. Le choix se fait en
+   CSS, donc dès le premier rendu, sans état React ni clignotement. */
+.icone-theme-clair {
+  display: none;
+  grid-area: 1 / 1;
+}
+.icone-theme-sombre {
+  display: block;
+  grid-area: 1 / 1;
+}
+
+@media (prefers-color-scheme: dark) {
+  .icone-theme-clair { display: block; }
+  .icone-theme-sombre { display: none; }
+}
+
+/* Un choix explicite l'emporte sur la préférence du système, dans les deux sens. */
+:root[data-theme='dark'] .icone-theme-clair { display: block; }
+:root[data-theme='dark'] .icone-theme-sombre { display: none; }
+:root[data-theme='light'] .icone-theme-clair { display: none; }
+:root[data-theme='light'] .icone-theme-sombre { display: block; }
+
+@utility lien-discret {
+  color: var(--encre-douce);
+  text-decoration: underline;
+  text-decoration-color: var(--bordure-forte);
+  text-underline-offset: 3px;
+  transition: color 0.15s;
+
+  &:hover {
+    color: var(--accent);
+  }
 }

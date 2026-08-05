@@ -39,3 +39,44 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ---------------------------------------------------------------------------
+# DONNÉES FAMILIALES — NE JAMAIS PUBLIER
+# ---------------------------------------------------------------------------
+# Ce dépôt est public : il ne contient que le code de l'application.
+# Les personnes citées dans l'arbre sont pour partie vivantes, et les actes
+# d'état civil comme les photos de famille ne sont pas publiables.
+# Tout cela vit dans la base Supabase privée et dans /data en local.
+#
+# Avant d'assouplir une règle ci-dessous, se rappeler qu'un dépôt public est
+# forké et mis en cache : une publication accidentelle ne se rattrape pas.
+
+/data/
+/private/
+
+# Fichiers généalogiques, quel que soit l'endroit où ils traînent
+*.ged
+*.gedcom
+
+# Déclarations locales : chemins, noms de branches et noms de personnes réels
+scripts/sources.config.mjs
+scripts/medias.config.mjs
+
+# Actes d'état civil et photos de famille numérisés
+/public/actes/
+/public/photos/
+/public/familles/
+acte*.jpg
+acte*.jpeg
+acte*.png
+acte*.pdf
+photo_*.jpg
+photo_*.jpeg
+photo_*.png
+
+# Exports et sauvegardes de la base
+*.dump
+*.sql.gz
+/supabase/.branches/
+/supabase/.temp/
+/backups/
