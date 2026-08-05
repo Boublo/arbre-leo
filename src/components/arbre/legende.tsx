@@ -24,13 +24,13 @@ export function Legende() {
       <Separateur />
 
       <span className="flex items-center gap-1.5">
-        <span className="grid h-4 w-6 place-items-center rounded-sm border border-bordure bg-fond-carte">
-          <span className="mr-4 h-3 w-1 rounded-sm bg-succes" />
+        <span className="grid h-4 w-6 place-items-center rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte">
+          <span className="mr-4 h-3 w-1 rounded-[var(--rayon-petit)] bg-succes" />
         </span>
         Vivant
       </span>
       <span className="flex items-center gap-1.5">
-        <span className="h-3 w-6 rounded-sm bg-accent" />
+        <span className="h-3 w-6 rounded-[var(--rayon-petit)] bg-accent" />
         Personne choisie
       </span>
     </div>

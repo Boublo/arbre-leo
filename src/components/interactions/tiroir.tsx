@@ -32,15 +32,55 @@ export function Tiroir({
   useEffect(() => {
     if (!ouvert) return;
 
+    // Mémoriser le déclencheur pour lui rendre le focus à la fermeture.
+    const declencheur =
+      typeof document !== 'undefined'
+        ? (document.activeElement as HTMLElement | null)
+        : null;
+
+    function elementsFocusables(): HTMLElement[] {
+      const racine = refPanneau.current;
+      if (!racine) return [];
+      const selecteur =
+        'a[href], area[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), ' +
+        'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+      return Array.from(racine.querySelectorAll<HTMLElement>(selecteur)).filter(
+        (el) => !el.hasAttribute('inert') && el.offsetParent !== null
+      );
+    }
+
     function surTouche(evt: KeyboardEvent) {
       if (evt.key === 'Escape') {
         evt.preventDefault();
         onFermer();
+        return;
+      }
+      if (evt.key !== 'Tab') return;
+
+      // Focus trap : boucler Tab / Shift+Tab dans le panneau pour tenir la
+      // promesse d'aria-modal="true".
+      const focusables = elementsFocusables();
+      if (focusables.length === 0) {
+        evt.preventDefault();
+        refPanneau.current?.focus();
+        return;
+      }
+      const premier = focusables[0]!;
+      const dernier = focusables[focusables.length - 1]!;
+      const actif = document.activeElement as HTMLElement | null;
+      if (evt.shiftKey && (actif === premier || !refPanneau.current?.contains(actif))) {
+        evt.preventDefault();
+        dernier.focus();
+      } else if (!evt.shiftKey && actif === dernier) {
+        evt.preventDefault();
+        premier.focus();
       }
     }
 
     document.addEventListener('keydown', surTouche);
-    // Éviter le défilement de la page derrière le tiroir.
+    // Éviter le défilement de la page derrière le tiroir. On force '' pour
+    // rendre la main à la feuille de style à la fermeture, sans mémoriser un
+    // 'hidden' hérité d'un autre calque encore ouvert.
     const debordement = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
@@ -49,7 +89,10 @@ export function Tiroir({
 
     return () => {
       document.removeEventListener('keydown', surTouche);
-      document.body.style.overflow = debordement;
+      document.body.style.overflow = debordement || '';
+      // Rendre le focus au déclencheur : sans quoi la tabulation reprend
+      // depuis le <body>, l'utilisateur perd son point d'ancrage.
+      declencheur?.focus?.();
     };
   }, [ouvert, onFermer]);
 

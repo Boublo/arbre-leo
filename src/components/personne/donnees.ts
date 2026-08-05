@@ -116,6 +116,9 @@ export type MediaFiche = {
   /** URL signée, valable une heure : le bucket est privé. */
   url: string | null;
   estImage: boolean;
+  /** Dimensions natives, quand la base les connaît : réservent la boîte de la vignette avant chargement. */
+  largeur: number | null;
+  hauteur: number | null;
 };
 
 export type FaitFiche = {
@@ -184,7 +187,8 @@ function uniques(ids: (string | null | undefined)[]): string[] {
 }
 
 /** « 12 mars 2024 » — les dépôts de la famille sont toujours datés au jour. */
-function formaterHorodatage(iso: string): string {
+function formaterHorodatage(iso: string | null | undefined): string {
+  if (!iso) return '';
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '';
   return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' }).format(date);
@@ -584,6 +588,8 @@ export async function chargerFiche(id: string): Promise<Fiche | null> {
         statut: m.statut,
         url: urlSignee.get(m.chemin) ?? null,
         estImage: m.mime ? m.mime.startsWith('image/') : m.type === 'photo',
+        largeur: m.largeur ?? null,
+        hauteur: m.hauteur ?? null,
       }))
       .sort((a, b) => Number(b.estImage) - Number(a.estImage)),
     faits: faits

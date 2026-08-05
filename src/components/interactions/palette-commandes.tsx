@@ -125,6 +125,8 @@ function PaletteInterne({
   const [indexActif, setIndexActif] = useState(0);
   const refSaisie = useRef<HTMLInputElement>(null);
   const refListe = useRef<HTMLUListElement>(null);
+  const refDialog = useRef<HTMLDivElement>(null);
+  const refDeclencheur = useRef<HTMLElement | null>(null);
   const listeId = useId();
 
   const elements: ElementListe[] = useMemo(() => {
@@ -153,17 +155,45 @@ function PaletteInterne({
   // quand la liste rétrécit.
   const indexBorne = elements.length === 0 ? 0 : Math.min(indexActif, elements.length - 1);
 
-  // Focus initial sur le champ, une seule fois.
+  // Focus initial sur le champ, une seule fois. On mémorise aussi le
+  // déclencheur : c'est à lui qu'on rendra le focus à la fermeture.
   useEffect(() => {
+    refDeclencheur.current =
+      (document.activeElement as HTMLElement | null) ?? null;
     refSaisie.current?.focus();
+    return () => {
+      refDeclencheur.current?.focus?.();
+    };
   }, []);
 
-  // Fermeture par Échap.
+  // Fermeture par Échap et focus trap : Tab et Shift+Tab bouclent dans le
+  // panneau, comme le promet aria-modal="true".
   useEffect(() => {
     function surTouche(evt: globalThis.KeyboardEvent) {
       if (evt.key === 'Escape') {
         evt.preventDefault();
         onFermer();
+        return;
+      }
+      if (evt.key !== 'Tab') return;
+      const racine = refDialog.current;
+      if (!racine) return;
+      const selecteur =
+        'a[href], area[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), ' +
+        'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+      const focusables = Array.from(
+        racine.querySelectorAll<HTMLElement>(selecteur)
+      ).filter((el) => !el.hasAttribute('inert') && el.offsetParent !== null);
+      if (focusables.length === 0) return;
+      const premier = focusables[0]!;
+      const dernier = focusables[focusables.length - 1]!;
+      const actif = document.activeElement as HTMLElement | null;
+      if (evt.shiftKey && (actif === premier || !racine.contains(actif))) {
+        evt.preventDefault();
+        dernier.focus();
+      } else if (!evt.shiftKey && actif === dernier) {
+        evt.preventDefault();
+        premier.focus();
       }
     }
     document.addEventListener('keydown', surTouche);
@@ -219,10 +249,11 @@ function PaletteInterne({
       <div aria-hidden className="absolute inset-0 bg-encre/40 backdrop-blur-[1px]" />
 
       <div
+        ref={refDialog}
         role="dialog"
         aria-modal="true"
         aria-label="Palette de commandes"
-        className="palette-entree relative flex w-full max-w-xl flex-col overflow-hidden rounded-[var(--rayon)] border border-bordure bg-fond-carte shadow-[var(--shadow-forte)]"
+        className="palette-entree relative flex w-full max-w-xl flex-col overflow-hidden rounded-[var(--rayon)] border border-bordure bg-fond-carte shadow-forte"
       >
         <div className="border-b border-bordure px-4 py-3">
           <label htmlFor={`${listeId}-saisie`} className="sr-only">
@@ -253,7 +284,9 @@ function PaletteInterne({
 
         {elements.length === 0 ? (
           <p className="px-4 py-8 text-center text-sm text-encre-douce">
-            Rien ne correspond à « {saisie} ». Essayez un prénom, un surnom ou le nom d’une page.
+            {saisie.trim() === ''
+              ? 'L’arbre est encore vide — il n’y a personne à chercher pour l’instant.'
+              : `Rien ne correspond à « ${saisie} ». Essayez un prénom, un surnom ou le nom d’une page.`}
           </p>
         ) : (
           <ul
@@ -324,10 +357,10 @@ function PaletteInterne({
 
         <div className="flex items-center justify-between gap-3 border-t border-bordure bg-fond-doux px-4 py-2 text-xs text-encre-douce">
           <span>
-            <kbd className="rounded border border-bordure px-1">↑</kbd>{' '}
-            <kbd className="rounded border border-bordure px-1">↓</kbd> parcourir ·{' '}
-            <kbd className="rounded border border-bordure px-1">Entrée</kbd> ouvrir ·{' '}
-            <kbd className="rounded border border-bordure px-1">Échap</kbd> fermer
+            <kbd className="rounded-[var(--rayon-petit)] border border-bordure bg-fond-doux px-1">↑</kbd>{' '}
+            <kbd className="rounded-[var(--rayon-petit)] border border-bordure bg-fond-doux px-1">↓</kbd> parcourir ·{' '}
+            <kbd className="rounded-[var(--rayon-petit)] border border-bordure bg-fond-doux px-1">Entrée</kbd> ouvrir ·{' '}
+            <kbd className="rounded-[var(--rayon-petit)] border border-bordure bg-fond-doux px-1">Échap</kbd> fermer
           </span>
           <span>{elements.length} résultat{elements.length > 1 ? 's' : ''}</span>
         </div>

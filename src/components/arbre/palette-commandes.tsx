@@ -68,10 +68,19 @@ function ContenuPalette({
   }
 
   // Prise de focus initiale : un effet ici est légitime — c'est une
-  // synchronisation avec le système extérieur qu'est le focus du DOM.
+  // synchronisation avec le système extérieur qu'est le focus du DOM. On
+  // mémorise aussi le déclencheur pour lui rendre le focus à la fermeture,
+  // sans quoi la tabulation reprend depuis le <body>.
   useEffect(() => {
+    const declencheur =
+      typeof document !== 'undefined'
+        ? (document.activeElement as HTMLElement | null)
+        : null;
     const id = window.setTimeout(() => champRef.current?.focus(), 0);
-    return () => window.clearTimeout(id);
+    return () => {
+      window.clearTimeout(id);
+      declencheur?.focus?.();
+    };
   }, []);
 
   // Faire suivre le défilement quand on parcourt aux flèches.
@@ -129,7 +138,7 @@ function ContenuPalette({
             aria-label="Aller à une personne"
             className="w-full bg-transparent text-sm text-encre outline-none placeholder:text-encre-tres-douce"
           />
-          <kbd className="rounded border border-bordure bg-fond-doux px-1.5 py-0.5 text-[10px] text-encre-tres-douce">
+          <kbd className="rounded-[var(--rayon-petit)] border border-bordure bg-fond-doux px-1.5 py-0.5 text-[10px] text-encre-tres-douce">
             Échap
           </kbd>
         </div>
@@ -175,12 +184,12 @@ function ContenuPalette({
 
         <div className="flex items-center justify-between gap-4 border-t border-bordure px-4 py-2 text-[11px] text-encre-tres-douce">
           <span>
-            <kbd className="mr-1 rounded border border-bordure bg-fond-doux px-1 py-0.5">↑</kbd>
-            <kbd className="mr-1 rounded border border-bordure bg-fond-doux px-1 py-0.5">↓</kbd>
+            <kbd className="mr-1 rounded-[var(--rayon-petit)] border border-bordure bg-fond-doux px-1 py-0.5">↑</kbd>
+            <kbd className="mr-1 rounded-[var(--rayon-petit)] border border-bordure bg-fond-doux px-1 py-0.5">↓</kbd>
             parcourir
           </span>
           <span>
-            <kbd className="mr-1 rounded border border-bordure bg-fond-doux px-1 py-0.5">
+            <kbd className="mr-1 rounded-[var(--rayon-petit)] border border-bordure bg-fond-doux px-1 py-0.5">
               Entrée
             </kbd>
             aller à la personne

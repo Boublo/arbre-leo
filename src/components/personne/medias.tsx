@@ -44,6 +44,8 @@ function Vignette({ media: m }: { media: MediaFiche }) {
             src={m.url}
             alt={alternative}
             loading="lazy"
+            width={m.largeur ?? undefined}
+            height={m.hauteur ?? undefined}
             className="h-56 w-full object-contain"
           />
         </a>
@@ -77,10 +79,7 @@ function Vignette({ media: m }: { media: MediaFiche }) {
             <summary className="cursor-pointer text-sm text-encre-douce">
               Lire la transcription
             </summary>
-            <p
-              className="mt-2 whitespace-pre-line border-l-2 border-or/60 py-1 pl-3 text-sm leading-relaxed text-encre"
-              style={{ fontFamily: 'var(--font-titre)' }}
-            >
+            <p className="mt-2 whitespace-pre-line border-l-2 border-or/60 py-1 pl-3 font-titre text-sm leading-relaxed text-encre">
               {m.transcription}
             </p>
           </details>

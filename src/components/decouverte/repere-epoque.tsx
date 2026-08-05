@@ -95,7 +95,7 @@ function LienPersonne({ personne }: { personne: PersonneArbre }) {
   return (
     <Link
       href={`/personne/${personne.id}`}
-      className="inline-flex items-baseline gap-1.5 rounded-[var(--rayon-petit)] px-1 py-0.5 transition hover:bg-fond-doux focus:outline-none"
+      className="inline-flex items-baseline gap-1.5 rounded-[var(--rayon-petit)] px-1 py-0.5 transition hover:bg-fond-doux focus-visible:outline-none focus-visible:bg-fond-doux focus-visible:ring-2 focus-visible:ring-accent"
     >
       <span
         aria-hidden

@@ -258,13 +258,13 @@ export function MiniFrise({
               >
                 {hauteurHistoire > 0 && (
                   <div
-                    className="mx-[1px] rounded-sm bg-encre-tres-douce/40"
+                    className="mx-[1px] rounded-[var(--rayon-petit)] bg-encre-tres-douce/40"
                     style={{ height: hauteurHistoire }}
                   />
                 )}
                 {hauteurFamille > 0 && (
                   <div
-                    className="mx-[1px] rounded-sm bg-accent/70"
+                    className="mx-[1px] rounded-[var(--rayon-petit)] bg-accent/70"
                     style={{ height: hauteurFamille }}
                   />
                 )}
@@ -348,12 +348,32 @@ export function useDecennieVisible(): number | null {
       }
     );
 
-    // Enregistrement de tout ce qui porte l'attribut ; l'observateur ignore
-    // les éléments ajoutés après coup, on ré-attache donc à chaque cycle.
-    const cibles = document.querySelectorAll<HTMLElement>('[data-decennie]');
-    cibles.forEach((c) => observateur.observe(c));
+    // Enregistrement initial de tout ce qui porte l'attribut.
+    const observes = new WeakSet<Element>();
+    function observerTout() {
+      const cibles = document.querySelectorAll<HTMLElement>('[data-decennie]');
+      cibles.forEach((c) => {
+        if (!observes.has(c)) {
+          observateur.observe(c);
+          observes.add(c);
+        }
+      });
+    }
+    observerTout();
 
-    return () => observateur.disconnect();
+    // Les filtres de la chronologie ajoutent et retirent des repères en flux :
+    // un MutationObserver rebranche l'IntersectionObserver quand la liste
+    // change, sans quoi la miniature se désynchroniserait au premier filtre.
+    let mutation: MutationObserver | null = null;
+    if (typeof MutationObserver !== 'undefined') {
+      mutation = new MutationObserver(() => observerTout());
+      mutation.observe(document.body, { childList: true, subtree: true });
+    }
+
+    return () => {
+      observateur.disconnect();
+      mutation?.disconnect();
+    };
   }, []);
 
   return decennie;

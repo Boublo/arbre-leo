@@ -6,6 +6,10 @@ const LARGEUR = 300;
 const HAUTEUR = 200;
 const LARGEUR_CASE = 92;
 const HAUTEUR_CASE = 34;
+// Rayon en pixels : reflète --rayon-petit (0.5rem à 16px de base). Centralisé
+// ici pour rester en écho du design system sans introduire de lecture runtime
+// de getComputedStyle dans un SVG rendu côté serveur.
+const RAYON_CASE = 8;
 
 const Y_PARENTS = 22;
 const Y_FOCUS = 100;
@@ -149,22 +153,19 @@ function Case({
   const cote = coteDesBranches(personne.branches);
   const annees = anneesCourtes(portrait);
 
-  return (
-    <a
-      href={focus ? undefined : `/personne/${personne.id}`}
-      aria-label={`${personne.nomComplet}${annees ? ` (${annees})` : ''}`}
-      className="transition hover:opacity-80"
-    >
+  const contenu = (
+    <>
       <title>
         {personne.nomComplet}
         {annees ? ` — ${annees}` : ''}
       </title>
       <rect
+        className="case"
         x={x - LARGEUR_CASE / 2}
         y={y - HAUTEUR_CASE / 2}
         width={LARGEUR_CASE}
         height={HAUTEUR_CASE}
-        rx={5}
+        rx={RAYON_CASE}
         fill="var(--fond-carte)"
         stroke={focus ? 'var(--accent)' : 'var(--bordure)'}
         strokeWidth={focus ? 1.5 : 1}
@@ -197,6 +198,30 @@ function Case({
           {annees}
         </text>
       )}
+    </>
+  );
+
+  // La case focus n'a pas d'ancre : ce serait un lien fantôme sans destination.
+  // On la rend en <g role="img"> pour rester annoncée sans promettre du cliquable.
+  if (focus) {
+    return (
+      <g
+        role="img"
+        aria-current="true"
+        aria-label={`${personne.nomComplet}${annees ? ` (${annees})` : ''}`}
+      >
+        {contenu}
+      </g>
+    );
+  }
+
+  return (
+    <a
+      href={`/personne/${personne.id}`}
+      aria-label={`${personne.nomComplet}${annees ? ` (${annees})` : ''}`}
+      className="transition hover:opacity-80 focus:outline-none [&:focus-visible_rect.case]:stroke-accent"
+    >
+      {contenu}
     </a>
   );
 }

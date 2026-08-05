@@ -299,7 +299,9 @@ function CarteRoute({
         href={href}
         className="carte group flex h-full flex-col gap-1.5 p-5 transition
                    hover:border-bordure-forte hover:shadow-[var(--ombre-forte)]
-                   focus:outline-none"
+                   focus-visible:outline-none focus-visible:border-bordure-forte
+                   focus-visible:shadow-[var(--ombre-forte)]
+                   focus-visible:ring-2 focus-visible:ring-accent"
       >
         <h3 className="text-lg leading-snug transition group-hover:text-accent">
           {titre}

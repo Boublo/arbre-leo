@@ -47,7 +47,8 @@ export function CartePortrait({
     <article
       className="carte group relative overflow-hidden p-5 transition
                  hover:border-bordure-forte hover:shadow-[var(--ombre-forte)]
-                 focus-within:border-bordure-forte"
+                 focus-within:border-bordure-forte
+                 focus-within:ring-2 focus-within:ring-accent"
     >
       {/* Bande de couleur latérale : rappelle la branche sans la nommer seule. */}
       <span
@@ -77,7 +78,7 @@ export function CartePortrait({
           <h3 className="text-lg leading-snug">
             <Link
               href={`/personne/${personne.id}`}
-              className="transition hover:text-accent focus:outline-none"
+              className="transition hover:text-accent focus-visible:outline-none focus-visible:text-accent"
             >
               <span className="absolute inset-0" aria-hidden />
               <span className="relative">{personne.nomComplet}</span>

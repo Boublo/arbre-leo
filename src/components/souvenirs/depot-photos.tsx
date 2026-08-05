@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useState, type DragEvent } from 'react';
+import { useEffect, useId, useRef, useState, type DragEvent } from 'react';
 import { creerClientNavigateur } from '@/lib/supabase/client';
 import { Alerte } from '@/components/ui/champs';
 import {
@@ -56,6 +56,23 @@ export function DepotPhotos({
   useEffect(() => {
     onChangement?.(photos);
   }, [photos, onChangement]);
+
+  // Toutes les URL blob : encore vivantes tant que le formulaire l'est. Au
+  // démontage on les révoque, sinon les vignettes restent en mémoire côté
+  // navigateur jusqu'à la fermeture de l'onglet.
+  const blobsVivants = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    for (const p of photos) {
+      if (p.apercu?.startsWith('blob:')) blobsVivants.current.add(p.apercu);
+    }
+  }, [photos]);
+  useEffect(() => {
+    const ensemble = blobsVivants.current;
+    return () => {
+      ensemble.forEach((url) => URL.revokeObjectURL(url));
+      ensemble.clear();
+    };
+  }, []);
 
   async function ajouter(fichiers: FileList | null) {
     if (!fichiers || fichiers.length === 0) return;
@@ -119,7 +136,10 @@ export function DepotPhotos({
 
   async function retirer(photo: PhotoDeposee) {
     setPhotos((precedent) => precedent.filter((p) => p.cle !== photo.cle));
-    if (photo.apercu?.startsWith('blob:')) URL.revokeObjectURL(photo.apercu);
+    if (photo.apercu?.startsWith('blob:')) {
+      URL.revokeObjectURL(photo.apercu);
+      blobsVivants.current.delete(photo.apercu);
+    }
 
     // Une photo jamais enregistrée n’a aucune raison de rester dans le bucket.
     // Une photo déjà enregistrée sera nettoyée par la Server Action.

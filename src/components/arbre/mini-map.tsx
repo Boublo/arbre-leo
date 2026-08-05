@@ -109,8 +109,6 @@ export function MiniMap({
         onMouseDown={deplacerDepuisMiniature}
         onMouseMove={surGlisse}
         className="cursor-crosshair"
-        role="img"
-        aria-label="Mini-carte de l’arbre"
       >
         <rect width={LARGEUR_MINIATURE} height={HAUTEUR_MINIATURE} fill="var(--fond-doux)" />
 

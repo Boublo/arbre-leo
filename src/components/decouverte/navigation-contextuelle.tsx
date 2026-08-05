@@ -86,7 +86,7 @@ function Bouton({
   return (
     <Link
       href={href}
-      className="flex h-full flex-col gap-1 rounded-[var(--rayon-petit)] border border-bordure bg-fond-doux px-3 py-3 transition hover:border-bordure-forte hover:bg-accent-clair"
+      className="flex h-full flex-col gap-1 rounded-[var(--rayon-petit)] border border-bordure bg-fond-doux px-3 py-3 transition hover:border-bordure-forte hover:bg-accent-clair focus-visible:outline-none focus-visible:border-bordure-forte focus-visible:bg-accent-clair focus-visible:ring-2 focus-visible:ring-accent"
     >
       <span className="text-sm font-medium text-encre">{titre}</span>
       <span className="text-xs leading-relaxed text-encre-douce">{aide}</span>
@@ -111,10 +111,11 @@ function BoutonMuet({ titre, aide }: { titre: string; aide: string }) {
 // ---------------------------------------------------------------------------
 
 /**
- * Pioche quelqu’un d’autre que la personne courante. Sans hasard — le tirage
- * est déterministe par la position dans la liste au chargement de la page :
- * en le refaisant à chaque requête, on obtient l’effet d’une redécouverte
- * sans casser la stabilité du rendu au sein d’une même vue.
+ * Pioche quelqu’un d’autre que la personne courante. Sans hasard : le tirage
+ * est déterministe par un décalage stable dérivé de l'identifiant de la
+ * personne focus. À chaque affichage, la même fiche renvoie donc au même
+ * cousin ; la redécouverte se fait en passant d'une fiche à l'autre, non en
+ * rechargeant la page — la stabilité du rendu est ainsi tenue.
  */
 function tirerAuHasard(
   eviter: string,
@@ -124,7 +125,14 @@ function tirerAuHasard(
     (p) => p.id !== eviter
   );
   if (candidats.length === 0) return null;
-  const index = Math.floor(Math.random() * candidats.length);
+
+  // Somme des points de code de l'identifiant : déterministe, indépendant de
+  // la plateforme, sans besoin d'un hachage.
+  let empreinte = 0;
+  for (let i = 0; i < eviter.length; i += 1) {
+    empreinte = (empreinte + eviter.charCodeAt(i)) | 0;
+  }
+  const index = Math.abs(empreinte) % candidats.length;
   return candidats[index] ?? null;
 }
 

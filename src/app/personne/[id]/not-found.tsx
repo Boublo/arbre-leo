@@ -17,7 +17,7 @@ export default function FicheIntrouvable() {
         </p>
 
         <p className="mt-8">
-          <Link href="/" className="lien-discret">
+          <Link href="/arbre" className="lien-discret">
             Revenir à l’arbre
           </Link>
         </p>

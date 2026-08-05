@@ -62,14 +62,20 @@ export function useNotifier(): NotifierFn {
 export function FournisseurNotifications({ children }: { children: ReactNode }) {
   const [liste, setListe] = useState<Notification[]>([]);
   const compteur = useRef(0);
+  // Les minuteries en cours, pour pouvoir les annuler à la fermeture manuelle
+  // ou au démontage du fournisseur : sans ce garde, un rappel appelle
+  // `setListe` sur un composant démonté.
+  const timers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
 
   const poser = useCallback<NotifierFn>((message, ton = 'info') => {
     const id = ++compteur.current;
     setListe((etat) => [...etat, { id, ton, message }]);
     // Retrait automatique après 4 s.
-    setTimeout(() => {
+    const t = setTimeout(() => {
+      timers.current.delete(id);
       setListe((etat) => etat.filter((n) => n.id !== id));
     }, 4000);
+    timers.current.set(id, t);
   }, []);
 
   useEffect(() => {
@@ -79,7 +85,22 @@ export function FournisseurNotifications({ children }: { children: ReactNode }) 
     };
   }, [poser]);
 
+  // Nettoyage au démontage du fournisseur : plus aucun rappel ne réveillera
+  // un composant qui n'est plus là.
+  useEffect(() => {
+    const carte = timers.current;
+    return () => {
+      carte.forEach((t) => clearTimeout(t));
+      carte.clear();
+    };
+  }, []);
+
   function retirer(id: number) {
+    const t = timers.current.get(id);
+    if (t) {
+      clearTimeout(t);
+      timers.current.delete(id);
+    }
     setListe((etat) => etat.filter((n) => n.id !== id));
   }
 

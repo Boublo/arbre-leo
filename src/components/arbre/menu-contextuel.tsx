@@ -38,7 +38,15 @@ export function MenuContextuel({
   const premierRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
+    const declencheur =
+      typeof document !== 'undefined'
+        ? (document.activeElement as HTMLElement | null)
+        : null;
     premierRef.current?.focus();
+    return () => {
+      // Rendre le focus au nœud d'arbre qui a ouvert le menu.
+      declencheur?.focus?.();
+    };
   }, [personne.id]);
 
   useEffect(() => {

@@ -49,13 +49,16 @@ export function ChoixPersonnes({
   }, [survolee, selection, parId]);
 
   function basculer(id: string) {
-    setSelection((precedent) => {
-      const nouvelle = precedent.includes(id)
-        ? precedent.filter((autre) => autre !== id)
-        : [...precedent, id];
-      onChangement?.(nouvelle.map((i) => parId.get(i)).filter(Boolean) as OptionPersonne[]);
-      return nouvelle;
-    });
+    // Calculer la prochaine sélection hors du updater React : sous Strict Mode
+    // l'updater peut être rejoué, appeler onChangement à l'intérieur le
+    // ferait alors deux fois et masquerait des régressions logiques.
+    const nouvelle = selection.includes(id)
+      ? selection.filter((autre) => autre !== id)
+      : [...selection, id];
+    setSelection(nouvelle);
+    onChangement?.(
+      nouvelle.map((i) => parId.get(i)).filter(Boolean) as OptionPersonne[]
+    );
   }
 
   const selectionnees = selection

@@ -62,7 +62,7 @@ export default async function PageNouvellePersonne({ searchParams }: PageProps<'
       <Navigation />
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 sm:px-6">
-        <Link href="/" className="lien-discret text-sm">
+        <Link href="/arbre" className="lien-discret text-sm">
           ← Revenir à l’arbre
         </Link>
 

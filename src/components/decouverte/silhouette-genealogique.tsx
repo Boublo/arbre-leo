@@ -56,11 +56,14 @@ export function Silhouette({
     (parGeneration.length - 1) * INTER_BANDE +
     MARGE_V * 2;
 
+  const motGeneration = parGeneration.length > 1 ? 'générations' : 'génération';
+  const motPersonnesTotal = totalPersonnes > 1 ? 'personnes' : 'personne';
+  const motPersonnesMax = maxNombre > 1 ? 'personnes' : 'personne';
   const description =
     legende ??
-    `Silhouette de l’arbre sur ${parGeneration.length} générations, ` +
-      `${totalPersonnes} personnes au total. La bande la plus large ` +
-      `compte ${maxNombre} personnes.`;
+    `Silhouette de l’arbre sur ${parGeneration.length} ${motGeneration}, ` +
+      `${totalPersonnes} ${motPersonnesTotal} au total. La bande la plus large ` +
+      `compte ${maxNombre} ${motPersonnesMax}.`;
 
   return (
     <figure className="carte flex flex-col gap-4 p-5">

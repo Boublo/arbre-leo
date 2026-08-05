@@ -41,25 +41,25 @@ export function BandeauAide({ signalActivite }: { signalActivite: number }) {
     >
       <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <span>
-          <kbd className="mr-1 rounded border border-bordure bg-fond-doux px-1 py-0.5 text-[10px]">
+          <kbd className="mr-1 rounded-[var(--rayon-petit)] border border-bordure bg-fond-doux px-1 py-0.5 text-[10px]">
             Molette
           </kbd>
           zoomer
         </span>
         <span>
-          <kbd className="mr-1 rounded border border-bordure bg-fond-doux px-1 py-0.5 text-[10px]">
+          <kbd className="mr-1 rounded-[var(--rayon-petit)] border border-bordure bg-fond-doux px-1 py-0.5 text-[10px]">
             Clic + glisser
           </kbd>
           déplacer
         </span>
         <span>
-          <kbd className="mr-1 rounded border border-bordure bg-fond-doux px-1 py-0.5 text-[10px]">
+          <kbd className="mr-1 rounded-[var(--rayon-petit)] border border-bordure bg-fond-doux px-1 py-0.5 text-[10px]">
             Double-clic
           </kbd>
           repartir d’ici
         </span>
         <span>
-          <kbd className="mr-1 rounded border border-bordure bg-fond-doux px-1 py-0.5 text-[10px]">
+          <kbd className="mr-1 rounded-[var(--rayon-petit)] border border-bordure bg-fond-doux px-1 py-0.5 text-[10px]">
             F
           </kbd>
           chercher

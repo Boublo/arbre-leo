@@ -32,7 +32,7 @@ export function VieCourte({
   return (
     <Link
       href={`/personne/${personne.id}`}
-      className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm text-encre-douce transition hover:text-accent"
+      className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-[var(--rayon-petit)] text-sm text-encre-douce transition hover:text-accent focus-visible:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
     >
       <span
         aria-hidden

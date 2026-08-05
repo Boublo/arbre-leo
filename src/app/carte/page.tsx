@@ -542,8 +542,20 @@ export default async function PageCarte() {
 
         <footer className="shrink-0 border-t border-bordure px-4 py-2.5 text-xs text-encre-douce">
           <p>
-            <span className="tabular-nums">{nbSitues}</span> lieu{pluriel(nbSitues)} sur{' '}
-            <span className="tabular-nums">{nbLieux}</span> {nbSitues > 1 ? 'sont situés' : 'est situé'}.
+            {nbLieux === 0 ? (
+              <>Aucun lieu n’a encore été saisi.</>
+            ) : nbSitues === 0 ? (
+              <>
+                <span className="tabular-nums">{nbLieux}</span> lieu
+                {pluriel(nbLieux)} {nbLieux > 1 ? 'sont saisis' : 'est saisi'}, aucun
+                n’est encore situé.
+              </>
+            ) : (
+              <>
+                <span className="tabular-nums">{nbSitues}</span> lieu{pluriel(nbSitues)} sur{' '}
+                <span className="tabular-nums">{nbLieux}</span> {nbSitues > 1 ? 'sont situés' : 'est situé'}.
+              </>
+            )}
             {manquants.length > 0 && (
               <>
                 {' '}

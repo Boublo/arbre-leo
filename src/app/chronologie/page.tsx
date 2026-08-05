@@ -507,5 +507,8 @@ function abreger(texte: string | null, max = 260): string | null {
 
   const coupe = propre.slice(0, max);
   const dernierPoint = coupe.lastIndexOf('.');
-  return `${dernierPoint > max * 0.5 ? coupe.slice(0, dernierPoint + 1) : coupe}…`;
+  // Si on tronque exactement à un point de phrase, ne pas doubler la
+  // ponctuation par « …» : le point suffit à marquer la coupure.
+  if (dernierPoint > max * 0.5) return coupe.slice(0, dernierPoint + 1);
+  return `${coupe}…`;
 }

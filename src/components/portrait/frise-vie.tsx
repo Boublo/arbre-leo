@@ -111,11 +111,19 @@ export function FriseVie({
 
   // Bornes de la vie documentée : naissance/décès si connus, à défaut les
   // jalons extrêmes. Le segment plein sera tiré entre ces deux abscisses.
+  const anneeCourante = new Date().getFullYear();
   const anneeVieDebut = personne.anneeNaissance ?? jalons[0]?.annee ?? anneeMin;
-  const anneeVieFin =
-    personne.anneeDeces ?? jalons[jalons.length - 1]?.annee ?? anneeMax;
+  // Pour une personne présumée vivante sans décès connu, on prolonge le
+  // segment plein jusqu'à l'année courante — sinon la vie « se termine » à
+  // sa naissance quand aucun jalon n'a été enregistré depuis.
+  const anneeVieFin = personne.anneeDeces
+    ? personne.anneeDeces
+    : personne.presumeVivant
+      ? Math.max(anneeCourante, jalons[jalons.length - 1]?.annee ?? anneeVieDebut)
+      : (jalons[jalons.length - 1]?.annee ?? anneeMax);
   const xVieDebut = xPour(anneeVieDebut);
   const xVieFin = xPour(Math.max(anneeVieFin, anneeVieDebut));
+  const vieOuverte = Boolean(personne.presumeVivant && !personne.anneeDeces);
 
   // Repères de décennies, sans encombrer les extrémités.
   const decennieDebut = Math.ceil(debut / 10) * 10;
@@ -142,7 +150,9 @@ export function FriseVie({
         strokeDasharray="3 4"
       />
 
-      {/* Segment plein : la vie documentée. */}
+      {/* Segment plein : la vie documentée. Pour une personne présumée vivante,
+          on pointille la partie « présent » — la vie continue au-delà de ce que
+          l'arbre sait. */}
       <line
         x1={xVieDebut}
         y1={Y_AXE}
@@ -150,6 +160,7 @@ export function FriseVie({
         y2={Y_AXE}
         stroke="var(--accent)"
         strokeWidth={2}
+        strokeDasharray={vieOuverte ? '5 3' : undefined}
       />
 
       {/* Repères de décennies. */}

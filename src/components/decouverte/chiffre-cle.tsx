@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 
 /**
  * Chiffres-clés de la découverte.
@@ -57,6 +57,7 @@ export function PalmaresChiffres({
   titre?: string;
   aide?: ReactNode;
 }) {
+  const titreId = useId();
   if (chiffres.length === 0) {
     return (
       <section className="carte p-5">
@@ -69,11 +70,11 @@ export function PalmaresChiffres({
   }
 
   return (
-    <section aria-labelledby={titre ? 'palmares-titre' : undefined}>
+    <section aria-labelledby={titre ? titreId : undefined}>
       {(titre || aide) && (
         <header className="mb-4">
           {titre && (
-            <h2 id="palmares-titre" className="text-lg">
+            <h2 id={titreId} className="text-lg">
               {titre}
             </h2>
           )}

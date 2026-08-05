@@ -69,7 +69,10 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
         <p className="mb-4">
-          <Link href="/" className="lien-discret text-sm">
+          <Link
+            href={`/arbre?personne=${encodeURIComponent(id)}`}
+            className="lien-discret text-sm"
+          >
             ← Revenir à l’arbre
           </Link>
         </p>

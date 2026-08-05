@@ -19,12 +19,19 @@ export function Onglets<T extends Valeur>({
   valeur,
   onChoix,
   etiquette,
+  idPanneau,
 }: {
   valeurs: readonly T[];
   valeur: T['id'];
   onChoix: (id: T['id']) => void;
   /** Nom du groupe d'onglets, pour l'aria-label. */
   etiquette?: string;
+  /**
+   * Fournit l'identifiant du panneau associé à un onglet, pour poser
+   * aria-controls et tenir le contrat ARIA vis-à-vis des lecteurs d'écran.
+   * Le parent, qui construit les panneaux, garantit alors la correspondance.
+   */
+  idPanneau?: (id: T['id']) => string;
 }) {
   const baseId = useId();
   const refs = useRef<Map<string, HTMLButtonElement>>(new Map());
@@ -65,6 +72,7 @@ export function Onglets<T extends Valeur>({
             type="button"
             role="tab"
             aria-selected={actif}
+            aria-controls={idPanneau?.(v.id)}
             tabIndex={actif ? 0 : -1}
             onClick={() => onChoix(v.id)}
             onKeyDown={surTouche}

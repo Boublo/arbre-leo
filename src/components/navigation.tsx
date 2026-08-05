@@ -3,6 +3,7 @@ import { creerClientServeur } from '@/lib/supabase/server';
 import { deconnecter } from '@/app/actions/auth';
 import { BasculeTheme } from '@/components/bascule-theme';
 import { NOM_DU_SITE } from '@/lib/site';
+import { LiensNavigation } from '@/components/navigation-liens';
 
 const LIENS = [
   { href: '/', libelle: 'Accueil' },
@@ -33,22 +34,10 @@ export async function Navigation() {
   return (
     <header className="z-20 flex shrink-0 flex-wrap items-center gap-x-6 gap-y-2 border-b border-bordure bg-fond-carte px-4 py-2.5">
       <Link href="/" className="flex items-baseline gap-2">
-        <span className="text-lg" style={{ fontFamily: 'var(--font-titre)' }}>
-          {NOM_DU_SITE}
-        </span>
+        <span className="font-titre text-lg">{NOM_DU_SITE}</span>
       </Link>
 
-      <nav className="flex flex-wrap items-center gap-1 text-sm">
-        {LIENS.map((lien) => (
-          <Link
-            key={lien.href}
-            href={lien.href}
-            className="rounded-[var(--rayon-petit)] px-2.5 py-1.5 text-encre-douce transition hover:bg-fond-doux hover:text-encre"
-          >
-            {lien.libelle}
-          </Link>
-        ))}
-      </nav>
+      <LiensNavigation liens={LIENS} />
 
       <div className="ml-auto flex items-center gap-2 text-sm">
         {membre?.role === 'admin' && (
