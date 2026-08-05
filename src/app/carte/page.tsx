@@ -1,14 +1,19 @@
 import { Navigation } from '@/components/navigation';
 import { EcranCarte } from '@/components/carte/ecran-carte';
 import type {
+  AnnotationTemps,
   Deplacement,
   DonneesCarte,
   EvenementAuLieu,
+  FaitLocal,
+  Flux,
   LieuSitue,
   PersonneAuLieu,
+  PhotoLieu,
 } from '@/components/carte/types-carte';
 import { formaterDate, lieuCourt } from '@/lib/arbre';
 import { coteDesBranches, type Cote } from '@/lib/branches';
+import { BUCKET_MEDIAS } from '@/lib/souvenirs-partage';
 import { creerClientServeur } from '@/lib/supabase/server';
 
 export const metadata = { title: 'La carte' };
@@ -25,11 +30,26 @@ type Chargement = {
   nbEvenementsSansLieuSitue: number;
 };
 
+/** Signature d'une heure : le temps d'une visite, pas davantage. */
+const DUREE_SIGNATURE = 60 * 60;
+
+/**
+ * La table peut ne pas exister sur une base fraîchement montée : on préfère
+ * alors une carte sans faits ni souvenirs à une page d'erreur. Toute autre
+ * erreur remonte.
+ */
+function tableAbsente(erreur: { code?: string; message?: string } | null): boolean {
+  if (!erreur) return false;
+  if (erreur.code === '42P01' || erreur.code === 'PGRST205') return true;
+  const message = erreur.message?.toLowerCase() ?? '';
+  return message.includes('does not exist') || message.includes('could not find the table');
+}
+
 /**
  * Rassemble ce qu'il faut pour la carte : les lieux situés, ce qui s'y est
- * passé, et le chemin que chaque personne a suivi d'un lieu au suivant. Tout
- * est fait ici, sur le serveur, pour n'envoyer au navigateur que des données
- * déjà en forme.
+ * passé, le chemin que chaque personne a suivi d'un lieu au suivant, et le
+ * grand trajet d'une vie entière. Tout est fait ici, sur le serveur, pour
+ * n'envoyer au navigateur que des données déjà en forme.
  */
 async function chargerCarte(): Promise<Chargement> {
   const supabase = await creerClientServeur();
@@ -37,7 +57,9 @@ async function chargerCarte(): Promise<Chargement> {
   const [lieuxRes, evenementsRes, personnesRes, unionsRes] = await Promise.all([
     supabase
       .from('lieux')
-      .select('id, libelle, commune, departement, region, pays, pays_actuel, latitude, longitude, note'),
+      .select(
+        'id, libelle, commune, departement, region, pays, pays_actuel, latitude, longitude, note'
+      ),
     supabase
       .from('evenements')
       .select(
@@ -84,6 +106,11 @@ async function chargerCarte(): Promise<Chargement> {
   const evenementsParLieuManquant = new Map<string, number>();
   /** Passages datés de chaque personne, pour reconstituer ses déplacements. */
   const passages = new Map<string, { lieuId: string; annee: number; mois: number; jour: number }[]>();
+  /** Année du premier événement d'une personne à un lieu donné. */
+  const anneeParLieuPersonne = new Map<string, number>();
+  /** Événement de naissance et de décès situés d'une personne, pour la vue flux. */
+  const naissances = new Map<string, { lieuId: string; annee: number }>();
+  const deces = new Map<string, { lieuId: string; annee: number }>();
   let nbEvenementsSansLieuSitue = 0;
 
   for (const evenement of evenementsRes.data ?? []) {
@@ -125,6 +152,28 @@ async function chargerCarte(): Promise<Chargement> {
           jour: evenement.jour ?? 0,
         });
         passages.set(acteur.id, chemin);
+
+        const cle = `${acteur.id}|${evenement.lieu_id}`;
+        const connue = anneeParLieuPersonne.get(cle);
+        if (connue === undefined || evenement.annee < connue) {
+          anneeParLieuPersonne.set(cle, evenement.annee);
+        }
+      }
+
+      // Un événement d'union — mariage — n'a pas de personne_id directe : on
+      // le passe pour la vue flux, qui parle d'une vie précise.
+      if (evenement.personne_id) {
+        if (evenement.type === 'naissance') {
+          naissances.set(evenement.personne_id, {
+            lieuId: evenement.lieu_id,
+            annee: evenement.annee,
+          });
+        } else if (evenement.type === 'deces') {
+          deces.set(evenement.personne_id, {
+            lieuId: evenement.lieu_id,
+            annee: evenement.annee,
+          });
+        }
       }
     }
   }
@@ -153,6 +202,38 @@ async function chargerCarte(): Promise<Chargement> {
     }
   }
 
+  // --- Flux : de la naissance au décès -------------------------------------
+
+  const flux: Flux[] = [];
+  for (const [personneId, naissance] of naissances) {
+    const finVie = deces.get(personneId);
+    if (!finVie || finVie.lieuId === naissance.lieuId) continue;
+
+    const personne = personnes.get(personneId);
+    if (!personne) continue;
+
+    flux.push({
+      id: `flux-${personneId}`,
+      personneId,
+      nom: personne.nom,
+      cote: personne.cote,
+      naissanceId: naissance.lieuId,
+      decesId: finVie.lieuId,
+      anneeNaissance: naissance.annee,
+      anneeDeces: finVie.annee,
+    });
+  }
+
+  // --- Enrichissements : photos, faits, souvenirs ---------------------------
+
+  const [photosParLieu, faitsParLieu, annotations, souvenirsParLieu] =
+    await Promise.all([
+      chargerPhotosParLieu(supabase, [...idsSitues]),
+      chargerFaitsParLieu(supabase, [...idsSitues]),
+      chargerAnnotations(supabase),
+      chargerCompteSouvenirs(supabase, [...idsSitues]),
+    ]);
+
   // --- Lieux situés ---------------------------------------------------------
 
   const lieux: LieuSitue[] = situes.map((lieu) => {
@@ -174,6 +255,7 @@ async function chargerCarte(): Promise<Chargement> {
           nom: acteur.nom,
           cote: details?.cote ?? 'commune',
           nombre: 1,
+          premiereAnnee: anneeParLieuPersonne.get(`${acteur.id}|${lieu.id}`) ?? null,
         });
       }
     }
@@ -195,16 +277,26 @@ async function chargerCarte(): Promise<Chargement> {
       precision: precision || null,
       pays: lieu.pays,
       paysActuel: lieu.pays_actuel,
+      region: lieu.region,
       note: lieu.note,
       latitude: lieu.latitude,
       longitude: lieu.longitude,
       cote: coteDominant(parCote),
       parCote,
       evenements,
-      personnes: [...parPersonne.values()].sort((a, b) => b.nombre - a.nombre || a.nom.localeCompare(b.nom, 'fr')),
+      personnes: [...parPersonne.values()].sort(
+        (a, b) =>
+          (a.premiereAnnee ?? Number.MAX_SAFE_INTEGER) -
+            (b.premiereAnnee ?? Number.MAX_SAFE_INTEGER) ||
+          b.nombre - a.nombre ||
+          a.nom.localeCompare(b.nom, 'fr')
+      ),
       anneeMin: annees.length > 0 ? Math.min(...annees) : null,
       anneeMax: annees.length > 0 ? Math.max(...annees) : null,
       nbSansDate: evenements.length - annees.length,
+      photo: photosParLieu.get(lieu.id) ?? null,
+      faits: faitsParLieu.get(lieu.id) ?? [],
+      nbSouvenirs: souvenirsParLieu.get(lieu.id) ?? 0,
     };
   });
 
@@ -229,11 +321,194 @@ async function chargerCarte(): Promise<Chargement> {
     .sort((a, b) => b.nbEvenements - a.nbEvenements || a.nom.localeCompare(b.nom, 'fr'));
 
   return {
-    carte: { lieux, deplacements, annees: toutesLesAnnees, anneeMin, anneeMax },
+    carte: {
+      lieux,
+      deplacements,
+      flux,
+      annotations,
+      annees: toutesLesAnnees,
+      anneeMin,
+      anneeMax,
+    },
     nbLieux: tousLesLieux.length,
     manquants,
     nbEvenementsSansLieuSitue,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Enrichissements
+// ---------------------------------------------------------------------------
+
+type ClientArbre = Awaited<ReturnType<typeof creerClientServeur>>;
+
+/**
+ * Une photo par lieu, choisie parmi les médias explicitement rattachés à ce
+ * lieu. Le bucket est privé : chaque chemin est signé pour l'heure qui vient.
+ * Ne renvoie que ce qui a pu être signé ; le reste retombe sur « pas de photo ».
+ */
+async function chargerPhotosParLieu(
+  supabase: ClientArbre,
+  idsSitues: string[]
+): Promise<Map<string, PhotoLieu>> {
+  const photos = new Map<string, PhotoLieu>();
+  if (idsSitues.length === 0) return photos;
+
+  const { data, error } = await supabase
+    .from('medias')
+    .select('id, chemin, titre, type, lieu_id, annee, largeur, hauteur, statut')
+    .eq('type', 'photo')
+    .eq('statut', 'publie')
+    .in('lieu_id', idsSitues);
+
+  if (error) {
+    if (tableAbsente(error)) return photos;
+    throw new Error(`Chargement des photos de lieux impossible : ${error.message}`);
+  }
+
+  // Une seule photo par lieu suffit à l'illustrer. On garde la plus ancienne
+  // datée, à défaut la première venue.
+  const choisies = new Map<string, { id: string; chemin: string; titre: string | null; largeur: number | null; hauteur: number | null; annee: number | null }>();
+  for (const ligne of data ?? []) {
+    if (!ligne.lieu_id) continue;
+    const connue = choisies.get(ligne.lieu_id);
+    const meilleure =
+      !connue ||
+      (ligne.annee !== null &&
+        (connue.annee === null || ligne.annee < connue.annee));
+    if (meilleure) {
+      choisies.set(ligne.lieu_id, {
+        id: ligne.id,
+        chemin: ligne.chemin,
+        titre: ligne.titre,
+        largeur: ligne.largeur,
+        hauteur: ligne.hauteur,
+        annee: ligne.annee,
+      });
+    }
+  }
+
+  const chemins = [...choisies.values()].map((c) => c.chemin);
+  if (chemins.length === 0) return photos;
+
+  const { data: signees } = await supabase.storage
+    .from(BUCKET_MEDIAS)
+    .createSignedUrls(chemins, DUREE_SIGNATURE);
+  const urls = new Map<string, string>();
+  for (const entree of signees ?? []) {
+    if (entree.path && entree.signedUrl) urls.set(entree.path, entree.signedUrl);
+  }
+
+  for (const [lieuId, media] of choisies) {
+    const url = urls.get(media.chemin);
+    if (!url) continue;
+    photos.set(lieuId, {
+      id: media.id,
+      titre: media.titre,
+      url,
+      largeur: media.largeur,
+      hauteur: media.hauteur,
+    });
+  }
+
+  return photos;
+}
+
+/**
+ * Les faits de la grande Histoire rattachés à chaque lieu situé. Les faits
+ * sans lieu identifié ne comptent pas ici : ils apparaissent en revanche
+ * dans les annotations du curseur si leur portée passe le monde ou la nation.
+ */
+async function chargerFaitsParLieu(
+  supabase: ClientArbre,
+  idsSitues: string[]
+): Promise<Map<string, FaitLocal[]>> {
+  const parLieu = new Map<string, FaitLocal[]>();
+  if (idsSitues.length === 0) return parLieu;
+
+  const { data, error } = await supabase
+    .from('faits_historiques')
+    .select('id, titre, annee_debut, annee_fin, lieu_id')
+    .in('lieu_id', idsSitues)
+    .order('annee_debut', { ascending: true });
+
+  if (error) {
+    if (tableAbsente(error)) return parLieu;
+    throw new Error(`Chargement des faits locaux impossible : ${error.message}`);
+  }
+
+  for (const ligne of data ?? []) {
+    if (!ligne.lieu_id) continue;
+    const liste = parLieu.get(ligne.lieu_id) ?? [];
+    liste.push({
+      id: ligne.id,
+      titre: ligne.titre,
+      annee: ligne.annee_debut,
+      dateTexte:
+        ligne.annee_fin && ligne.annee_fin !== ligne.annee_debut
+          ? `${ligne.annee_debut} – ${ligne.annee_fin}`
+          : String(ligne.annee_debut),
+    });
+    parLieu.set(ligne.lieu_id, liste);
+  }
+  return parLieu;
+}
+
+/** Nombre de souvenirs qui mentionnent explicitement chacun des lieux situés. */
+async function chargerCompteSouvenirs(
+  supabase: ClientArbre,
+  idsSitues: string[]
+): Promise<Map<string, number>> {
+  const compte = new Map<string, number>();
+  if (idsSitues.length === 0) return compte;
+
+  const { data, error } = await supabase
+    .from('souvenirs')
+    .select('lieu_id')
+    .in('lieu_id', idsSitues);
+
+  if (error) {
+    if (tableAbsente(error)) return compte;
+    throw new Error(`Chargement des souvenirs par lieu impossible : ${error.message}`);
+  }
+
+  for (const ligne of data ?? []) {
+    if (!ligne.lieu_id) continue;
+    compte.set(ligne.lieu_id, (compte.get(ligne.lieu_id) ?? 0) + 1);
+  }
+  return compte;
+}
+
+/**
+ * Les jalons de la grande Histoire à révéler au passage du curseur : les faits
+ * de portée mondiale ou nationale d'abord, puis les faits régionaux si la
+ * frise reste maigre. Les faits familiaux, eux, ne remontent jamais : ils sont
+ * déjà dits ailleurs.
+ */
+async function chargerAnnotations(supabase: ClientArbre): Promise<AnnotationTemps[]> {
+  const { data, error } = await supabase
+    .from('faits_historiques')
+    .select('id, titre, annee_debut, portee')
+    .in('portee', ['mondial', 'national', 'regional', 'local'])
+    .order('annee_debut', { ascending: true });
+
+  if (error) {
+    if (tableAbsente(error)) return [];
+    throw new Error(`Chargement des annotations impossible : ${error.message}`);
+  }
+
+  // Un seul jalon par année : sinon la frise se marche dessus. Le premier
+  // fait rencontré l'emporte — la requête est déjà triée par année.
+  const parAnnee = new Map<number, AnnotationTemps>();
+  for (const ligne of data ?? []) {
+    if (parAnnee.has(ligne.annee_debut)) continue;
+    parAnnee.set(ligne.annee_debut, {
+      annee: ligne.annee_debut,
+      texte: ligne.titre,
+      faitId: ligne.id,
+    });
+  }
+  return [...parAnnee.values()];
 }
 
 /** La branche qui domine un lieu ; « commune » dès que les deux s'y croisent. */

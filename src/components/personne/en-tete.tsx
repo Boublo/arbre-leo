@@ -51,25 +51,9 @@ export function EnTetePersonne({ fiche }: { fiche: Fiche }) {
           <ListePreuves niveaux={personne.niveaux_preuve ?? []} />
         </div>
       )}
-
-      {personne.presume_vivant && <MentionVivant />}
     </header>
   );
-}
-
-/**
- * Rappel discret, mais présent sur chaque fiche concernée : l'arbre est privé,
- * et ce qui touche aux vivants l'est deux fois.
- */
-function MentionVivant() {
-  return (
-    <p
-      role="note"
-      className="mt-4 border-l-2 border-alerte/50 bg-fond-doux py-2 pl-3 pr-2 text-xs leading-relaxed text-encre-douce"
-    >
-      <span className="font-medium text-encre">Personne présumée vivante.</span> Ce qui figure
-      ici — dates, lieux, photographies — reste entre nous : rien ne doit être recopié sur un site
-      de généalogie ni transmis hors de la famille.
-    </p>
-  );
+  // La mention « présumée vivante » a migré dans `<BandeauVivant>`, posé
+  // pleine largeur au sommet de la page : rappel visible à l'arrivée sans
+  // alourdir l'en-tête.
 }

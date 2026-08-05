@@ -83,3 +83,70 @@ export function nomFichierSain(nom: string): string {
   // On garde la fin : c’est là que se trouve l’extension.
   return (propre || 'photo').slice(-80);
 }
+
+/**
+ * Coupe un récit au dernier point avant la limite, pour ne pas trancher une
+ * phrase. Pur : partagé entre l’aperçu du formulaire (côté navigateur) et le
+ * rendu du mur (côté serveur).
+ */
+export function extraitRecit(texte: string, max = 260): string {
+  const propre = texte.trim();
+  if (propre.length <= max) return propre;
+  const coupe = propre.slice(0, max);
+  const dernierPoint = coupe.lastIndexOf('.');
+  return `${dernierPoint > max * 0.5 ? coupe.slice(0, dernierPoint + 1) : coupe}…`;
+}
+
+// ---------------------------------------------------------------------------
+// Lecture d’une année dans un texte libre
+// ---------------------------------------------------------------------------
+
+/**
+ * Cherche dans un récit toutes les années qui pourraient dater le souvenir.
+ * On accepte « 1963 », « 1963. », « en 1963 », « années 60 », « années 1970 »
+ * ou « 70’s » — c’est ce que la famille écrit spontanément. Les nombres qui
+ * ne peuvent pas être des années (0 à 1699, au-delà de l’année en cours) sont
+ * écartés. Les doublons aussi.
+ */
+export function anneesDansTexte(texte: string): number[] {
+  const trouvees = new Set<number>();
+  const max = anneeMax();
+
+  // 1) Années à quatre chiffres, isolées de tout autre chiffre.
+  const quatreChiffres = /(?<!\d)(\d{4})(?!\d)/g;
+  for (const trouvaille of texte.matchAll(quatreChiffres)) {
+    const nombre = Number(trouvaille[1]);
+    if (nombre >= ANNEE_MIN && nombre <= max) trouvees.add(nombre);
+  }
+
+  // 2) « années 60 », « années 70’s », « 60’s » : on ramène au 20e siècle.
+  const decenniesCourtes = /(?:ann[ée]es\s+)?(\d{2})[’']?s?\b/gi;
+  const decoupe = sansAccent(texte);
+  for (const trouvaille of decoupe.matchAll(decenniesCourtes)) {
+    const brut = Number(trouvaille[1]);
+    if (!Number.isFinite(brut)) continue;
+    // 40–99 valent 1940–1999 ; 00–30 valent 2000–2030.
+    const anneeComplete = brut >= 40 ? 1900 + brut : 2000 + brut;
+    if (anneeComplete >= ANNEE_MIN && anneeComplete <= max) trouvees.add(anneeComplete);
+  }
+
+  return [...trouvees].sort((a, b) => a - b);
+}
+
+/**
+ * Propose, à partir d’un texte, la meilleure date à préremplir : la première
+ * année trouvée, avec la précision qui a le plus de sens (année seule, ou
+ * décennie si le texte disait « années 70 »).
+ */
+export function suggererPeriode(
+  texte: string
+): { annee: number; precision: PrecisionSaisie } | null {
+  const annees = anneesDansTexte(texte);
+  if (annees.length === 0) return null;
+
+  const evoqueDecennie = /ann[ée]es\s+\d{2,4}|\b\d{2}[’']?s\b/i.test(texte);
+  return {
+    annee: annees[0],
+    precision: evoqueDecennie ? 'decennie' : 'annee',
+  };
+}

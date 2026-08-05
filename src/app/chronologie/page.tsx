@@ -9,22 +9,26 @@ import {
   chevauchePeriode,
   concerneLaLignee,
   construireRelations,
+  descendre,
   ensembleDeLaPortee,
   lirePortee,
   periodeDesAnnees,
   perimetreDeLEnsemble,
   type PorteeLignee,
+  type RelationsFamille,
 } from '@/components/chronologie/lignee';
 import {
   anneeDeLaCle,
   cleDeTri,
   type EntreeChronologie,
+  type MotifRemarquable,
   type PersonneCitee,
 } from '@/components/chronologie/vocabulaire';
+import type { Portrait } from '@/components/portrait/types';
 import { coteDesBranches } from '@/lib/branches';
 import { formaterDate, lieuCourt } from '@/lib/arbre';
 import { creerClientServeur } from '@/lib/supabase/server';
-import type { PorteeFait, Sexe, TypeEvenement } from '@/lib/types-base';
+import type { NiveauPreuve, PorteeFait, Sexe, TypeEvenement } from '@/lib/types-base';
 
 /**
  * La chronologie.
@@ -40,6 +44,14 @@ import type { PorteeFait, Sexe, TypeEvenement } from '@/lib/types-base';
  * ailleurs — il se partage entre cousins, se met en favori, et survit au
  * rechargement. Le calcul de la lignée est un parcours de graphe, tenu à part
  * dans `@/components/chronologie/lignee`.
+ *
+ * Deux enrichissements sont calculés en même temps que la frise elle-même :
+ *  — le meilleur niveau de preuve de chaque événement, pour distinguer d'un
+ *    coup d'œil ce que la famille a en main d'un acte de ce qu'elle tient
+ *    encore de mémoire ;
+ *  — les repères marquants : la mort d'un aïeul dont descend un large pan de
+ *    l'arbre, et la première apparition d'un lieu jusqu'alors inconnu de la
+ *    famille — ces deux moments où la géographie de la famille tourne.
  */
 
 export const metadata = { title: 'Chronologie' };
@@ -48,6 +60,9 @@ export const metadata = { title: 'Chronologie' };
 export const dynamic = 'force-dynamic';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Seuil au-delà duquel un ancêtre est dit remarquable par sa descendance. */
+const SEUIL_ANCETRE = 8;
 
 type LieuJoint = { libelle: string; pays: string | null } | null;
 
@@ -64,6 +79,7 @@ type LigneEvenement = {
   jour: number | null;
   annee_fin: number | null;
   qualificatif: string | null;
+  niveau_preuve: NiveauPreuve | null;
   date_tri: string | null;
   lieux: LieuJoint;
 };
@@ -96,10 +112,10 @@ export default async function PageChronologie({ searchParams }: PageProps<'/chro
       supabase
         .from('evenements')
         .select(
-          'id, personne_id, union_id, type, libelle, detail, date_texte, annee, mois, jour, annee_fin, qualificatif, date_tri, lieux(libelle, pays)'
+          'id, personne_id, union_id, type, libelle, detail, date_texte, annee, mois, jour, annee_fin, qualificatif, niveau_preuve, date_tri, lieux(libelle, pays)'
         )
         .order('date_tri', { ascending: true, nullsFirst: false }),
-      supabase.from('personnes').select('id, nom_complet, prenoms, nom, sexe, branches'),
+      supabase.from('personnes').select('id, nom_complet, prenoms, nom, surnom, sexe, branches'),
       supabase.from('unions').select('id, conjoint_a, conjoint_b, branches'),
       supabase.from('filiations').select('union_id, enfant_id'),
       supabase
@@ -144,10 +160,12 @@ export default async function PageChronologie({ searchParams }: PageProps<'/chro
   const nomParPersonne = new Map<string, string>();
   const sexeParPersonne = new Map<string, Sexe>();
   const branchesParPersonne = new Map<string, string[]>();
+  const surnomParPersonne = new Map<string, string | null>();
   for (const p of personnesRes.data ?? []) {
     nomParPersonne.set(p.id, p.nom_complet?.trim() || p.prenoms || p.nom || 'Inconnu');
     sexeParPersonne.set(p.id, p.sexe);
     branchesParPersonne.set(p.id, p.branches ?? []);
+    surnomParPersonne.set(p.id, p.surnom);
   }
 
   const unionsParId = new Map(
@@ -157,14 +175,16 @@ export default async function PageChronologie({ searchParams }: PageProps<'/chro
     ])
   );
 
-  // Naissance et décès de chacun : ils servent au bandeau et à départager les
-  // homonymes dans la liste de choix.
+  // Naissance et décès de chacun : ils servent au bandeau, aux portraits et à
+  // départager les homonymes dans la liste de choix.
   const naissances = new Map<string, number>();
+  const naissancesLieu = new Map<string, string | null>();
   const deces = new Map<string, number>();
   for (const e of evenements) {
     if (!e.personne_id || e.annee === null) continue;
     if (e.type === 'naissance' && !naissances.has(e.personne_id)) {
       naissances.set(e.personne_id, e.annee);
+      naissancesLieu.set(e.personne_id, e.lieux ? lieuCourt(e.lieux.libelle) : null);
     } else if (e.type === 'deces' && !deces.has(e.personne_id)) {
       deces.set(e.personne_id, e.annee);
     }
@@ -184,6 +204,10 @@ export default async function PageChronologie({ searchParams }: PageProps<'/chro
     ? ensembleDeLaPortee(relations, personneChoisie, portee)
     : null;
   const perimetre = ensemble ? perimetreDeLEnsemble(relations, ensemble) : null;
+
+  // --- Ancêtres à large descendance ----------------------------------------
+
+  const descendantsPar = calculerDescendants(relations, nomParPersonne.keys());
 
   // --- Le fil de la famille -------------------------------------------------
 
@@ -224,6 +248,8 @@ export default async function PageChronologie({ searchParams }: PageProps<'/chro
       portee: null,
       personnes,
       sourceUrl: null,
+      niveauPreuve: e.niveau_preuve,
+      remarquable: null,
     });
   }
 
@@ -273,6 +299,8 @@ export default async function PageChronologie({ searchParams }: PageProps<'/chro
       portee: f.portee,
       personnes: [],
       sourceUrl: f.source_url,
+      niveauPreuve: null,
+      remarquable: null,
     });
   }
 
@@ -280,6 +308,24 @@ export default async function PageChronologie({ searchParams }: PageProps<'/chro
   // ordre ici. Les entrées sans année portent une clé vide : elles se rangent
   // en tête du tableau, et la frise les renvoie en fin de page.
   entrees.sort((a, b) => (a.tri < b.tri ? -1 : a.tri > b.tri ? 1 : 0));
+
+  marquerRemarquables(entrees, descendantsPar);
+
+  // --- Portraits pour le tiroir de contextualisation -----------------------
+
+  const portraits = new Map<string, Portrait>();
+  for (const [id, nom] of nomParPersonne) {
+    portraits.set(id, {
+      id,
+      nomComplet: nom,
+      surnom: surnomParPersonne.get(id) ?? null,
+      sexe: sexeParPersonne.get(id) ?? 'inconnu',
+      branches: branchesParPersonne.get(id) ?? [],
+      anneeNaissance: naissances.get(id) ?? null,
+      anneeDeces: deces.get(id) ?? null,
+      lieuNaissance: naissancesLieu.get(id) ?? null,
+    });
+  }
 
   // --- De quoi choisir, et savoir qui l'on suit -----------------------------
 
@@ -316,6 +362,7 @@ export default async function PageChronologie({ searchParams }: PageProps<'/chro
       <main className="flex-1 pb-24">
         <FriseChronologie
           entrees={entrees}
+          portraits={portraits}
           messageVide={
             resume
               ? 'Aucune date n’est encore enregistrée pour cette lignée. Revenez à la famille entière, ou attendez qu’un acte vienne la dater.'
@@ -346,6 +393,93 @@ function premier(valeur: string | string[] | undefined): string | null {
   const brut = Array.isArray(valeur) ? valeur[0] : valeur;
   const propre = (brut ?? '').trim();
   return propre === '' ? null : propre;
+}
+
+// ---------------------------------------------------------------------------
+// Ancêtres à large descendance
+// ---------------------------------------------------------------------------
+
+/**
+ * Compte, pour chaque personne, sa descendance connue — au sens large : tout
+ * enfant, petit-enfant, arrière-petit-enfant… qu'on retrouve par parenté.
+ *
+ * La famille est petite (moins de deux cents personnes), un parcours en
+ * largeur par personne suffit sans qu'il faille un cache. On préserve toutefois
+ * la correction en présence de boucles — deux cousins qui se marient
+ * referment un cycle — grâce à l'ensemble « vus » propre à chaque parcours.
+ */
+function calculerDescendants(
+  relations: RelationsFamille,
+  identifiants: Iterable<string>
+): Map<string, number> {
+  const total = new Map<string, number>();
+  for (const id of identifiants) {
+    const atteints = descendre(relations, id);
+    // `descendre` compte la personne de départ ; on la retire pour ne parler
+    // que de sa descendance.
+    total.set(id, Math.max(0, atteints.size - 1));
+  }
+  return total;
+}
+
+// ---------------------------------------------------------------------------
+// Repères marquants
+// ---------------------------------------------------------------------------
+
+/**
+ * Repère, sur la frise déjà triée, ce qui mérite un liseré distinctif : la
+ * mort d'un aïeul à large descendance, et la première apparition d'un lieu.
+ *
+ * L'ordre chronologique compte : une commune n'est nouvelle que si on ne l'a
+ * jamais vue en amont sur la frise. Ce marquage se fait donc après le tri
+ * final, en une seule passe.
+ */
+function marquerRemarquables(
+  entrees: EntreeChronologie[],
+  descendantsPar: Map<string, number>
+): void {
+  const lieuxVus = new Set<string>();
+
+  for (const entree of entrees) {
+    if (entree.nature !== 'famille') continue;
+
+    let motif: MotifRemarquable | null = null;
+
+    // Décès d'un aïeul à large descendance.
+    if (entree.type === 'deces') {
+      for (const personne of entree.personnes) {
+        const n = descendantsPar.get(personne.id) ?? 0;
+        if (n >= SEUIL_ANCETRE) {
+          motif = 'ancetre';
+          break;
+        }
+      }
+    }
+
+    // Première apparition d'un lieu, tous types d'événements confondus : une
+    // arrivée peut être une naissance sur place, une émigration, une résidence
+    // nouvelle. On ne l'annonce qu'une seule fois par lieu.
+    if (entree.lieu) {
+      const cle = normaliserLieu(entree.lieu);
+      if (!lieuxVus.has(cle)) {
+        lieuxVus.add(cle);
+        // On laisse la priorité au motif d'aïeul quand les deux tombent
+        // ensemble : c'est le plus rare et le plus parlant à la lecture.
+        if (motif === null) motif = 'arrivee';
+      }
+    }
+
+    if (motif) entree.remarquable = motif;
+  }
+}
+
+function normaliserLieu(libelle: string): string {
+  return libelle
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 // ---------------------------------------------------------------------------

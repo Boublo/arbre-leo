@@ -121,20 +121,28 @@ export function Branches({ branches }: { branches: string[] }) {
   );
 }
 
-/** Toute personne citée sur la fiche mène à la sienne. */
+/**
+ * Toute personne citée sur la fiche mène à la sienne. `mention` — « fils »,
+ * « conjoint », « demi-sœur » — précise le lien à la fois dans le corps du
+ * lien et dans l’attribut `title`, qui condense le tout au survol.
+ */
 export function LienFiche({ personne, mention }: { personne: LienPersonne; mention?: string }) {
+  const legende = [mention, personne.annees].filter(Boolean).join(' · ') || 'Dates inconnues';
+  const infoBulle = [personne.nomComplet, mention, personne.annees]
+    .filter(Boolean)
+    .join(' · ');
+
   return (
     <Link
       href={`/personne/${personne.id}`}
+      title={infoBulle}
       className="flex flex-col rounded-[var(--rayon-petit)] border border-bordure bg-fond-doux px-3 py-2 transition hover:border-bordure-forte hover:bg-accent-clair"
     >
       <span className="text-sm font-medium text-encre">{personne.nomComplet}</span>
       {personne.surnom && (
         <span className="text-xs text-encre-douce">« {personne.surnom} »</span>
       )}
-      <span className="text-xs text-encre-tres-douce">
-        {[mention, personne.annees].filter(Boolean).join(' · ') || 'Dates inconnues'}
-      </span>
+      <span className="text-xs text-encre-tres-douce">{legende}</span>
     </Link>
   );
 }

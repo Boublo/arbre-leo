@@ -13,12 +13,19 @@ import {
   type Disposition,
   type NoeudArbre,
 } from '@/lib/layout-arbre';
+import { MiniMap } from '@/components/arbre/mini-map';
+import { MenuContextuel, type ActionContexte } from '@/components/arbre/menu-contextuel';
+import { BandeauAide } from '@/components/arbre/bandeau-aide';
+import { Legende } from '@/components/arbre/legende';
+import { iconesPour, IconeSvg } from '@/components/arbre/icones-richesse';
 
 const COULEUR_COTE = {
   paternelle: { trait: 'var(--paternelle)', fond: 'var(--paternelle-douce)' },
   maternelle: { trait: 'var(--maternelle)', fond: 'var(--maternelle-douce)' },
   commune: { trait: 'var(--commune)', fond: 'var(--fond-doux)' },
 } as const;
+
+type EtatMenu = { personneId: string; x: number; y: number } | null;
 
 export function VueArbre({
   donnees,
@@ -35,10 +42,15 @@ export function VueArbre({
   onSelection: (id: string | null) => void;
   onRecentrer: (id: string) => void;
 }) {
-  const [echelle, setEchelle] = useState(1);
+  const [transform, setTransform] = useState({ x: 0, y: 0, k: 1 });
+  const [tailleVue, setTailleVue] = useState({ largeur: 0, hauteur: 0 });
+  const [menu, setMenu] = useState<EtatMenu>(null);
+  const [signalActivite, setSignalActivite] = useState(0);
+  const [conseilCopie, setConseilCopie] = useState<string | null>(null);
 
   const svgRef = useRef<SVGSVGElement>(null);
   const groupeRef = useRef<SVGGElement>(null);
+  const cadreRef = useRef<HTMLDivElement>(null);
   const comportementRef = useRef<ZoomBehavior<SVGSVGElement, unknown> | null>(null);
 
   const noeudParId = useMemo(
@@ -57,7 +69,16 @@ export function VueArbre({
       .scaleExtent([0.06, 3])
       .on('zoom', (evenement) => {
         groupe.setAttribute('transform', evenement.transform.toString());
-        setEchelle(evenement.transform.k);
+        setTransform({
+          x: evenement.transform.x,
+          y: evenement.transform.y,
+          k: evenement.transform.k,
+        });
+      })
+      .on('start', () => {
+        // Le premier geste ferme le bandeau d'aide et tout menu ouvert.
+        setSignalActivite((n) => n + 1);
+        setMenu(null);
       });
 
     comportementRef.current = comportement;
@@ -66,6 +87,19 @@ export function VueArbre({
     return () => {
       select(svg).on('.zoom', null);
     };
+  }, []);
+
+  // On observe la taille du cadre pour que la mini-carte connaisse la portion
+  // visible et que « Voir tout » recadre correctement au changement de fenêtre.
+  useEffect(() => {
+    const cadre = cadreRef.current;
+    if (!cadre) return;
+    const observateur = new ResizeObserver(() => {
+      const rect = cadre.getBoundingClientRect();
+      setTailleVue({ largeur: rect.width, hauteur: rect.height });
+    });
+    observateur.observe(cadre);
+    return () => observateur.disconnect();
   }, []);
 
   const toutVoir = useCallback(() => {
@@ -101,17 +135,113 @@ export function VueArbre({
     return () => clearTimeout(minuteur);
   }, [toutVoir, disposition.racineId, disposition.mode]);
 
+  // --- Mini-carte : cliquer pour recentrer la vue ---------------------------
+
+  const deplacerVersPointMonde = useCallback(
+    (mondeX: number, mondeY: number) => {
+      const svg = svgRef.current;
+      const comportement = comportementRef.current;
+      if (!svg || !comportement) return;
+      const { width, height } = svg.getBoundingClientRect();
+      // On garde l'échelle courante et l'on décale pour amener le point demandé
+      // au centre de la fenêtre visible.
+      const k = transform.k;
+      select(svg)
+        .transition()
+        .duration(200)
+        .call(
+          comportement.transform,
+          zoomIdentity.translate(width / 2 - mondeX * k, height / 2 - mondeY * k).scale(k)
+        );
+    },
+    [transform.k]
+  );
+
+  // --- Menu contextuel -------------------------------------------------------
+
+  const ouvrirMenu = useCallback(
+    (personneId: string, evenement: React.MouseEvent) => {
+      evenement.preventDefault();
+      const cadre = cadreRef.current;
+      if (!cadre) return;
+      const rect = cadre.getBoundingClientRect();
+      // Éviter de dépasser du cadre : on cadre le menu dans les limites.
+      const largeurMenu = 240;
+      const hauteurMenu = 220;
+      const x = Math.min(evenement.clientX - rect.left, rect.width - largeurMenu - 8);
+      const y = Math.min(evenement.clientY - rect.top, rect.height - hauteurMenu - 8);
+      setMenu({ personneId, x: Math.max(x, 8), y: Math.max(y, 8) });
+    },
+    []
+  );
+
+  const executerMenu = useCallback(
+    (action: ActionContexte) => {
+      if (!menu) return;
+      const p = donnees.personnes.get(menu.personneId);
+      if (!p) return;
+
+      if (action === 'repartir') {
+        onRecentrer(p.id);
+      } else if (action === 'fiche') {
+        onSelection(p.id);
+      } else if (action === 'lien') {
+        // Copie dans le presse-papier — on privilégie l'API moderne et l'on
+        // retombe sur une saisie invisible si l'environnement la refuse.
+        const url = new URL(window.location.href);
+        url.searchParams.set('personne', p.id);
+        const texte = url.toString();
+        const echec = () => setConseilCopie('Impossible de copier — sélectionnez la barre d’adresse.');
+        if (navigator.clipboard?.writeText) {
+          navigator.clipboard
+            .writeText(texte)
+            .then(() => setConseilCopie('Lien copié.'))
+            .catch(echec);
+        } else {
+          echec();
+        }
+        window.setTimeout(() => setConseilCopie(null), 3000);
+      }
+      // Les actions 'chronologie', 'carte', 'lignee' sont portées par des
+      // liens Next : elles se ferment d'elles-mêmes en changeant de page.
+      setMenu(null);
+    },
+    [menu, donnees, onRecentrer, onSelection]
+  );
+
   const focus = donnees.personnes.get(focusId);
   const prenomFocus = focus?.prenoms?.split(' ')[0] ?? focus?.nomComplet ?? '';
-  const detaille = echelle > 0.45;
+  const detaille = transform.k > 0.45;
+  const personneMenu = menu ? donnees.personnes.get(menu.personneId) ?? null : null;
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-fond">
+    <div ref={cadreRef} className="relative h-full w-full overflow-hidden bg-fond">
+      {/* Liserés de branche : rappel latéral, deux ans après avoir découvert
+          l'arbre on ne se rappelle plus toujours quelle couleur est quel côté. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 left-0 w-1"
+        style={{
+          background:
+            'linear-gradient(to bottom, transparent, var(--paternelle) 20%, var(--paternelle) 80%, transparent)',
+          opacity: 0.55,
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 right-0 w-1"
+        style={{
+          background:
+            'linear-gradient(to bottom, transparent, var(--maternelle) 20%, var(--maternelle) 80%, transparent)',
+          opacity: 0.55,
+        }}
+      />
+
       <svg
         ref={svgRef}
         className="h-full w-full cursor-grab active:cursor-grabbing"
         role="application"
-        aria-label="Arbre généalogique. Faites glisser pour vous déplacer, la molette pour zoomer, cliquez sur une personne pour l’ouvrir."
+        aria-label="Arbre généalogique. Faites glisser pour vous déplacer, la molette pour zoomer, cliquez sur une personne pour l’ouvrir, F pour chercher."
       >
         <defs>
           <pattern id="grille" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -197,25 +327,57 @@ export function VueArbre({
                 detaille={detaille}
                 onClick={() => onSelection(noeud.personneId)}
                 onDoubleClick={() => onRecentrer(noeud.personneId)}
+                onMenu={(evenement) => ouvrirMenu(noeud.personneId, evenement)}
               />
             ))}
           </g>
         </g>
       </svg>
 
+      {/* Menu contextuel */}
+      {menu && personneMenu && (
+        <MenuContextuel
+          personne={personneMenu}
+          x={menu.x}
+          y={menu.y}
+          onAction={executerMenu}
+          onFermer={() => setMenu(null)}
+        />
+      )}
+
+      {/* Bandeau d'aide clavier — en haut, il ne cache pas la vue de l'arbre. */}
+      <div className="pointer-events-none absolute inset-x-0 top-3 flex justify-center px-3">
+        <BandeauAide signalActivite={signalActivite} />
+      </div>
+
+      {/* Confirmation discrète après un « Copier le lien ». */}
+      {conseilCopie && (
+        <div
+          role="status"
+          className="pointer-events-none absolute left-1/2 top-16 -translate-x-1/2 rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte px-3 py-1.5 text-xs text-encre-douce shadow-[var(--ombre-douce)]"
+        >
+          {conseilCopie}
+        </div>
+      )}
+
+      {/* Légende à gauche, mini-carte à droite. */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-3 p-4">
-        <div className="pointer-events-auto carte flex flex-wrap items-center gap-4 px-3 py-2 text-xs text-encre-douce">
-          <Pastille couleur="var(--paternelle)">Côté paternel</Pastille>
-          <Pastille couleur="var(--maternelle)">Côté maternel</Pastille>
-          <Pastille couleur="var(--or)">Union</Pastille>
-          <span className="text-encre-tres-douce">Double-clic : repartir de cette personne</span>
+        <div className="flex flex-col gap-3">
+          <Legende />
+          <div className="pointer-events-auto carte flex w-fit items-center gap-1 p-1">
+            <BoutonRond titre="Voir tout l’arbre" onClick={toutVoir}>
+              ⤢
+            </BoutonRond>
+          </div>
         </div>
 
-        <div className="pointer-events-auto carte flex items-center gap-1 p-1">
-          <BoutonRond titre="Voir tout l’arbre" onClick={toutVoir}>
-            ⤢
-          </BoutonRond>
-        </div>
+        <MiniMap
+          disposition={disposition}
+          transform={transform}
+          tailleVue={tailleVue}
+          onDeplacer={deplacerVersPointMonde}
+          focusId={focusId}
+        />
       </div>
 
       {disposition.noeuds.length <= 1 && (
@@ -240,6 +402,7 @@ function Noeud({
   detaille,
   onClick,
   onDoubleClick,
+  onMenu,
 }: {
   noeud: NoeudArbre;
   personne: PersonneArbre | undefined;
@@ -248,17 +411,21 @@ function Noeud({
   detaille: boolean;
   onClick: () => void;
   onDoubleClick: () => void;
+  onMenu: (evenement: React.MouseEvent) => void;
 }) {
   if (!personne) return null;
 
   const couleurs = COULEUR_COTE[noeud.cote];
   const vie = anneesDeVie(personne);
+  const icones = detaille ? iconesPour(personne) : [];
+  const couleurIcone = estFocus ? 'var(--accent-contraste)' : 'var(--encre-douce)';
 
   return (
     <g
       transform={`translate(${noeud.x - LARGEUR_NOEUD / 2}, ${noeud.y})`}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
+      onContextMenu={onMenu}
       className="cursor-pointer"
       role="button"
       tabIndex={0}
@@ -270,6 +437,8 @@ function Noeud({
         }
       }}
     >
+      {/* Fond doré pour la personne choisie : ce n'est pas juste un contour,
+          c'est un fond patiné, comme un cadre autour d'un portrait. */}
       <rect
         width={LARGEUR_NOEUD}
         height={HAUTEUR_NOEUD}
@@ -324,6 +493,21 @@ function Noeud({
               {tronquer(personne.naissance.lieuCourt, 26)}
             </text>
           )}
+
+          {/* Icônes de richesse — alignées en bas à droite du nœud. */}
+          {icones.length > 0 && (
+            <g>
+              {icones.map((type, index) => (
+                <IconeSvg
+                  key={type}
+                  type={type}
+                  x={LARGEUR_NOEUD - 10 - index * 13}
+                  y={HAUTEUR_NOEUD - 8}
+                  couleur={couleurIcone}
+                />
+              ))}
+            </g>
+          )}
         </>
       )}
     </g>
@@ -353,14 +537,5 @@ function BoutonRond({
     >
       {children}
     </button>
-  );
-}
-
-function Pastille({ couleur, children }: { couleur: string; children: React.ReactNode }) {
-  return (
-    <span className="flex items-center gap-1.5">
-      <span className="h-2.5 w-2.5 rounded-full" style={{ background: couleur }} />
-      {children}
-    </span>
   );
 }

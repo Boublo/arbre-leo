@@ -1,11 +1,12 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { VueArbre } from '@/components/arbre/vue-arbre';
 import { SelecteurPersonne } from '@/components/arbre/selecteur-personne';
 import { FichePersonne } from '@/components/arbre/fiche-personne';
+import { PaletteCommandes } from '@/components/arbre/palette-commandes';
 import {
   anneesDeVie,
   compterEntourage,
@@ -31,6 +32,7 @@ export function EcranArbre({
   const [focusId, setFocusId] = useState(focusInitial);
   const [mode, setMode] = useState<ModeArbre>('ascendance');
   const [selectionId, setSelectionId] = useState<string | null>(null);
+  const [paletteOuverte, setPaletteOuverte] = useState(false);
 
   const donnees = useMemo(() => reconstruireGraphe(graphe), [graphe]);
 
@@ -66,6 +68,35 @@ export function EcranArbre({
   );
 
   const personneSelectionnee = selectionId ? donnees.personnes.get(selectionId) ?? null : null;
+
+  /**
+   * Raccourci F : ouvre la palette de recherche. On ignore les frappes
+   * quand un champ est déjà en train de recevoir du texte, faute de quoi
+   * on empêcherait de taper la lettre f dans le sélecteur d'ascendance.
+   */
+  useEffect(() => {
+    function surTouche(evenement: KeyboardEvent) {
+      if (evenement.defaultPrevented) return;
+      if (evenement.key !== 'f' && evenement.key !== 'F') return;
+      if (evenement.ctrlKey || evenement.metaKey || evenement.altKey) return;
+
+      const cible = evenement.target as HTMLElement | null;
+      const tag = cible?.tagName;
+      if (
+        cible?.isContentEditable ||
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        tag === 'SELECT'
+      ) {
+        return;
+      }
+
+      evenement.preventDefault();
+      setPaletteOuverte(true);
+    }
+    window.addEventListener('keydown', surTouche);
+    return () => window.removeEventListener('keydown', surTouche);
+  }, []);
 
   if (!focus) {
     return (
@@ -158,6 +189,13 @@ export function EcranArbre({
           </aside>
         )}
       </div>
+
+      <PaletteCommandes
+        personnes={graphe.personnes}
+        ouverte={paletteOuverte}
+        onFermer={() => setPaletteOuverte(false)}
+        onChoix={changerFocus}
+      />
     </div>
   );
 }

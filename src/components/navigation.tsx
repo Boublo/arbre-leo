@@ -5,7 +5,8 @@ import { BasculeTheme } from '@/components/bascule-theme';
 import { NOM_DU_SITE } from '@/lib/site';
 
 const LIENS = [
-  { href: '/', libelle: 'L’arbre' },
+  { href: '/', libelle: 'Accueil' },
+  { href: '/arbre', libelle: 'L’arbre' },
   { href: '/chronologie', libelle: 'Chronologie' },
   { href: '/carte', libelle: 'Carte' },
   { href: '/souvenirs', libelle: 'Souvenirs' },

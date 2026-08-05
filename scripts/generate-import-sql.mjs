@@ -168,15 +168,49 @@ const evenementsSql = [
 // Sources
 // ---------------------------------------------------------------------------
 
+/**
+ * Devine le niveau de preuve d'une source à partir de son texte.
+ * L'ordre du test compte : la meilleure preuve l'emporte quand plusieurs
+ * canaux se recoupent (par exemple un acte confirmé par l'INSEE).
+ */
+function niveauDe(texte) {
+  const T = texte;
+  if (
+    /\bACTE DE (NAISSANCE|MARIAGE|DECES|BAPTEME) LUS?\b/i.test(T) ||
+    /\bACTES? LUS?\b/i.test(T) ||
+    /\bAD\s?\d{2,3}\b/.test(T) ||
+    /\bArchives (departementales|municipales)\b/i.test(T) ||
+    /\bacte n° \d/i.test(T) ||
+    /\bregistre des (naissances|mariages|deces)\b/i.test(T) ||
+    /\bmicrofilm \d/i.test(T) ||
+    /\b\d E \d{3}/.test(T) ||
+    /\bLIVRET DE FAMILLE\b/i.test(T)
+  ) return 'acte';
+
+  if (
+    /\bANOM\b/i.test(T) ||
+    /\bArchives nationales d[' ]outre-mer\b/i.test(T) ||
+    (/\b(La Senia|Mers.el.Kebir|Tiaret|El Ancor|Oran)\b/i.test(T) && /\bacte\b/i.test(T))
+  ) return 'anom';
+
+  if (/\bINSEE\b/i.test(T) || /\bfichier des deces\b/i.test(T)) return 'insee';
+
+  if (/\b(MyHeritage|Geneanet|FamilySearch|arbre familial)\b/i.test(T)) return 'hypothese';
+
+  // Le marqueur explicite entre crochets, s'il est présent, est prioritaire.
+  const marqueur = Object.keys(PREUVE).find((m) => T.toUpperCase().includes(`[${m}]`));
+  if (marqueur) return PREUVE[marqueur];
+
+  return 'memoire';
+}
+
 /** Une source citée sans transcription n'apporte rien : on ne la reprend pas. */
 const sourcesSql = tree.persons.flatMap((p) =>
   p.sources
     .filter((s) => s.text || s.notes.length)
     .map((s) => {
       const texte = [s.text, ...s.notes].filter(Boolean).join('\n');
-      // Le marqueur de fiabilité est souvent posé en tête de la transcription.
-      const marqueur = Object.keys(PREUVE).find((m) => texte.toUpperCase().includes(`[${m}]`));
-      const niveau = marqueur ? `${q(PREUVE[marqueur])}::arbre.niveau_preuve` : 'null';
+      const niveau = `${q(niveauDe(texte))}::arbre.niveau_preuve`;
       return `insert into arbre.sources (personne_id, texte, page, niveau_preuve)
 select id, ${q(texte)}, ${q(s.page)}, ${niveau}
 from arbre.personnes where code_gedcom = ${q(p.id)}

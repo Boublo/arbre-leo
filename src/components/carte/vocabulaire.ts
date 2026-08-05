@@ -53,3 +53,39 @@ export const sansAccent = (texte: string) =>
     .replace(/[̀-ͯ]/g, '')
     .trim()
     .toLowerCase();
+
+/**
+ * « XIXᵉ », « XXᵉ ». Une année 1875 relève du 19ᵉ, non du 18ᵉ : on divise
+ * par cent après retrait d'une unité.
+ */
+export function siecleDe(annee: number): number {
+  return Math.floor((annee - 1) / 100) + 1;
+}
+
+/** Numéro de siècle vers chiffres romains, sans dépendance extérieure. */
+export function romain(nombre: number): string {
+  const table: [number, string][] = [
+    [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'],
+    [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'],
+    [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I'],
+  ];
+  let reste = nombre;
+  let sortie = '';
+  for (const [valeur, symbole] of table) {
+    while (reste >= valeur) {
+      sortie += symbole;
+      reste -= valeur;
+    }
+  }
+  return sortie;
+}
+
+/** « XIXᵉ siècle » — le nombre en romain, l'exposant en typographie française. */
+export function libelleSiecleDeAnnee(annee: number): string {
+  return `${romain(siecleDe(annee))}ᵉ siècle`;
+}
+
+/** Le même, à partir du numéro de siècle : 19 → « XIXᵉ siècle ». */
+export function libelleSiecle(siecle: number): string {
+  return `${romain(siecle)}ᵉ siècle`;
+}

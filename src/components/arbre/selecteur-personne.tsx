@@ -39,18 +39,24 @@ export function SelecteurPersonne({
 
   const enRecherche = requete.trim().length >= 2;
 
+  function fermer() {
+    setOuvert(false);
+    setRequete('');
+  }
+
   // Fermer au clic à côté et à la touche Échap : un menu qui reste ouvert
   // masque l'arbre qu'on essaie de lire.
   useEffect(() => {
     if (!ouvert) return;
 
     function surClic(evenement: MouseEvent) {
-      if (!conteneurRef.current?.contains(evenement.target as Node)) setOuvert(false);
+      if (!conteneurRef.current?.contains(evenement.target as Node)) fermer();
     }
     function surTouche(evenement: KeyboardEvent) {
-      if (evenement.key === 'Escape') setOuvert(false);
+      if (evenement.key === 'Escape') fermer();
     }
 
+    champRef.current?.focus();
     document.addEventListener('mousedown', surClic);
     document.addEventListener('keydown', surTouche);
     return () => {
@@ -59,18 +65,13 @@ export function SelecteurPersonne({
     };
   }, [ouvert]);
 
-  useEffect(() => {
-    if (ouvert) champRef.current?.focus();
-    else setRequete('');
-  }, [ouvert]);
-
   const annees = anneesDeVie(choisie);
 
   return (
     <div ref={conteneurRef} className="relative">
       <button
         type="button"
-        onClick={() => setOuvert((o) => !o)}
+        onClick={() => (ouvert ? fermer() : setOuvert(true))}
         aria-expanded={ouvert}
         aria-haspopup="listbox"
         className="flex items-center gap-2 rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte px-3 py-1.5 text-left transition hover:border-bordure-forte"
@@ -116,7 +117,7 @@ export function SelecteurPersonne({
                     type="button"
                     onClick={() => {
                       onChoix(p.id);
-                      setOuvert(false);
+                      fermer();
                     }}
                     className={`w-full px-3 py-2 text-left transition hover:bg-fond-doux ${
                       p.id === choisie.id ? 'bg-accent-clair' : ''

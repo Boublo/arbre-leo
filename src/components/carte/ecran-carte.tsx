@@ -22,6 +22,12 @@ const RAYON_MAX = 20;
 /** Rayon d'un lieu sans événement dans la période retenue. */
 const RAYON_ENDORMI = 3.5;
 
+/** Seuils de zoom où la légende de bas de carte change de granularité. */
+const ZOOM_REGION = 2.4;
+const ZOOM_VILLE = 5.5;
+
+type NiveauLegende = 'pays' | 'region' | 'ville';
+
 type PointCarte = {
   lieu: LieuSitue;
   nombre: number;
@@ -45,6 +51,7 @@ export function EcranCarte({ donnees }: { donnees: DonneesCarte }) {
   const [selectionId, setSelectionId] = useState<string | null>(null);
   const [survolId, setSurvolId] = useState<string | null>(null);
   const [montrerDeplacements, setMontrerDeplacements] = useState(true);
+  const [montrerFlux, setMontrerFlux] = useState(false);
   const [taille, setTaille] = useState({ largeur: 0, hauteur: 0 });
   const [transformation, setTransformation] = useState<Transformation>({ k: 1, x: 0, y: 0 });
 
@@ -259,7 +266,7 @@ export function EcranCarte({ donnees }: { donnees: DonneesCarte }) {
       return [
         {
           cle,
-          chemin: arcCourbe(trait.a, trait.b),
+          chemin: arcCourbe(trait.a, trait.b, 0.16),
           cote: paire.cote,
           epaisseur: 1 + Math.min(paire.nombre, 6) * 0.45,
           titre: `${depart.lieu.nom} → ${arrivee.lieu.nom} · ${paire.noms.slice(0, 4).join(', ')}${
@@ -269,6 +276,35 @@ export function EcranCarte({ donnees }: { donnees: DonneesCarte }) {
       ];
     });
   }, [points, donnees.deplacements, montrerDeplacements, debut, fin]);
+
+  // --- Flux : naissance → décès ---------------------------------------------
+
+  const fluxAffiches = useMemo(() => {
+    if (!montrerFlux) return [];
+
+    const parLieu = new Map(points.map((point) => [point.lieu.id, point]));
+
+    return donnees.flux.flatMap((vie) => {
+      // La vie doit chevaucher la période affichée pour valoir la peine.
+      if (vie.anneeDeces < debut || vie.anneeNaissance > fin) return [];
+
+      const depart = parLieu.get(vie.naissanceId);
+      const arrivee = parLieu.get(vie.decesId);
+      if (!depart || !arrivee) return [];
+
+      const trait = raccourcir(depart, arrivee, depart.rayon + 2, arrivee.rayon + 5);
+      if (!trait) return [];
+
+      return [
+        {
+          cle: vie.id,
+          chemin: arcCourbe(trait.a, trait.b, 0.28),
+          cote: vie.cote,
+          titre: `${vie.nom} · ${depart.lieu.nom} (${vie.anneeNaissance}) → ${arrivee.lieu.nom} (${vie.anneeDeces})`,
+        },
+      ];
+    });
+  }, [points, donnees.flux, montrerFlux, debut, fin]);
 
   // --- Sélection -------------------------------------------------------------
 
@@ -282,6 +318,16 @@ export function EcranCarte({ donnees }: { donnees: DonneesCarte }) {
   const apercu = useMemo(
     () => points.find((point) => point.lieu.id === survolId) ?? null,
     [points, survolId]
+  );
+
+  // --- Légende dynamique : granularité selon le zoom ------------------------
+
+  const niveauLegende: NiveauLegende =
+    transformation.k >= ZOOM_VILLE ? 'ville' : transformation.k >= ZOOM_REGION ? 'region' : 'pays';
+
+  const groupesLegende = useMemo(
+    () => grouperPourLegende(points, niveauLegende),
+    [points, niveauLegende]
   );
 
   if (donnees.lieux.length === 0) {
@@ -341,9 +387,45 @@ export function EcranCarte({ donnees }: { donnees: DonneesCarte }) {
                     <path d="M0 0 L8 4 L0 8 Z" fill={COULEUR_COTE[cote]} opacity={0.75} />
                   </marker>
                 ))}
+                {(Object.keys(COULEUR_COTE) as Cote[]).map((cote) => (
+                  <marker
+                    key={`vie-${cote}`}
+                    id={`vie-${cote}`}
+                    viewBox="0 0 8 8"
+                    refX={7}
+                    refY={4}
+                    markerWidth={6}
+                    markerHeight={6}
+                    markerUnits="userSpaceOnUse"
+                    orient="auto"
+                  >
+                    <path d="M0 0 L8 4 L0 8 Z" fill={COULEUR_COTE[cote]} opacity={0.55} />
+                  </marker>
+                ))}
               </defs>
 
               <FondCarte cadre={cadre} transformation={transformation} lieux={donnees.lieux} />
+
+              {/* Les vies entières passent sous les déplacements pour laisser
+                  lisible ce qui compte davantage à un moment donné. */}
+              {fluxAffiches.length > 0 && (
+                <g fill="none">
+                  {fluxAffiches.map((vie) => (
+                    <path
+                      key={vie.cle}
+                      d={vie.chemin}
+                      stroke={COULEUR_COTE[vie.cote]}
+                      strokeWidth={1.1}
+                      strokeLinecap="round"
+                      strokeDasharray="4 3"
+                      opacity={0.35}
+                      markerEnd={`url(#vie-${vie.cote})`}
+                    >
+                      <title>{vie.titre}</title>
+                    </path>
+                  ))}
+                </g>
+              )}
 
               {/* Les déplacements passent sous les points. */}
               <g fill="none">
@@ -433,7 +515,7 @@ export function EcranCarte({ donnees }: { donnees: DonneesCarte }) {
           </div>
         )}
 
-        {/* --- Légende --------------------------------------------------- */}
+        {/* --- Légende des couleurs et des symboles --------------------- */}
         <div className="carte pointer-events-none absolute left-4 top-4 max-w-xs p-3 text-xs text-encre-douce">
           <p className="mb-2 text-encre">
             <span className="tabular-nums">{nbActifs}</span> lieu{nbActifs > 1 ? 'x' : ''} entre{' '}
@@ -452,8 +534,46 @@ export function EcranCarte({ donnees }: { donnees: DonneesCarte }) {
           </ul>
           <p className="mt-2 text-encre-tres-douce">
             La taille du point dit le nombre d’événements. Un cercle vide et pointillé
-            marque un lieu sans événement dans la période. La flèche va du lieu quitté
-            au lieu rejoint.
+            marque un lieu sans événement dans la période. La flèche pleine va du lieu quitté
+            au lieu rejoint&nbsp;; le trait pointillé va d’une naissance à un décès.
+          </p>
+        </div>
+
+        {/* --- Légende dynamique de bas de carte : pays → région → ville */}
+        <div className="carte pointer-events-none absolute right-4 top-4 max-w-xs p-3 text-xs text-encre-douce">
+          <p className="text-encre">
+            <span className="uppercase tracking-wider text-encre-tres-douce">
+              {niveauLegende === 'pays'
+                ? 'Par pays'
+                : niveauLegende === 'region'
+                  ? 'Par région'
+                  : 'Par ville'}
+            </span>
+          </p>
+          {groupesLegende.length === 0 ? (
+            <p className="mt-1 text-encre-tres-douce">
+              Aucun lieu de ce niveau n’est visible dans la période.
+            </p>
+          ) : (
+            <ul className="mt-1 flex flex-col gap-0.5">
+              {groupesLegende.slice(0, 8).map((groupe) => (
+                <li key={groupe.libelle} className="flex items-baseline justify-between gap-3">
+                  <span className="truncate text-encre">{groupe.libelle}</span>
+                  <span className="tabular-nums text-encre-douce">
+                    {groupe.nombre}
+                    <span className="text-encre-tres-douce"> · {groupe.evenements} évt</span>
+                  </span>
+                </li>
+              ))}
+              {groupesLegende.length > 8 && (
+                <li className="text-encre-tres-douce">
+                  et {groupesLegende.length - 8} autre{groupesLegende.length - 8 > 1 ? 's' : ''}
+                </li>
+              )}
+            </ul>
+          )}
+          <p className="mt-2 text-encre-tres-douce">
+            Zoomer descend d’un cran : pays, puis région, puis ville.
           </p>
         </div>
 
@@ -466,17 +586,32 @@ export function EcranCarte({ donnees }: { donnees: DonneesCarte }) {
               debut={debut}
               fin={fin}
               annees={donnees.annees}
+              annotations={donnees.annotations}
               surChangement={changerPeriode}
             />
-            <label className="mt-3 flex items-center gap-2 text-xs text-encre-douce">
-              <input
-                type="checkbox"
-                checked={montrerDeplacements}
-                onChange={(evenement) => setMontrerDeplacements(evenement.target.checked)}
-                style={{ accentColor: 'var(--accent)' }}
-              />
-              Montrer les déplacements d’une vie à l’autre
-            </label>
+            <div className="mt-3 flex flex-col gap-1.5">
+              <label className="flex items-center gap-2 text-xs text-encre-douce">
+                <input
+                  type="checkbox"
+                  checked={montrerDeplacements}
+                  onChange={(evenement) => setMontrerDeplacements(evenement.target.checked)}
+                  style={{ accentColor: 'var(--accent)' }}
+                />
+                Montrer les déplacements d’une vie à l’autre
+              </label>
+              <label className="flex items-center gap-2 text-xs text-encre-douce">
+                <input
+                  type="checkbox"
+                  checked={montrerFlux}
+                  onChange={(evenement) => setMontrerFlux(evenement.target.checked)}
+                  style={{ accentColor: 'var(--accent)' }}
+                />
+                Tracer les vies&nbsp;: de la naissance au décès
+                <span className="text-encre-tres-douce">
+                  ({donnees.flux.length})
+                </span>
+              </label>
+            </div>
           </div>
 
           <div className="carte pointer-events-auto flex items-center gap-1 p-1">
@@ -623,6 +758,35 @@ function Pastille({ couleur }: { couleur: string }) {
 
 // ---------------------------------------------------------------------------
 
+/** Groupe les lieux visibles selon le niveau demandé pour la légende. */
+function grouperPourLegende(
+  points: readonly PointCarte[],
+  niveau: NiveauLegende
+): { libelle: string; nombre: number; evenements: number }[] {
+  const cle = (point: PointCarte): string | null => {
+    if (niveau === 'ville') return point.lieu.nom;
+    if (niveau === 'region') {
+      return point.lieu.region ?? point.lieu.paysActuel ?? point.lieu.pays ?? 'Sans région';
+    }
+    return point.lieu.paysActuel ?? point.lieu.pays ?? 'Sans pays';
+  };
+
+  const totaux = new Map<string, { nombre: number; evenements: number }>();
+  for (const point of points) {
+    if (!point.actif) continue;
+    const identifiant = cle(point);
+    if (!identifiant) continue;
+    const acc = totaux.get(identifiant) ?? { nombre: 0, evenements: 0 };
+    acc.nombre += 1;
+    acc.evenements += point.nombre;
+    totaux.set(identifiant, acc);
+  }
+
+  return [...totaux.entries()]
+    .map(([libelle, valeurs]) => ({ libelle, ...valeurs }))
+    .sort((a, b) => b.evenements - a.evenements || a.libelle.localeCompare(b.libelle, 'fr'));
+}
+
 function rayonDe(nombre: number, sommet: number): number {
   return RAYON_MIN + (RAYON_MAX - RAYON_MIN) * Math.sqrt(nombre / Math.max(sommet, 1));
 }
@@ -648,13 +812,16 @@ function raccourcir(
   };
 }
 
-/** Un arc légèrement bombé : deux trajets inverses ne se superposent pas. */
-function arcCourbe(a: { x: number; y: number }, b: { x: number; y: number }): string {
+/** Un arc plus ou moins bombé : deux trajets inverses ne se superposent pas. */
+function arcCourbe(
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  courbure = 0.16
+): string {
   const milieuX = (a.x + b.x) / 2;
   const milieuY = (a.y + b.y) / 2;
   const dx = b.x - a.x;
   const dy = b.y - a.y;
-  const courbure = 0.16;
   return `M${a.x} ${a.y} Q${milieuX - dy * courbure} ${milieuY + dx * courbure} ${b.x} ${b.y}`;
 }
 

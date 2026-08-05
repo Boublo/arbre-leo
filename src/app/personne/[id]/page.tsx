@@ -4,6 +4,9 @@ import { notFound } from 'next/navigation';
 import { Navigation } from '@/components/navigation';
 import { chargerFiche, chargerNomPersonne } from '@/components/personne/donnees';
 import { EnTetePersonne } from '@/components/personne/en-tete';
+import { BandeauVivant } from '@/components/personne/bandeau-vivant';
+import { FriseFiche } from '@/components/personne/frise-fiche';
+import { OrganisationFiche, type Compteurs } from '@/components/personne/organisation-fiche';
 import { ViePersonne } from '@/components/personne/vie';
 import { ParentePersonne } from '@/components/personne/parente';
 import { NotesPersonne } from '@/components/personne/notes';
@@ -13,14 +16,18 @@ import { SouvenirsPersonne } from '@/components/personne/souvenirs';
 import { FaitsPersonne } from '@/components/personne/faits';
 import { CommentairesPersonne } from '@/components/personne/commentaires';
 import { BarreDeSaisie } from '@/components/saisie/lien-ajout';
+import { BarreParente } from '@/components/portrait/barre-parente';
+import { NavigationContextuelle } from '@/components/decouverte/navigation-contextuelle';
+import { chargerArbre } from '@/lib/arbre';
 
 /**
  * La fiche complète d'une personne.
  *
  * On y vient depuis l'arbre pour tout savoir de quelqu'un : sa vie dans
  * l'ordre, sa parenté, ce qui l'atteste, ce que la famille en raconte. La page
- * est volontairement longue et d'une seule colonne — elle se lit comme une
- * notice de livre de famille, pas comme un tableau de bord.
+ * s'ouvre sur le contexte immédiat — une barre de parenté et une frise de vie
+ * — puis répartit le reste entre onglets pour ne pas noyer le lecteur : cinq
+ * matières séparées qu'on ne consulte presque jamais dans la même minute.
  */
 
 // Une correction déposée par un cousin doit se voir au rechargement suivant.
@@ -34,9 +41,27 @@ export async function generateMetadata({ params }: PageProps<'/personne/[id]'>):
 
 export default async function PagePersonne({ params }: PageProps<'/personne/[id]'>) {
   const { id } = await params;
-  const fiche = await chargerFiche(id);
+
+  // La fiche vient de plusieurs tables ; l'arbre entier sert au contexte
+  // (parenté immédiate, tirage d'un membre au hasard). Les deux appels sont
+  // indépendants, on les mène en parallèle.
+  const [fiche, donneesArbre] = await Promise.all([
+    chargerFiche(id),
+    chargerArbre(),
+  ]);
 
   if (!fiche) notFound();
+
+  const compteurs: Compteurs = {
+    vue: fiche.evenements.length + fiche.sources.length + fiche.faits.length,
+    parente:
+      fiche.parents.length +
+      fiche.fratrie.length +
+      fiche.foyers.reduce((n, f) => n + (f.conjoint ? 1 : 0) + f.enfants.length, 0),
+    souvenirs: fiche.souvenirs.length,
+    photos: fiche.medias.length,
+    conversation: compterCommentaires(fiche.commentaires),
+  };
 
   return (
     <>
@@ -50,26 +75,54 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
         </p>
 
         <div className="flex flex-col gap-6">
+          {fiche.personne.presume_vivant && <BandeauVivant />}
+
+          <BarreParente focusId={fiche.personne.id} donnees={donneesArbre} />
+
           <EnTetePersonne fiche={fiche} />
+
+          <FriseFiche fiche={fiche} />
+
           <BarreDeSaisie
             personneId={fiche.personne.id}
             nomComplet={fiche.nomComplet}
             sexe={fiche.personne.sexe}
           />
-          <ViePersonne evenements={fiche.evenements} />
-          <ParentePersonne fiche={fiche} />
-          <NotesPersonne notes={fiche.personne.notes} />
-          <SourcesPersonne sources={fiche.sources} />
-          <MediasPersonne medias={fiche.medias} />
-          <SouvenirsPersonne souvenirs={fiche.souvenirs} />
-          <FaitsPersonne faits={fiche.faits} />
-          <CommentairesPersonne
-            personneId={fiche.personne.id}
-            nomPersonne={fiche.nomComplet}
-            commentaires={fiche.commentaires}
+
+          <OrganisationFiche
+            compteurs={compteurs}
+            vue={
+              <>
+                <ViePersonne evenements={fiche.evenements} />
+                <SourcesPersonne sources={fiche.sources} />
+                <NotesPersonne notes={fiche.personne.notes} />
+                <FaitsPersonne faits={fiche.faits} />
+              </>
+            }
+            parente={<ParentePersonne fiche={fiche} />}
+            souvenirs={<SouvenirsPersonne souvenirs={fiche.souvenirs} />}
+            photos={<MediasPersonne medias={fiche.medias} />}
+            conversation={
+              <CommentairesPersonne
+                personneId={fiche.personne.id}
+                nomPersonne={fiche.nomComplet}
+                commentaires={fiche.commentaires}
+              />
+            }
           />
+
+          <NavigationContextuelle focusId={fiche.personne.id} donnees={donneesArbre} />
         </div>
       </main>
     </>
+  );
+}
+
+type NoeudCommentaire = { reponses: NoeudCommentaire[] };
+
+function compterCommentaires(commentaires: NoeudCommentaire[]): number {
+  return commentaires.reduce(
+    (total, c) => total + 1 + compterCommentaires(c.reponses),
+    0
   );
 }

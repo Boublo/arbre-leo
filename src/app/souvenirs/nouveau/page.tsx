@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Navigation } from '@/components/navigation';
 import { FormulaireSouvenir } from '@/components/souvenirs/formulaire-souvenir';
-import { chargerLieux, chargerPersonnesMentionnables, lireDroits } from '@/lib/souvenirs';
+import { chargerLieux, chargerPortraitsMentionnables, lireDroits } from '@/lib/souvenirs';
 
 export const metadata = { title: 'Déposer un souvenir' };
 
@@ -17,14 +17,14 @@ export default async function PageNouveauSouvenir() {
 
   const [lieux, personnes] = await Promise.all([
     chargerLieux(),
-    chargerPersonnesMentionnables(),
+    chargerPortraitsMentionnables(),
   ]);
 
   return (
     <>
       <Navigation />
 
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 sm:px-6">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
         <Link href="/souvenirs" className="lien-discret text-sm">
           ← Revenir au mur
         </Link>

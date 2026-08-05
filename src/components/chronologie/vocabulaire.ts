@@ -1,5 +1,5 @@
 import type { Cote } from '@/lib/branches';
-import type { PorteeFait, TypeEvenement } from '@/lib/types-base';
+import type { NiveauPreuve, PorteeFait, TypeEvenement } from '@/lib/types-base';
 
 /**
  * Le vocabulaire de la frise.
@@ -13,6 +13,21 @@ import type { PorteeFait, TypeEvenement } from '@/lib/types-base';
 export type NatureEntree = 'famille' | 'histoire';
 
 export type PersonneCitee = { id: string; nom: string };
+
+/**
+ * Ce qui rend un événement remarquable dans une frise familiale.
+ *
+ * Le mot est réservé aux repères qui changent la géographie de la famille : la
+ * mort d'un aïeul dont descend un large pan de l'arbre, l'arrivée d'un lieu
+ * inconnu jusqu'alors. On ne l'attribue jamais à main levée : le calcul est
+ * fait côté serveur, à partir de la parenté et de l'ordre des dates.
+ */
+export type MotifRemarquable = 'ancetre' | 'arrivee';
+
+export const LIBELLE_REMARQUABLE: Record<MotifRemarquable, string> = {
+  ancetre: 'Décès d’un aïeul d’où descend une large part de la famille',
+  arrivee: 'Première apparition connue de ce lieu dans la famille',
+};
 
 export type EntreeChronologie = {
   /** Unique sur toute la frise : la nature préfixe l'identifiant de la ligne. */
@@ -37,6 +52,16 @@ export type EntreeChronologie = {
   portee: PorteeFait | null;
   personnes: PersonneCitee[];
   sourceUrl: string | null;
+  /**
+   * Meilleure preuve rattachée à un événement de famille. `null` pour les faits
+   * de la grande Histoire, qui portent leurs propres sources.
+   */
+  niveauPreuve: NiveauPreuve | null;
+  /**
+   * Pourquoi cette entrée mérite d'être remarquée sur la frise, ou `null` si
+   * elle n'est qu'une ligne parmi d'autres.
+   */
+  remarquable: MotifRemarquable | null;
 };
 
 /**
@@ -93,6 +118,15 @@ export const LIBELLE_COTE: Record<Cote, string> = {
   commune: 'les deux côtés',
 };
 
+/**
+ * Reconnaît les niveaux dits « étayés » — ceux pour lesquels un acte a été
+ * consulté. Isolé ici pour que la frise et le tiroir de contexte s'entendent
+ * sur la même règle.
+ */
+export function estEtaye(niveau: NiveauPreuve | null): boolean {
+  return niveau === 'acte' || niveau === 'anom';
+}
+
 // ---------------------------------------------------------------------------
 // Dates
 // ---------------------------------------------------------------------------
@@ -145,6 +179,11 @@ export function chiffresRomains(nombre: number): string {
  */
 export function siecleDeLaDecennie(decennie: number): number {
   return Math.floor(decennie / 100) + 1;
+}
+
+/** Décennie à laquelle une année appartient : 1758 → 1750, 1900 → 1900. */
+export function decennieDeLAnnee(annee: number): number {
+  return Math.floor(annee / 10) * 10;
 }
 
 /** « 3 personnes », « 1 personne » — l'accord au pluriel, sans y penser. */

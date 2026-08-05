@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Champ } from '@/components/ui/champs';
 import { Selecteur } from '@/components/souvenirs/selecteur';
 import {
@@ -25,9 +24,38 @@ export type ValeursDate = {
  * On demande donc d’abord ce que l’on sait — le jour, le mois, l’année, la
  * décennie, ou rien — et les champs se règlent là-dessus. C’est ce choix qui
  * remplit `precision_date` en base.
+ *
+ * En mode contrôlé (via `onChangement`), les valeurs vivent au-dessus, ce qui
+ * permet à la prévisualisation vivante d’en tirer parti sans dupliquer l’état.
  */
-export function ChoixDate({ valeurs }: { valeurs?: ValeursDate }) {
-  const [precision, setPrecision] = useState<PrecisionSaisie>(valeurs?.precision ?? 'annee');
+export function ChoixDate({
+  valeurs,
+  onChangement,
+}: {
+  valeurs?: ValeursDate;
+  onChangement?: (valeurs: ValeursDate) => void;
+}) {
+  const precision = valeurs?.precision ?? 'annee';
+  const annee = valeurs?.annee ?? null;
+  const mois = valeurs?.mois ?? null;
+  const jour = valeurs?.jour ?? null;
+  const dateTexte = valeurs?.dateTexte ?? null;
+
+  const controle = onChangement !== undefined;
+
+  // `undefined` = « non touché », `null` = « effacé volontairement ». Il faut
+  // distinguer les deux : sans cela, on ne pourrait plus vider la date.
+  function pousser(patch: Partial<ValeursDate>) {
+    const clef = <K extends keyof ValeursDate>(nom: K, courant: ValeursDate[K]): ValeursDate[K] =>
+      nom in patch ? (patch[nom] as ValeursDate[K]) : courant;
+    onChangement?.({
+      precision: clef('precision', precision),
+      annee: clef('annee', annee),
+      mois: clef('mois', mois),
+      jour: clef('jour', jour),
+      dateTexte: clef('dateTexte', dateTexte),
+    });
+  }
 
   const demandeAnnee = precision !== 'inconnue';
   const demandeMois = precision === 'mois' || precision === 'jour';
@@ -41,7 +69,10 @@ export function ChoixDate({ valeurs }: { valeurs?: ValeursDate }) {
         label="Ce dont vous êtes sûr"
         name="precision"
         value={precision}
-        onChange={(e) => setPrecision(e.target.value as PrecisionSaisie)}
+        onChange={(e) => {
+          const nouvellePrecision = e.target.value as PrecisionSaisie;
+          if (controle) pousser({ precision: nouvellePrecision });
+        }}
         aide="Une année approximative vaut mieux qu’une date inventée."
       >
         {PRECISIONS.map((p) => (
@@ -61,13 +92,24 @@ export function ChoixDate({ valeurs }: { valeurs?: ValeursDate }) {
             min={ANNEE_MIN}
             max={anneeMax()}
             required
-            defaultValue={valeurs?.annee ?? ''}
+            value={annee ?? ''}
+            onChange={(e) =>
+              controle && pousser({ annee: e.target.value === '' ? null : Number(e.target.value) })
+            }
             aide={precision === 'decennie' ? '1963 sera rangé dans les années 1960.' : undefined}
           />
         )}
 
         {demandeMois && (
-          <Selecteur label="Mois" name="mois" required defaultValue={valeurs?.mois ?? ''}>
+          <Selecteur
+            label="Mois"
+            name="mois"
+            required
+            value={mois ?? ''}
+            onChange={(e) =>
+              controle && pousser({ mois: e.target.value === '' ? null : Number(e.target.value) })
+            }
+          >
             <option value="">Choisir…</option>
             {MOIS.map((nom, index) => (
               <option key={nom} value={index + 1}>
@@ -86,7 +128,10 @@ export function ChoixDate({ valeurs }: { valeurs?: ValeursDate }) {
             min={1}
             max={31}
             required
-            defaultValue={valeurs?.jour ?? ''}
+            value={jour ?? ''}
+            onChange={(e) =>
+              controle && pousser({ jour: e.target.value === '' ? null : Number(e.target.value) })
+            }
           />
         )}
       </div>
@@ -95,7 +140,8 @@ export function ChoixDate({ valeurs }: { valeurs?: ValeursDate }) {
         label="La date telle qu’on la raconte (facultatif)"
         name="dateTexte"
         maxLength={160}
-        defaultValue={valeurs?.dateTexte ?? ''}
+        value={dateTexte ?? ''}
+        onChange={(e) => controle && pousser({ dateTexte: e.target.value === '' ? null : e.target.value })}
         placeholder="l’été de mes dix ans"
         aide="Cette phrase est conservée telle quelle, à côté de la date."
       />

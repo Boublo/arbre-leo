@@ -8,7 +8,7 @@ import type { ValeursSouvenir } from '@/components/souvenirs/formulaire-souvenir
 import { epinglerSouvenir, supprimerCommentaire, supprimerSouvenir } from '@/app/actions/souvenirs';
 import {
   chargerLieux,
-  chargerPersonnesMentionnables,
+  chargerPortraitsMentionnables,
   chargerSouvenir,
   formaterHorodatage,
   lireDroits,
@@ -46,7 +46,7 @@ export default async function PageSouvenir({ params }: PageProps<'/souvenirs/[id
 
   // Les listes de reprise ne sont chargées que pour qui peut effectivement reprendre.
   const [lieux, personnes] = peutReprendre
-    ? await Promise.all([chargerLieux(), chargerPersonnesMentionnables()])
+    ? await Promise.all([chargerLieux(), chargerPortraitsMentionnables()])
     : [[], []];
 
   const valeurs: ValeursSouvenir = {
@@ -231,7 +231,7 @@ function Commentaires({
   droits: { utilisateurId: string | null; estAdmin: boolean };
 }) {
   return (
-    <section className="flex flex-col gap-4 border-t border-bordure pt-6">
+    <section id="reagir" className="flex flex-col gap-4 border-t border-bordure pt-6">
       <h2 className="text-lg">
         {souvenir.commentaires.length === 0
           ? 'Personne n’a encore réagi'

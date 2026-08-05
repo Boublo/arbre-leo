@@ -1,4 +1,8 @@
-import { siecleDeLaDecennie, type EntreeChronologie } from '@/components/chronologie/vocabulaire';
+import {
+  decennieDeLAnnee,
+  siecleDeLaDecennie,
+  type EntreeChronologie,
+} from '@/components/chronologie/vocabulaire';
 
 /**
  * Mise en paliers de la frise.
@@ -8,6 +12,11 @@ import { siecleDeLaDecennie, type EntreeChronologie } from '@/components/chronol
  * repère précis, et retrouve toujours où il en est. Les décennies vides ne sont
  * pas dessinées — elles seraient des dizaines de bandes blanches — mais elles
  * sont comptées, pour qu'un long silence de la famille reste visible.
+ *
+ * Une vue alternative regroupe les mêmes entrées par lieu : elle sert quand
+ * c'est la géographie de la famille qu'on cherche à embrasser, plutôt que sa
+ * chronologie. Les deux regroupements partent des mêmes entrées et se laissent
+ * choisir sans nouveau chargement.
  */
 
 export type GroupeAnnee = {
@@ -59,7 +68,7 @@ export function regrouper(entrees: EntreeChronologie[]): FriseRegroupee {
 
   for (const annee of annees) {
     const entreesAnnee = parAnnee.get(annee) ?? [];
-    const decennie = Math.floor(annee / 10) * 10;
+    const decennie = decennieDeLAnnee(annee);
     const siecle = siecleDeLaDecennie(decennie);
 
     let blocSiecle = siecles.at(-1);
@@ -96,4 +105,90 @@ export function regrouper(entrees: EntreeChronologie[]): FriseRegroupee {
   }
 
   return { siecles, sansAnnee };
+}
+
+// ---------------------------------------------------------------------------
+// Vue alternative : par lieu
+// ---------------------------------------------------------------------------
+
+export type GroupeLieu = {
+  /** Libellé du lieu tel qu'affiché dans la frise. */
+  lieu: string;
+  /** Clef stable pour le DOM ; obtenue à partir du libellé. */
+  cle: string;
+  /** Entrées rattachées, triées de la plus ancienne à la plus récente. */
+  entrees: EntreeChronologie[];
+  premiereAnnee: number | null;
+  derniereAnnee: number | null;
+};
+
+export type VueLieux = {
+  groupes: GroupeLieu[];
+  /** Les entrées sans lieu identifié : rassemblées à part plutôt que noyées. */
+  sansLieu: EntreeChronologie[];
+};
+
+/** Nettoyage minimal pour rassembler les orthographes proches d'un même lieu. */
+function cle(libelle: string): string {
+  return libelle
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Regroupe les entrées par lieu, tel qu'affiché sur la frise (« Oran (Algérie) »
+ * reste distinct d'« Oran », faute de mieux). Les groupes sont ordonnés par
+ * date de leur première entrée : la géographie retrace ainsi le chemin réel de
+ * la famille, du plus ancien au plus récent.
+ */
+export function regrouperParLieu(entrees: EntreeChronologie[]): VueLieux {
+  const parCle = new Map<string, GroupeLieu>();
+  const sansLieu: EntreeChronologie[] = [];
+
+  for (const entree of entrees) {
+    if (!entree.lieu) {
+      sansLieu.push(entree);
+      continue;
+    }
+    const cleLieu = cle(entree.lieu);
+    let groupe = parCle.get(cleLieu);
+    if (!groupe) {
+      groupe = {
+        lieu: entree.lieu,
+        cle: cleLieu,
+        entrees: [],
+        premiereAnnee: null,
+        derniereAnnee: null,
+      };
+      parCle.set(cleLieu, groupe);
+    }
+    groupe.entrees.push(entree);
+
+    if (entree.annee !== null) {
+      if (groupe.premiereAnnee === null || entree.annee < groupe.premiereAnnee) {
+        groupe.premiereAnnee = entree.annee;
+      }
+      if (groupe.derniereAnnee === null || entree.annee > groupe.derniereAnnee) {
+        groupe.derniereAnnee = entree.annee;
+      }
+    }
+  }
+
+  // On garde l'ordre chronologique interne — chaque groupe se lit alors comme
+  // un carnet de séjour, du premier au dernier passage connu.
+  for (const groupe of parCle.values()) {
+    groupe.entrees.sort((a, b) => (a.tri < b.tri ? -1 : a.tri > b.tri ? 1 : 0));
+  }
+
+  const groupes = [...parCle.values()].sort((a, b) => {
+    const debutA = a.premiereAnnee ?? Number.POSITIVE_INFINITY;
+    const debutB = b.premiereAnnee ?? Number.POSITIVE_INFINITY;
+    if (debutA !== debutB) return debutA - debutB;
+    return a.lieu.localeCompare(b.lieu, 'fr');
+  });
+
+  return { groupes, sansLieu };
 }

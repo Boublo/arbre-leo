@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useEffect, useId, useState, type DragEvent } from 'react';
 import { creerClientNavigateur } from '@/lib/supabase/client';
 import { Alerte } from '@/components/ui/champs';
 import {
@@ -38,15 +38,24 @@ export function DepotPhotos({
   utilisateurId,
   actif,
   valeurs = [],
+  onChangement,
 }: {
   utilisateurId: string;
   actif: boolean;
   valeurs?: PhotoDeposee[];
+  /** Notifie la prévisualisation à chaque ajout, retrait ou réordonnancement. */
+  onChangement?: (photos: PhotoDeposee[]) => void;
 }) {
   const [photos, setPhotos] = useState<PhotoDeposee[]>(valeurs);
   const [enCours, setEnCours] = useState(0);
   const [souci, setSouci] = useState<string | null>(null);
+  const [survole, setSurvole] = useState(false);
   const idChoix = useId();
+
+  // Signaler à l’extérieur : la Preview vit à côté du formulaire.
+  useEffect(() => {
+    onChangement?.(photos);
+  }, [photos, onChangement]);
 
   async function ajouter(fichiers: FileList | null) {
     if (!fichiers || fichiers.length === 0) return;
@@ -130,6 +139,27 @@ export function DepotPhotos({
     });
   }
 
+  function surGlisserSurvol(e: DragEvent<HTMLElement>) {
+    e.preventDefault();
+    if (e.dataTransfer.types.includes('Files')) {
+      setSurvole(true);
+      e.dataTransfer.dropEffect = 'copy';
+    }
+  }
+
+  function surGlisserQuitter(e: DragEvent<HTMLElement>) {
+    e.preventDefault();
+    setSurvole(false);
+  }
+
+  function surDeposer(e: DragEvent<HTMLElement>) {
+    e.preventDefault();
+    setSurvole(false);
+    if (e.dataTransfer.files.length > 0) {
+      void ajouter(e.dataTransfer.files);
+    }
+  }
+
   if (!actif) {
     return (
       <div className="flex flex-col gap-3 rounded-[var(--rayon)] border border-bordure p-4">
@@ -143,31 +173,48 @@ export function DepotPhotos({
   }
 
   return (
-    <fieldset className="flex flex-col gap-4 rounded-[var(--rayon)] border border-bordure p-4">
+    <fieldset
+      className="flex flex-col gap-4 rounded-[var(--rayon)] border border-bordure p-4"
+      onDragOver={surGlisserSurvol}
+      onDragEnter={surGlisserSurvol}
+      onDragLeave={surGlisserQuitter}
+      onDrop={surDeposer}
+    >
       <legend className="px-1.5 text-sm font-medium text-encre">Des photos ?</legend>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor={idChoix} className="text-sm font-medium text-encre">
-          Choisir des images
-        </label>
-        <input
-          id={idChoix}
-          type="file"
-          multiple
-          accept={TYPES_PHOTO.join(',')}
-          onChange={(e) => {
-            void ajouter(e.target.files);
-            e.target.value = '';
-          }}
-          className="rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte px-3 py-2.5 text-sm text-encre
-                     file:mr-3 file:rounded-[var(--rayon-petit)] file:border-0 file:bg-fond-doux file:px-3 file:py-1.5
-                     file:text-sm file:text-encre focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25"
-        />
-        <p className="text-xs text-encre-douce">
-          JPEG, PNG, WebP, AVIF, HEIC ou TIFF. 25 Mo au plus par image, {NOMBRE_MAX_PHOTOS} images
-          au plus. L’envoi commence dès la sélection.
-        </p>
-      </div>
+      <label
+        htmlFor={idChoix}
+        className={`flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[var(--rayon-petit)] border-2 border-dashed p-6 text-center transition ${
+          survole
+            ? 'border-accent bg-accent-clair text-encre'
+            : 'border-bordure bg-fond-doux text-encre-douce hover:border-bordure-forte'
+        }`}
+      >
+        <span className="text-sm font-medium text-encre">
+          {survole ? 'Relâchez pour joindre les images' : 'Glissez vos photos ici'}
+        </span>
+        <span className="text-xs">
+          ou <span className="underline decoration-bordure-forte underline-offset-2">choisissez-les</span> depuis
+          votre appareil
+        </span>
+      </label>
+
+      <input
+        id={idChoix}
+        type="file"
+        multiple
+        accept={TYPES_PHOTO.join(',')}
+        onChange={(e) => {
+          void ajouter(e.target.files);
+          e.target.value = '';
+        }}
+        className="sr-only"
+      />
+
+      <p className="text-xs text-encre-douce">
+        JPEG, PNG, WebP, AVIF, HEIC ou TIFF. 25 Mo au plus par image, {NOMBRE_MAX_PHOTOS} images
+        au plus. L’envoi commence dès la sélection.
+      </p>
 
       <p aria-live="polite" className="text-xs text-encre-douce">
         {enCours > 0

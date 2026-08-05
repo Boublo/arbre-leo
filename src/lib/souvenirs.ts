@@ -1,7 +1,12 @@
 import { creerClientServeur } from '@/lib/supabase/server';
 import { formaterDate, lieuCourt } from '@/lib/arbre';
-import { BUCKET_MEDIAS } from '@/lib/souvenirs-partage';
-import type { PrecisionDate, StatutModeration } from '@/lib/types-base';
+import { BUCKET_MEDIAS, extraitRecit as extraitRecitPartage } from '@/lib/souvenirs-partage';
+import type { PrecisionDate, Sexe, StatutModeration } from '@/lib/types-base';
+
+// Ré-exporté pour ne pas casser les importations existantes. Le corps de la
+// fonction vit dans `souvenirs-partage.ts` : ainsi un composant client peut
+// s’en servir sans traîner `next/headers`.
+export const extraitRecit = extraitRecitPartage;
 
 /**
  * Chargement des souvenirs.
@@ -33,6 +38,21 @@ export type PhotoSouvenir = {
 
 export type PersonneMentionnee = { id: string; nomComplet: string };
 
+/**
+ * Ce que le sélecteur de personnes du formulaire affiche : de quoi remplir une
+ * Vignette (années de vie, côté paternel ou maternel, lieu de naissance) sans
+ * quitter la page pour aller le chercher.
+ */
+export type PortraitMentionnable = PersonneMentionnee & {
+  surnom: string | null;
+  sexe: Sexe;
+  branches: string[];
+  anneeNaissance: number | null;
+  anneeDeces: number | null;
+  lieuNaissance: string | null;
+  presumeVivant: boolean;
+};
+
 export type CommentaireSouvenir = {
   id: string;
   texte: string;
@@ -48,6 +68,7 @@ export type SouvenirResume = {
   /** Date mise en forme : « 8 mars 1993 », « mars 1993 », « années 1960 ». */
   date: string;
   annee: number | null;
+  mois: number | null;
   lieu: string | null;
   lieuBref: string | null;
   epingle: boolean;
@@ -59,10 +80,11 @@ export type SouvenirResume = {
   /** Les premières photos seulement, pour la vignette du mur. */
   photos: PhotoSouvenir[];
   nombrePhotos: number;
+  /** Nombre de commentaires publiés — renseigné par `avecCompteurs`. */
+  nombreCommentaires: number;
 };
 
 export type SouvenirDetail = SouvenirResume & {
-  mois: number | null;
   jour: number | null;
   dateTexte: string | null;
   precisionDate: PrecisionDate;
@@ -76,7 +98,36 @@ export type FiltresSouvenirs = {
   personneId?: string | null;
   anneeDebut?: number | null;
   anneeFin?: number | null;
+  /**
+   * Ce que la carte porte : rien, une photo, un simple récit. Le mur devient
+   * lisible d’un coup quand on ne cherche qu’un des deux.
+   */
+  type?: TypeSouvenir | null;
 };
+
+export type TypeSouvenir = 'tous' | 'photos' | 'recits';
+
+export type Contributeur = {
+  id: string;
+  nom: string;
+  nombre: number;
+};
+
+export type AnniversaireCalendrier = {
+  personneId: string;
+  nomComplet: string;
+  branches: string[];
+  sexe: Sexe;
+  type: 'naissance' | 'mariage' | 'deces';
+  /** Année exacte, quand elle est connue : sert au sous-titre « en 1954 ». */
+  annee: number | null;
+  jour: number | null;
+  /** Le conjoint, pour les mariages : « X et Y se marient ». */
+  autrePersonneId: string | null;
+  autreNomComplet: string | null;
+};
+
+export type CalendrierAnniversaires = Map<number, AnniversaireCalendrier[]>;
 
 /** Ce que la base autorise pour l’utilisateur courant, demandé à la base elle-même. */
 export type Droits = {
@@ -113,15 +164,6 @@ export function formaterDateSouvenir(s: {
     jour: s.jour,
     date_texte: s.date_texte,
   });
-}
-
-/** Coupe au dernier point avant la limite, pour ne pas trancher une phrase. */
-export function extraitRecit(texte: string, max = 260): string {
-  const propre = texte.trim();
-  if (propre.length <= max) return propre;
-  const coupe = propre.slice(0, max);
-  const dernierPoint = coupe.lastIndexOf('.');
-  return `${dernierPoint > max * 0.5 ? coupe.slice(0, dernierPoint + 1) : coupe}…`;
 }
 
 /** « 12 février 2026 » : la date de dépôt, qui elle est toujours connue. */
@@ -250,6 +292,7 @@ function assembler(
     recit: ligne.recit,
     date: formaterDateSouvenir(ligne),
     annee: ligne.annee,
+    mois: ligne.mois,
     lieu,
     lieuBref: lieuCourt(lieu),
     epingle: ligne.epingle,
@@ -269,7 +312,48 @@ function assembler(
       url: urls.get(m.chemin) ?? null,
     })),
     nombrePhotos: medias.length,
+    // Rempli plus tard par `attacherCompteurs` : la table des commentaires n’est
+    // pas jointe ici pour ne pas alourdir la requête du mur.
+    nombreCommentaires: 0,
   };
+}
+
+/**
+ * Interroge la table des commentaires pour connaître le nombre de réactions par
+ * souvenir donné. Une seule requête plutôt qu’un compte par carte : le mur en
+ * affiche une vingtaine à la fois.
+ */
+async function compterCommentaires(
+  supabase: ClientServeur,
+  souvenirIds: string[]
+): Promise<Map<string, number>> {
+  const compteurs = new Map<string, number>();
+  if (souvenirIds.length === 0) return compteurs;
+
+  const { data } = await supabase
+    .from('commentaires')
+    .select('souvenir_id')
+    .in('souvenir_id', souvenirIds);
+
+  for (const ligne of data ?? []) {
+    if (!ligne.souvenir_id) continue;
+    compteurs.set(ligne.souvenir_id, (compteurs.get(ligne.souvenir_id) ?? 0) + 1);
+  }
+  return compteurs;
+}
+
+/** Attache les compteurs de commentaires à une liste déjà chargée. */
+async function attacherCompteurs(
+  supabase: ClientServeur,
+  souvenirs: SouvenirResume[]
+): Promise<void> {
+  const compteurs = await compterCommentaires(
+    supabase,
+    souvenirs.map((s) => s.id)
+  );
+  for (const s of souvenirs) {
+    s.nombreCommentaires = compteurs.get(s.id) ?? 0;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -345,7 +429,18 @@ export async function chargerSouvenirs(filtres: FiltresSouvenirs = {}): Promise<
     signerMedias(supabase, chemins),
   ]);
 
-  return lignes.map((l) => assembler(l, auteurs, personnes, urls, 3));
+  let assembles = lignes.map((l) => assembler(l, auteurs, personnes, urls, 3));
+
+  // Le filtre par type porte sur le résultat assemblé : le nombre de photos est
+  // déjà comptabilisé, inutile de refaire la jointure côté base.
+  if (filtres.type === 'photos') {
+    assembles = assembles.filter((s) => s.nombrePhotos > 0);
+  } else if (filtres.type === 'recits') {
+    assembles = assembles.filter((s) => s.nombrePhotos === 0);
+  }
+
+  await attacherCompteurs(supabase, assembles);
+  return assembles;
 }
 
 /** La fiche entière : toutes les photos, tous les commentaires. */
@@ -378,10 +473,10 @@ export async function chargerSouvenir(id: string): Promise<SouvenirDetail | null
   ]);
 
   const resume = assembler(ligne, auteurs, personnes, urls, Number.POSITIVE_INFINITY);
+  resume.nombreCommentaires = commentaires.length;
 
   return {
     ...resume,
-    mois: ligne.mois,
     jour: ligne.jour,
     dateTexte: ligne.date_texte,
     precisionDate: ligne.precision_date,
@@ -408,6 +503,228 @@ export async function chargerPersonnesMentionnables(): Promise<PersonneMentionne
     .sort((a, b) => a.nomComplet.localeCompare(b.nomComplet, 'fr'));
 }
 
+/**
+ * Version étoffée destinée au formulaire de dépôt : les Vignettes ont besoin
+ * d’années de vie et d’une commune de naissance pour que l’auteur reconnaisse
+ * la personne au premier coup d’œil.
+ */
+export async function chargerPortraitsMentionnables(): Promise<PortraitMentionnable[]> {
+  const supabase = await creerClientServeur();
+
+  const [personnesRes, evenementsRes] = await Promise.all([
+    supabase
+      .from('personnes')
+      .select('id, nom_complet, prenoms, nom, surnom, sexe, branches, presume_vivant'),
+    supabase
+      .from('evenements')
+      .select('personne_id, type, annee, lieux(libelle)')
+      .in('type', ['naissance', 'deces'])
+      .not('personne_id', 'is', null),
+  ]);
+
+  type LigneAnniv = {
+    personne_id: string | null;
+    type: 'naissance' | 'deces' | string;
+    annee: number | null;
+    lieux: { libelle: string } | null;
+  };
+
+  const parPersonne = new Map<string, LigneAnniv[]>();
+  for (const e of (evenementsRes.data ?? []) as unknown as LigneAnniv[]) {
+    if (!e.personne_id) continue;
+    const liste = parPersonne.get(e.personne_id) ?? [];
+    liste.push(e);
+    parPersonne.set(e.personne_id, liste);
+  }
+
+  return (personnesRes.data ?? [])
+    .map((p) => {
+      const evts = parPersonne.get(p.id) ?? [];
+      const naissance = evts.find((e) => e.type === 'naissance');
+      const deces = evts.find((e) => e.type === 'deces');
+      return {
+        id: p.id,
+        nomComplet: nomLisible(p),
+        surnom: p.surnom,
+        sexe: p.sexe,
+        branches: p.branches ?? [],
+        presumeVivant: p.presume_vivant,
+        anneeNaissance: naissance?.annee ?? null,
+        anneeDeces: deces?.annee ?? null,
+        lieuNaissance: lieuCourt(naissance?.lieux?.libelle ?? null),
+      };
+    })
+    .sort((a, b) => a.nomComplet.localeCompare(b.nomComplet, 'fr'));
+}
+
+/**
+ * Les dix plus grands déposants du site. La table `souvenirs` n’a pas de vue
+ * agrégée : on compte en mémoire, ce qui reste sans conséquence à cette
+ * échelle. Les brouillons masqués comptent aussi, pour ne pas dévaloriser le
+ * travail d’un contributeur dont un texte est en relecture.
+ */
+export async function chargerTopContributeurs(combien = 10): Promise<Contributeur[]> {
+  const supabase = await creerClientServeur();
+  const { data } = await supabase.from('souvenirs').select('auteur_id');
+
+  const totaux = new Map<string, number>();
+  for (const ligne of data ?? []) {
+    totaux.set(ligne.auteur_id, (totaux.get(ligne.auteur_id) ?? 0) + 1);
+  }
+  if (totaux.size === 0) return [];
+
+  const noms = await nomsMembres(supabase, [...totaux.keys()]);
+
+  return [...totaux.entries()]
+    .map(([id, nombre]) => ({
+      id,
+      nom: noms.get(id) ?? 'Un membre de la famille',
+      nombre,
+    }))
+    .sort((a, b) => b.nombre - a.nombre || a.nom.localeCompare(b.nom, 'fr'))
+    .slice(0, combien);
+}
+
+/**
+ * Le calendrier des anniversaires : ce que la famille peut se souvenir de fêter
+ * ce mois-ci — naissances, mariages, disparitions. Renvoyé sous forme de carte
+ * indexée par mois (1 à 12) pour que la vue puisse balayer l’année.
+ *
+ * Les événements sans mois connu sont ignorés : on ne fêtera pas « quelque part
+ * dans l’année 1912 ».
+ */
+export async function chargerCalendrierAnniversaires(): Promise<CalendrierAnniversaires> {
+  const supabase = await creerClientServeur();
+
+  type LigneAnnivRaw = {
+    type: string;
+    personne_id: string | null;
+    union_id: string | null;
+    annee: number | null;
+    mois: number | null;
+    jour: number | null;
+  };
+
+  const { data: evenements } = await supabase
+    .from('evenements')
+    .select('type, personne_id, union_id, annee, mois, jour')
+    .in('type', ['naissance', 'mariage', 'deces'])
+    .not('mois', 'is', null);
+
+  const brut = (evenements ?? []) as LigneAnnivRaw[];
+  if (brut.length === 0) return new Map();
+
+  const idsUnions = [...new Set(brut.filter((e) => e.union_id).map((e) => e.union_id!))];
+  const idsDirects = brut.filter((e) => e.personne_id).map((e) => e.personne_id!);
+
+  const [unionsRes, personnesInit] = await Promise.all([
+    idsUnions.length > 0
+      ? supabase.from('unions').select('id, conjoint_a, conjoint_b').in('id', idsUnions)
+      : Promise.resolve({ data: [] as { id: string; conjoint_a: string | null; conjoint_b: string | null }[] }),
+    Promise.resolve(idsDirects),
+  ]);
+  void personnesInit;
+
+  const parUnion = new Map<string, { a: string | null; b: string | null }>();
+  for (const u of unionsRes.data ?? []) {
+    parUnion.set(u.id, { a: u.conjoint_a, b: u.conjoint_b });
+  }
+
+  const tousIds = new Set<string>(idsDirects);
+  for (const u of parUnion.values()) {
+    if (u.a) tousIds.add(u.a);
+    if (u.b) tousIds.add(u.b);
+  }
+
+  const { data: personnesData } = tousIds.size
+    ? await supabase
+        .from('personnes')
+        .select('id, nom_complet, prenoms, nom, sexe, branches')
+        .in('id', [...tousIds])
+    : { data: [] };
+
+  const infos = new Map<
+    string,
+    { nomComplet: string; sexe: Sexe; branches: string[] }
+  >();
+  for (const p of personnesData ?? []) {
+    infos.set(p.id, {
+      nomComplet: nomLisible(p),
+      sexe: p.sexe,
+      branches: p.branches ?? [],
+    });
+  }
+
+  const calendrier: CalendrierAnniversaires = new Map();
+  const ajouter = (mois: number, entree: AnniversaireCalendrier) => {
+    const liste = calendrier.get(mois) ?? [];
+    liste.push(entree);
+    calendrier.set(mois, liste);
+  };
+
+  for (const e of brut) {
+    const mois = e.mois;
+    if (mois === null || mois < 1 || mois > 12) continue;
+
+    if (e.type === 'mariage' && e.union_id) {
+      const union = parUnion.get(e.union_id);
+      if (!union) continue;
+      const a = union.a ? infos.get(union.a) : null;
+      const b = union.b ? infos.get(union.b) : null;
+      if (!a && !b) continue;
+
+      // La ligne est portée par le conjoint dont l’identifiant vient en premier :
+      // il faut un pivot stable pour lier vers /personne/[id] sans doublon.
+      const principalId = union.a ?? union.b!;
+      const principal = a ?? b!;
+      const autreId = union.a && union.b ? union.b : null;
+      const autre = union.a && union.b ? b : null;
+
+      ajouter(mois, {
+        personneId: principalId,
+        nomComplet: principal.nomComplet,
+        branches: principal.branches,
+        sexe: principal.sexe,
+        type: 'mariage',
+        annee: e.annee,
+        jour: e.jour,
+        autrePersonneId: autreId,
+        autreNomComplet: autre?.nomComplet ?? null,
+      });
+      continue;
+    }
+
+    if (!e.personne_id) continue;
+    const info = infos.get(e.personne_id);
+    if (!info) continue;
+
+    ajouter(mois, {
+      personneId: e.personne_id,
+      nomComplet: info.nomComplet,
+      branches: info.branches,
+      sexe: info.sexe,
+      type: e.type === 'naissance' ? 'naissance' : 'deces',
+      annee: e.annee,
+      jour: e.jour,
+      autrePersonneId: null,
+      autreNomComplet: null,
+    });
+  }
+
+  // À l’intérieur d’un mois, du plus tôt (petit jour) au plus tard, puis par
+  // année croissante à jour égal : c’est ainsi qu’on lit un calendrier.
+  for (const liste of calendrier.values()) {
+    liste.sort((a, b) => {
+      const ja = a.jour ?? 99;
+      const jb = b.jour ?? 99;
+      if (ja !== jb) return ja - jb;
+      return (a.annee ?? 9999) - (b.annee ?? 9999);
+    });
+  }
+
+  return calendrier;
+}
+
 export async function chargerLieux(): Promise<{ id: string; libelle: string }[]> {
   const supabase = await creerClientServeur();
   const { data } = await supabase.from('lieux').select('id, libelle').order('libelle');
@@ -419,4 +736,37 @@ export function bornesAnnees(souvenirs: SouvenirResume[]): { min: number; max: n
   const annees = souvenirs.map((s) => s.annee).filter((a): a is number => a !== null);
   if (annees.length === 0) return null;
   return { min: Math.min(...annees), max: Math.max(...annees) };
+}
+
+/**
+ * La décennie d’un souvenir, ou `null` s’il ne porte pas d’année : sert au
+ * regroupement du mur et au filtre en colonne latérale.
+ */
+export function decennieDe(annee: number | null): number | null {
+  if (annee === null) return null;
+  return Math.floor(annee / 10) * 10;
+}
+
+/** Les décennies présentes dans un lot, ordonnées du plus récent au plus ancien. */
+export function decenniesDansLeMur(souvenirs: SouvenirResume[]): number[] {
+  const trouvees = new Set<number>();
+  for (const s of souvenirs) {
+    const d = decennieDe(s.annee);
+    if (d !== null) trouvees.add(d);
+  }
+  return [...trouvees].sort((a, b) => b - a);
+}
+
+/**
+ * Le souvenir qui mérite le grand cadre en tête du mur : d’abord un souvenir
+ * explicitement épinglé — le plus récemment mis à jour, si plusieurs le sont —
+ * puis, à défaut, le tout dernier déposé. C’est ce qui accueille le visiteur.
+ */
+export function souvenirDeTete(souvenirs: SouvenirResume[]): SouvenirResume | null {
+  const epingles = souvenirs.filter((s) => s.epingle);
+  if (epingles.length > 0) {
+    // Le plus récent des épinglés : les autres seront revus au fil du mur.
+    return [...epingles].sort((a, b) => b.creeLe.localeCompare(a.creeLe))[0];
+  }
+  return souvenirs[0] ?? null;
 }
