@@ -36,6 +36,13 @@ export type PersonneArbre = {
   unions: string[];
   /** Identifiant de l'union d'où elle est issue, s'il est connu. */
   issuDe: string | null;
+  /**
+   * Indice discret qu'il manque peut-être une descendance à saisir : soit un
+   * couple sans enfant où au moins un conjoint a passé l'âge où l'on en a, soit
+   * une personne présumée vivante d'âge adulte dont aucune union n'est connue.
+   * Ce n'est jamais qu'une invitation à vérifier, jamais une affirmation.
+   */
+  descendanceIncomplete: boolean;
 };
 
 export type EvenementResume = {
@@ -265,10 +272,73 @@ export async function chargerArbre(): Promise<DonneesArbre> {
       profession: profession?.detail ?? null,
       unions: unionsParPersonne.get(p.id) ?? [],
       issuDe: issuDe.get(p.id) ?? null,
+      // Repose sur les unions et les naissances : renseigné en second passage,
+      // une fois toutes les personnes construites.
+      descendanceIncomplete: false,
     });
   }
 
+  // Second passage : maintenant que toutes les personnes existent, on peut
+  // regarder les conjoints d'un couple pour déduire une branche à compléter.
+  for (const personne of personnes.values()) {
+    personne.descendanceIncomplete = descendanceParaitIncomplete(personne, personnes, unions);
+  }
+
   return { personnes, unions, parents, enfants };
+}
+
+// ---------------------------------------------------------------------------
+// Descendance qui semble à compléter
+// ---------------------------------------------------------------------------
+
+/**
+ * Deux situations très différentes justifient qu'un nœud porte l'invitation
+ * discrète à ajouter un enfant :
+ *
+ *  — un couple constitué mais dont aucune descendance n'est en base, alors
+ *    qu'au moins l'un des conjoints est en âge d'en avoir eu (plus de dix-huit
+ *    ans, seuil conservateur) ;
+ *  — une personne présumée vivante, adulte confirmée (plus de trente ans),
+ *    qu'aucune union ne rattache encore à qui que ce soit — souvent parce
+ *    que sa famille récente n'a pas encore été saisie.
+ *
+ * On garde volontairement l'indication vague : elle n'affirme rien qui manque,
+ * elle interroge — « faut-il compléter ? ».
+ */
+function descendanceParaitIncomplete(
+  personne: PersonneArbre,
+  personnes: Map<string, PersonneArbre>,
+  unions: Map<string, UnionArbre>
+): boolean {
+  const anneeCourante = new Date().getFullYear();
+
+  const ageDe = (p: PersonneArbre | undefined): number | null => {
+    const annee = p?.naissance?.annee;
+    return annee == null ? null : anneeCourante - annee;
+  };
+
+  // Cas A : au moins une union sans enfant, avec un conjoint majeur.
+  for (const unionId of personne.unions) {
+    const union = unions.get(unionId);
+    if (!union || union.enfants.length > 0) continue;
+
+    const agePersonne = ageDe(personne);
+    const autreId =
+      union.conjointA === personne.id ? union.conjointB : union.conjointA;
+    const ageAutre = ageDe(autreId ? personnes.get(autreId) : undefined);
+
+    if ((agePersonne !== null && agePersonne > 18) || (ageAutre !== null && ageAutre > 18)) {
+      return true;
+    }
+  }
+
+  // Cas B : présumée vivante, adulte confirmée, aucune union enregistrée.
+  if (personne.presumeVivant && personne.unions.length === 0) {
+    const age = ageDe(personne);
+    if (age !== null && age > 30) return true;
+  }
+
+  return false;
 }
 
 /**

@@ -17,67 +17,60 @@
   --encre: #211c17;
   --encre-douce: #5d5348;
   --encre-tres-douce: #8a7f72;
-  --bordure: #e4dbcc;
-  --bordure-forte: #cfc2ad;
+  /* Bordures : sur parchemin, #e4dbcc se lisait à peine et les cartes
+     flottaient sans se poser. On les fonce d'un cran (contour perceptible sans
+     durcir), et --bordure-forte suit du même écart pour rester distincte. */
+  --bordure: #dcd1bc;
+  --bordure-forte: #c2b39c;
 
   /* Vert profond : la couleur de l'arbre lui-même. */
   --accent: #2f5d50;
   --accent-clair: #dfeae5;
   --accent-contraste: #ffffff;
 
-  /* Or patiné, pour ce qui est précieux : un acte retrouvé, un souvenir épinglé. */
-  --or: #b08d2f;
+  /* Or patiné, pour ce qui est précieux : un acte retrouvé, un souvenir épinglé.
+     Recentré vers l'olive doré (ex. #b08d2f trop chaud) pour se démarquer plus
+     nettement du terracotta paternel sur fond parchemin. */
+  --or: #a17e26;
 
   --paternelle: #b85c38;
-  --paternelle-douce: #f6e6de;
+  /* Vignettes de branche : fond très pâle, à peine teinté, pour poser un accent
+     de couleur sans jamais écraser l'encre. Retravaillé d'un demi-ton pour se
+     lire plus franchement que le parchemin voisin sans virer au bloc coloré. */
+  --paternelle-douce: #f4e3d7;
   --maternelle: #3d6b8e;
-  --maternelle-douce: #e2ecf4;
+  --maternelle-douce: #dfe9f2;
   --commune: #6b5b95;
 
   --succes: #3f7d58;
   --alerte: #b4762a;
   --erreur: #a63d3d;
 
-  --ombre-douce: 0 1px 2px rgb(33 28 23 / 0.05), 0 4px 16px rgb(33 28 23 / 0.06);
-  --ombre-forte: 0 2px 4px rgb(33 28 23 / 0.07), 0 12px 32px rgb(33 28 23 / 0.12);
+  /* Ombres : intensité proche, mais rayon élargi. Sur parchemin les cartes
+     avaient l'air posées à plat ; ce voile plus large les décolle sans
+     alourdir. --ombre-forte suit la même logique, avec un peu plus de contact. */
+  --ombre-douce: 0 1px 2px rgb(33 28 23 / 0.05), 0 8px 24px rgb(33 28 23 / 0.08);
+  --ombre-forte: 0 2px 4px rgb(33 28 23 / 0.08), 0 16px 40px rgb(33 28 23 / 0.14);
 
   --rayon: 0.75rem;
   --rayon-petit: 0.5rem;
+
+  /* Micro-grain de papier : un bruit très discret (opacité 0.04) posé sur le
+     fond pour rompre la platitude de la dalle parchemin. Défini en variable
+     pour être neutralisé en thème sombre, où il parasiterait le contraste. */
+  --texture-papier: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.13 0 0 0 0 0.11 0 0 0 0 0.09 0 0 0 0.04 0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>");
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --fond: #17130f;
-    --fond-carte: #211c17;
-    --fond-doux: #2b241d;
-    --encre: #f2ece3;
-    --encre-douce: #c0b5a6;
-    --encre-tres-douce: #8e8375;
-    --bordure: #362e26;
-    --bordure-forte: #4a4036;
-
-    --accent: #6aa892;
-    --accent-clair: #2a473e;
-    --accent-contraste: #10201b;
-
-    --or: #d9b455;
-
-    --paternelle: #e08b64;
-    --paternelle-douce: #3a241a;
-    --maternelle: #7aaed3;
-    --maternelle-douce: #1c2c3a;
-    --commune: #a08ecb;
-
-    --succes: #6fb98b;
-    --alerte: #dda453;
-    --erreur: #e07a7a;
-
-    --ombre-douce: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.35);
-    --ombre-forte: 0 2px 4px rgb(0 0 0 / 0.4), 0 12px 32px rgb(0 0 0 / 0.5);
-  }
+/*
+ * Le thème clair est le défaut, indépendamment de la préférence système :
+ * l'application est un livre de famille, elle se lit sur un fond de parchemin,
+ * pas sur un fond noir. Le sombre reste disponible via la bascule, mais il
+ * n'est appliqué que si l'utilisateur le choisit explicitement.
+ */
+:root {
+  color-scheme: light;
 }
 
-/* Le sélecteur de thème du site l'emporte sur la préférence du système. */
 :root[data-theme="light"] {
   color-scheme: light;
 }
@@ -105,6 +98,9 @@
   --erreur: #e07a7a;
   --ombre-douce: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 16px rgb(0 0 0 / 0.35);
   --ombre-forte: 0 2px 4px rgb(0 0 0 / 0.4), 0 12px 32px rgb(0 0 0 / 0.5);
+  /* Le grain de papier n'a pas sa place sur le fond sombre : il grisaillerait
+     l'encre et parasiterait le contraste. On l'éteint proprement. */
+  --texture-papier: none;
 }
 
 @theme inline {
@@ -142,7 +138,13 @@
 }
 
 body {
-  background: var(--fond);
+  /* Fond en deux couches : la couleur unie du parchemin, puis le grain de
+     papier par-dessus (activé uniquement en clair via --texture-papier). Le
+     background-color reste séparé pour que le grain se voie sur toute la
+     hauteur, même quand le contenu est court. */
+  background-color: var(--fond);
+  background-image: var(--texture-papier, none);
+  background-repeat: repeat;
   color: var(--encre);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;

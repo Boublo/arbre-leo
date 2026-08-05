@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { select } from 'd3-selection';
 import { zoom, zoomIdentity, type ZoomBehavior } from 'd3-zoom';
 import type { DonneesArbre, PersonneArbre } from '@/lib/arbre';
@@ -52,6 +53,7 @@ export function VueArbre({
   const groupeRef = useRef<SVGGElement>(null);
   const cadreRef = useRef<HTMLDivElement>(null);
   const comportementRef = useRef<ZoomBehavior<SVGSVGElement, unknown> | null>(null);
+  const router = useRouter();
 
   const noeudParId = useMemo(
     () => new Map(disposition.noeuds.map((n) => [n.personneId, n])),
@@ -328,6 +330,13 @@ export function VueArbre({
                 onClick={() => onSelection(noeud.personneId)}
                 onDoubleClick={() => onRecentrer(noeud.personneId)}
                 onMenu={(evenement) => ouvrirMenu(noeud.personneId, evenement)}
+                onAjouterEnfant={(personne) => {
+                  // Le formulaire d'ajout attend `pere` ou `mere` selon le sexe
+                  // du parent pressenti — féminin d'un côté, masculin ou inconnu
+                  // de l'autre, faute de mieux.
+                  const cle = personne.sexe === 'F' ? 'mere' : 'pere';
+                  router.push(`/personne/nouvelle?${cle}=${personne.id}`);
+                }}
               />
             ))}
           </g>
@@ -403,6 +412,7 @@ function Noeud({
   onClick,
   onDoubleClick,
   onMenu,
+  onAjouterEnfant,
 }: {
   noeud: NoeudArbre;
   personne: PersonneArbre | undefined;
@@ -412,6 +422,7 @@ function Noeud({
   onClick: () => void;
   onDoubleClick: () => void;
   onMenu: (evenement: React.MouseEvent) => void;
+  onAjouterEnfant: (personne: PersonneArbre) => void;
 }) {
   if (!personne) return null;
 
@@ -539,8 +550,88 @@ function Noeud({
               ))}
             </g>
           )}
+
+          {/* Descendance à compléter : petite pastille discrète, hors du cadre
+              pour ne pas empiéter sur les icônes de richesse ni sur le nom. */}
+          {personne.descendanceIncomplete && (
+            <IndicateurDescendance
+              personne={personne}
+              estFocus={estFocus}
+              onAjouterEnfant={onAjouterEnfant}
+            />
+          )}
         </>
       )}
+    </g>
+  );
+}
+
+/**
+ * Pastille silencieuse à la sortie bas-droit du nœud : rappelle qu'ici, la
+ * descendance n'est peut-être pas complète. Un clic conduit au formulaire
+ * d'ajout, déjà rattaché à cette personne comme parent probable.
+ */
+function IndicateurDescendance({
+  personne,
+  estFocus,
+  onAjouterEnfant,
+}: {
+  personne: PersonneArbre;
+  estFocus: boolean;
+  onAjouterEnfant: (personne: PersonneArbre) => void;
+}) {
+  // On centre la pastille sur le coin bas-droit du nœud : elle en dépasse à
+  // moitié, ce qui la distingue nettement des icônes de richesse et évite le
+  // chevauchement.
+  const cx = LARGEUR_NOEUD - 4;
+  const cy = HAUTEUR_NOEUD - 4;
+  const rayon = 8;
+
+  const traitTeinte = estFocus ? 'var(--accent-contraste)' : 'var(--encre-douce)';
+  const fondTeinte = estFocus ? 'var(--accent)' : 'var(--fond-carte)';
+  const libelle = 'Descendance à compléter ? Ajouter un enfant';
+
+  return (
+    <g
+      className="cursor-pointer"
+      role="button"
+      aria-label={libelle}
+      tabIndex={0}
+      onClick={(e) => {
+        e.stopPropagation();
+        onAjouterEnfant(personne);
+      }}
+      onDoubleClick={(e) => e.stopPropagation()}
+      onContextMenu={(e) => e.stopPropagation()}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          e.stopPropagation();
+          onAjouterEnfant(personne);
+        }
+      }}
+    >
+      <title>{libelle}</title>
+      <circle
+        cx={cx}
+        cy={cy}
+        r={rayon}
+        fill={fondTeinte}
+        stroke={traitTeinte}
+        strokeWidth={1}
+        opacity={0.9}
+      />
+      {/* Chevron discret pointé vers le bas : « quelque chose sous cette
+          personne peut manquer ». Deux segments plutôt qu'une flèche pleine,
+          pour rester à peine marqué. */}
+      <path
+        d={`M ${cx - 3} ${cy - 1.5} L ${cx} ${cy + 1.5} L ${cx + 3} ${cy - 1.5}`}
+        fill="none"
+        stroke={traitTeinte}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </g>
   );
 }

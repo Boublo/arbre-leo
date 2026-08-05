@@ -234,10 +234,14 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
     // on écarte à droite si la précédente occupe déjà la place. Une seconde
     // passe recentrera les fratries sur leur ancrage réel si elles ont dû être
     // décalées.
-    let curseur = -Infinity;
-    for (const id of liste) {
+    //
+    // `curseur` démarre à un vrai nombre : sans ça, une rangée entière sans
+    // ancrage parental produirait des positions à -Infinity et des NaN en aval.
+    let curseur = Number.NEGATIVE_INFINITY;
+    for (const [index, id] of liste.entries()) {
       const ideal = ancrageDe(id);
-      const x = Math.max(ideal ?? curseur + 1, curseur + 1);
+      const suivant = Number.isFinite(curseur) ? curseur + 1 : index;
+      const x = Math.max(ideal ?? suivant, suivant);
       positions.set(id, x);
       curseur = x;
     }
@@ -255,10 +259,12 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
 
     for (const [cle, groupe] of parGroupe) {
       if (cle === '_') continue;
-      const xs = groupe.map((id) => positions.get(id)!);
+      const xs = groupe.map((id) => positions.get(id) ?? 0);
+      if (xs.some((x) => !Number.isFinite(x))) continue;
+
       const centreActuel = (xs[0]! + xs[xs.length - 1]!) / 2;
       const ideal = ancrageDe(groupe[0]!);
-      if (ideal === null) continue;
+      if (ideal === null || !Number.isFinite(ideal)) continue;
       const decalage = ideal - centreActuel;
       if (Math.abs(decalage) < 0.1) continue;
 
@@ -266,14 +272,22 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
       // les personnes déjà posées (à gauche ou à droite du groupe).
       const indexPremier = liste.indexOf(groupe[0]!);
       const indexDernier = liste.indexOf(groupe[groupe.length - 1]!);
-      const marginGauche = indexPremier > 0 ? positions.get(liste[indexPremier - 1]!)! + 1 : -Infinity;
-      const marginDroite = indexDernier < liste.length - 1 ? positions.get(liste[indexDernier + 1]!)! - 1 : Infinity;
+      const marginGauche =
+        indexPremier > 0 ? (positions.get(liste[indexPremier - 1]!) ?? -Infinity) + 1 : -Infinity;
+      const marginDroite =
+        indexDernier < liste.length - 1
+          ? (positions.get(liste[indexDernier + 1]!) ?? Infinity) - 1
+          : Infinity;
 
       const decalageEffectif = Math.max(
         marginGauche - xs[0]!,
         Math.min(decalage, marginDroite - xs[xs.length - 1]!)
       );
-      for (const id of groupe) positions.set(id, positions.get(id)! + decalageEffectif);
+      if (!Number.isFinite(decalageEffectif)) continue;
+      for (const id of groupe) {
+        const courante = positions.get(id) ?? 0;
+        positions.set(id, courante + decalageEffectif);
+      }
     }
   }
 
@@ -614,8 +628,18 @@ function finaliser(
     };
   }
 
-  const xMin = Math.min(...noeuds.map((n) => n.x));
-  const rangMax = Math.max(...noeuds.map((n) => n.rang));
+  // On assainit d'abord : toute position ou rang non finis produirait des NaN
+  // sur les x/y des <circle>, <line>, <rect> plus loin — c'est ce que la
+  // console signalait.
+  for (const noeud of noeuds) {
+    if (!Number.isFinite(noeud.x)) noeud.x = 0;
+    if (!Number.isFinite(noeud.rang)) noeud.rang = 0;
+  }
+
+  const xs = noeuds.map((n) => n.x);
+  const xMin = xs.length > 0 ? Math.min(...xs) : 0;
+  const rangs = noeuds.map((n) => n.rang);
+  const rangMax = rangs.length > 0 ? Math.max(...rangs) : 0;
 
   for (const noeud of noeuds) {
     noeud.x = (noeud.x - xMin) * ESPACEMENT_X;
