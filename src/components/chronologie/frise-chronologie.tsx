@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import type { TypeEvenement } from '@/lib/types-base';
 import { EntreeFrise } from '@/components/chronologie/entree-frise';
 import { FiltresFrise, type Filtres } from '@/components/chronologie/filtres-frise';
@@ -28,7 +28,20 @@ const FILTRES_INITIAUX: Filtres = {
   masquerHistoire: false,
 };
 
-export function FriseChronologie({ entrees }: { entrees: EntreeChronologie[] }) {
+export function FriseChronologie({
+  entrees,
+  enTete,
+  messageVide,
+}: {
+  entrees: EntreeChronologie[];
+  /**
+   * Ce que la page pose sous le titre : le choix de la personne suivie, et le
+   * rappel de qui l'on suit. Rendu côté serveur, la frise ne fait que le placer.
+   */
+  enTete?: ReactNode;
+  /** Ce qu'on dit quand la frise est vide dès le départ, filtres au repos. */
+  messageVide?: ReactNode;
+}) {
   const [filtres, setFiltres] = useState<Filtres>(FILTRES_INITIAUX);
 
   // Les types réellement présents, dans l'ordre d'une vie plutôt que dans
@@ -89,6 +102,8 @@ export function FriseChronologie({ entrees }: { entrees: EntreeChronologie[] }) 
           Les naissances, mariages et départs sont posés sur des cartes pleines ;
           la grande Histoire, en retrait, sur fond discret.
         </p>
+
+        {enTete && <div className="mt-5 flex flex-col gap-4">{enTete}</div>}
       </header>
 
       <FiltresFrise
@@ -103,8 +118,12 @@ export function FriseChronologie({ entrees }: { entrees: EntreeChronologie[] }) 
       <div className="mx-auto w-full max-w-4xl px-4 sm:px-6">
         {comptes.affichees === 0 ? (
           <p className="carte mt-10 px-5 py-8 text-center text-encre-douce">
-            Aucune entrée ne répond à ces réglages. Rétablissez un type d’événement
-            ou revenez aux deux branches.
+            {comptes.total === 0
+              ? // Rien à montrer avant même d'avoir touché aux réglages : c'est la
+                // page qui sait pourquoi — base vide, ou lignée sans aucune date.
+                (messageVide ??
+                  'Aucun événement n’est encore enregistré. La frise se remplira dès que les premières dates seront versées dans la base.')
+              : 'Aucune entrée ne répond à ces réglages. Rétablissez un type d’événement ou revenez aux deux branches.'}
           </p>
         ) : (
           siecles.map((bloc) => (

@@ -240,21 +240,34 @@ export async function chargerArbre(): Promise<DonneesArbre> {
 }
 
 /**
- * Repère l'enfant autour duquel l'arbre est construit.
- * Le point de départ est nommé plutôt que codé en dur sur un identifiant, pour
- * que l'application reste utilisable si la base est repeuplée.
+ * Les derniers-nés de la famille : ceux dont on ne connaît pas de descendance.
+ *
+ * Ce sont les points de départ naturels d'une remontée — les enfants d'où part
+ * toute l'histoire. Ils sont proposés en tête du choix, du plus jeune au plus
+ * ancien. Aucun nom n'est codé en dur : la liste se déduit de la base et se
+ * met à jour d'elle-même à chaque naissance saisie.
  */
-export function trouverRacine(donnees: DonneesArbre): PersonneArbre | null {
-  const candidats = [...donnees.personnes.values()];
+export function derniersEnfants(donnees: DonneesArbre, combien = 12): PersonneArbre[] {
+  return [...donnees.personnes.values()]
+    .filter((p) => (donnees.enfants.get(p.id) ?? []).length === 0)
+    .filter((p) => p.naissance?.annee)
+    .sort((a, b) => (b.naissance?.annee ?? 0) - (a.naissance?.annee ?? 0))
+    .slice(0, combien);
+}
 
-  const leo = candidats.find((p) => /\bl[ée]o\b/i.test(p.nomComplet));
-  if (leo) return leo;
+/**
+ * La personne montrée à l'ouverture, faute de choix explicite : le plus jeune
+ * des derniers-nés. C'est de lui que la famille remonte le plus naturellement.
+ */
+export function racineParDefaut(donnees: DonneesArbre): PersonneArbre | null {
+  return derniersEnfants(donnees, 1)[0] ?? [...donnees.personnes.values()][0] ?? null;
+}
 
-  // À défaut : la personne la plus récente qui n'a pas de descendance connue.
-  const sansEnfant = candidats.filter((p) => (donnees.enfants.get(p.id) ?? []).length === 0);
-  return (
-    sansEnfant.sort((a, b) => (b.naissance?.annee ?? 0) - (a.naissance?.annee ?? 0))[0] ??
-    candidats[0] ??
-    null
-  );
+/** Retrouve une personne par son identifiant, si elle existe encore. */
+export function personneOuDefaut(
+  donnees: DonneesArbre,
+  id: string | undefined
+): PersonneArbre | null {
+  if (id && donnees.personnes.has(id)) return donnees.personnes.get(id)!;
+  return racineParDefaut(donnees);
 }

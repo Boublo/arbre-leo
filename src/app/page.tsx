@@ -1,54 +1,50 @@
 import { Navigation } from '@/components/navigation';
 import { EcranArbre } from '@/components/arbre/ecran-arbre';
-import { chargerArbre, trouverRacine } from '@/lib/arbre';
-import { disposerArbre } from '@/lib/layout-arbre';
-import type { ArbreSerialise } from '@/components/arbre/vue-arbre';
+import { chargerArbre, derniersEnfants, personneOuDefaut } from '@/lib/arbre';
+import { serialiserGraphe } from '@/lib/arbre-graphe';
 
 export const metadata = { title: 'L’arbre' };
 
-// L'arbre change dès qu'un membre corrige une fiche ou dépose un souvenir.
+// L'arbre change dès qu'un membre corrige une fiche ou saisit une naissance.
 export const dynamic = 'force-dynamic';
 
-export default async function PageArbre() {
-  const donnees = await chargerArbre();
-  const racine = trouverRacine(donnees);
+export default async function PageArbre({ searchParams }: PageProps<'/'>) {
+  const { personne: focusDemande } = await searchParams;
 
-  if (!racine) {
+  const donnees = await chargerArbre();
+
+  if (donnees.personnes.size === 0) {
     return (
       <>
         <Navigation />
         <main className="mx-auto flex max-w-lg flex-1 flex-col justify-center px-6 text-center">
           <h1 className="text-2xl">L’arbre est encore vide</h1>
           <p className="mt-3 text-encre-douce">
-            Aucune personne n’a été versée dans la base. Lancez l’import décrit
-            dans le fichier <code>README.md</code>.
+            Personne n’a été versé dans la base. Importez un fichier GEDCOM en suivant
+            le <code>README.md</code>, ou saisissez la première personne à la main.
           </p>
         </main>
       </>
     );
   }
 
-  // Les deux vues sont calculées côté serveur : la bascule est alors immédiate.
-  const personnes = [...donnees.personnes.values()];
+  // Le graphe entier part au navigateur : changer de personne ou de mode
+  // devient instantané, sans repasser par le serveur.
+  const graphe = serialiserGraphe(donnees);
 
-  const serialiser = (mode: 'ascendance' | 'complet'): ArbreSerialise => {
-    const complet = disposerArbre(donnees, racine.id, mode);
-    // `parGeneration` est une Map : elle ne franchit pas la frontière
-    // serveur/client, et le composant n'en a pas l'usage.
-    const disposition = {
-      noeuds: complet.noeuds,
-      liens: complet.liens,
-      unions: complet.unions,
-      largeur: complet.largeur,
-      hauteur: complet.hauteur,
-    };
-    return { personnes, disposition, racineId: racine.id };
-  };
+  const focus = personneOuDefaut(
+    donnees,
+    typeof focusDemande === 'string' ? focusDemande : undefined
+  );
 
   return (
     <>
       <Navigation />
-      <EcranArbre ascendance={serialiser('ascendance')} complet={serialiser('complet')} />
+      <EcranArbre
+        graphe={graphe}
+        focusInitial={focus?.id ?? graphe.personnes[0]!.id}
+        derniersEnfants={derniersEnfants(donnees).map((p) => p.id)}
+      />
     </>
   );
 }

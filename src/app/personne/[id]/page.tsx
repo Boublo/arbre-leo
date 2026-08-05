@@ -12,6 +12,7 @@ import { MediasPersonne } from '@/components/personne/medias';
 import { SouvenirsPersonne } from '@/components/personne/souvenirs';
 import { FaitsPersonne } from '@/components/personne/faits';
 import { CommentairesPersonne } from '@/components/personne/commentaires';
+import { BarreDeSaisie } from '@/components/saisie/lien-ajout';
 
 /**
  * La fiche complète d'une personne.
@@ -50,6 +51,11 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
 
         <div className="flex flex-col gap-6">
           <EnTetePersonne fiche={fiche} />
+          <BarreDeSaisie
+            personneId={fiche.personne.id}
+            nomComplet={fiche.nomComplet}
+            sexe={fiche.personne.sexe}
+          />
           <ViePersonne evenements={fiche.evenements} />
           <ParentePersonne fiche={fiche} />
           <NotesPersonne notes={fiche.personne.notes} />

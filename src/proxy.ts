@@ -47,7 +47,14 @@ export async function proxy(request: NextRequest) {
   if (!user && !estPublique) {
     const url = request.nextUrl.clone();
     url.pathname = '/connexion';
-    url.searchParams.set('suite', chemin);
+
+    // La destination doit garder ses paramètres : un membre à qui l'on envoie
+    // le lien d'une branche précise doit y arriver après s'être connecté, et
+    // non sur l'arbre par défaut.
+    const destination = `${chemin}${request.nextUrl.search}`;
+    url.search = '';
+    url.searchParams.set('suite', destination);
+
     return NextResponse.redirect(url);
   }
 
