@@ -1,0 +1,14 @@
+#!/bin/sh
+# Crochet git pre-commit pour « L'arbre de Léo ».
+#
+# Ce fichier n'est actif qu'après :
+#
+#     git config core.hooksPath .githooks
+#
+# Il relit ce que git s'apprête à commiter et refuse la publication de
+# tout ce qui touche à la vie privée de la famille : patronymes en dur,
+# prénoms combinés à des dates identifiantes, fichiers GEDCOM / actes /
+# photos, secrets Supabase, mots de passe dans une URL.
+#
+# La logique est dans scripts/verifier-avant-commit.mjs.
+exec node scripts/verifier-avant-commit.mjs

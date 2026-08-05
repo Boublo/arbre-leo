@@ -9,6 +9,10 @@
     "lint": "eslint",
     "arbre:fusion": "node scripts/build-tree.mjs",
     "arbre:sql": "node scripts/generate-import-sql.mjs",
+    "arbre:maj": "node scripts/maj.mjs",
+    "arbre:diag": "node scripts/diagnostic.mjs",
+    "arbre:acte": "node scripts/nouvel-acte.mjs",
+    "arbre:verif": "node scripts/verifier-avant-commit.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

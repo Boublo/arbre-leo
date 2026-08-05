@@ -114,6 +114,45 @@ clause `on conflict do nothing`, adossée aux index d'unicité de la migration
 nouveautés entrent en base. Les souvenirs, photos et commentaires déposés par
 la famille ne sont jamais touchés par l'import.
 
+Pour ne rien manquer entre deux passages, un raccourci enchaîne fusion et
+génération, puis affiche ce qui a changé (nouvelles personnes, corrections,
+disparitions) :
+
+```bash
+npm run arbre:maj
+```
+
+C'est le compte rendu à relire avant d'exécuter les blocs SQL. La marche à
+suivre détaillée, avec les trois cas de versement (enrichir un GEDCOM,
+ajouter une personne isolée, verser un acte lu), est dans
+`docs/PASSATION.md`.
+
+Pour un acte isolé — le cas d'école du versement entre deux campagnes —
+un canevas interactif produit le SQL sans avoir à recopier le patron :
+
+```bash
+npm run arbre:acte
+```
+
+Il pose les questions dans le terminal et écrit un fichier
+`data/sql-actes/AAAA-MM-JJ-<sujet>.sql` à relire avant exécution. Rien
+n'est envoyé en base par le script.
+
+### Contrôler la santé de la base
+
+Après un versement, un diagnostic parcourt la base et signale ce qui mérite
+un regard : décès antérieurs à la naissance, écarts parent-enfant
+invraisemblables, personnes isolées, doublons potentiels, chantiers en
+attente depuis trop longtemps, progression des preuves.
+
+```bash
+ARBRE_EMAIL=vous@exemple.fr ARBRE_MOTDEPASSE=… npm run arbre:diag
+```
+
+Le script se connecte comme un membre ordinaire (mêmes règles RLS que dans
+l'application) et sort avec le code `1` si une anomalie est repérée, ce qui
+le rend branchable sur un crochet git `pre-commit`.
+
 Les chemins des fichiers sources se règlent en tête de `scripts/build-tree.mjs`,
 et les coordonnées des lieux dans `scripts/lieux-connus.mjs` — un géocodeur
 moderne ne sait placer ni les communes de l'Algérie française, ni les hameaux
@@ -130,6 +169,48 @@ src/app/          routes
 ```
 
 `CONVENTIONS.md` fixe les règles d'écriture du projet.
+
+### État des branches (fiche interne)
+
+Pour l'enquête généalogique elle-même, une fiche « état des branches »
+vit hors du dépôt, dans `data/BRANCHES.md` (dossier `/data/` exclu par le
+`.gitignore`). Elle donne, pour chaque branche d'ascendance, ce qu'on tient
+génération par génération, où l'on bloque, et l'ordre de priorité pour
+la reprise. C'est le seul document du projet qui nomme des personnes
+réelles, ce qui explique sa place hors git. `docs/DONNEES.md`
+décrit la base — tables, énums, clés, règles RLS et patrons de requêtes
+utiles pour écrire du SQL correct sur ce schéma.
+
+`docs/PASSATION.md` s'adresse à quiconque reprend l'enquête généalogique en
+cours — humain ou agent : où l'on en est, ce qui manque, et comment verser
+proprement une nouvelle pièce en base.
+
+### Filet de sécurité pré-commit (facultatif)
+
+Ce dépôt est public : rien de familial ne doit y entrer. Le `.gitignore` bloque
+déjà l'essentiel (dossier `/data/`, `*.ged`, actes et photos). Un filet
+supplémentaire, `scripts/verifier-avant-commit.mjs`, relit la version indexée
+de chaque fichier et refuse le commit s'il y trouve un patronyme de la famille,
+un couple prénom + année identifiant, un fichier GEDCOM / acte / photo malgré
+son extension, ou un secret (clé Supabase, mot de passe dans une URL).
+
+Il s'exécute à la demande —
+
+```bash
+npm run arbre:verif
+```
+
+— ou, une fois pour toutes, comme crochet git :
+
+```bash
+git config core.hooksPath .githooks   # active .githooks/pre-commit
+```
+
+Le crochet n'est **pas** activé par défaut : c'est un outil sur mesure pour
+ce dépôt-ci, à brancher explicitement. Pour le débrancher :
+`git config --unset core.hooksPath`. Le détail des règles, la liste des
+fichiers où les mentions familiales sont assumées, et la façon d'ajouter
+une exception sont dans l'en-tête du script.
 
 ## Licence
 
