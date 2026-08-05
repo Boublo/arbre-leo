@@ -1,4 +1,4 @@
-import type { DonneesArbre } from '@/lib/arbre';
+import type { DonneesArbre, UnionArbre } from '@/lib/arbre';
 import { coteDesBranches, type Cote } from '@/lib/branches';
 
 /**
@@ -71,6 +71,12 @@ export type Disposition = {
   racineId: string;
   /** Profondeur atteinte, en nombre de rangs. */
   rangMax: number;
+  /**
+   * Rang réel de la personne choisie dans la disposition finale.
+   * En mode ascendance/descendance elle est toujours à 0 ; en mode famille et
+   * éclaté elle peut être ailleurs — les libellés à gauche s'ajustent dessus.
+   */
+  rangRacine: number;
 };
 
 export const ESPACEMENT_X = 210;
@@ -159,8 +165,16 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
     }
   }
 
-  // Placement : les personnes du même rang côte à côte, dans l'ordre où on les
-  // a rencontrées (à peu près chronologique quand les naissances sont datées).
+  // -------------------------------------------------------------------------
+  // Placement : les fratries doivent rester groupées sous leur couple parent.
+  //
+  // Le tri simple par nom, testé plus tôt, entrelaçait les frères et sœurs
+  // avec les cousins issus de germains — les traits de filiation se croisaient
+  // en tous sens. La solution est de placer d'abord la rangée la plus ancienne,
+  // puis de descendre en positionnant chaque personne SOUS le milieu de ses
+  // parents déjà placés, avec un écartement minimal pour éviter les collisions.
+  // -------------------------------------------------------------------------
+
   const parRang = new Map<number, string[]>();
   for (const [id, rang] of rangs) {
     const liste = parRang.get(rang) ?? [];
@@ -168,51 +182,131 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
     parRang.set(rang, liste);
   }
 
-  // Tri chaque rangée par lieu de naissance (proxy stable pour ancrer les
-  // frères et sœurs entre leurs cousins) puis par nom.
-  for (const liste of parRang.values()) {
+  const positions = new Map<string, number>();
+  const rangsTries = [...parRang.keys()].sort((a, b) => a - b);
+
+  /** Union à laquelle cette personne est rattachée dans le graphe placé. */
+  const unionParentaleDe = (id: string): UnionArbre | null => {
+    const personne = personnes.get(id);
+    if (!personne?.issuDe) return null;
+    return unions.get(personne.issuDe) ?? null;
+  };
+
+  /** Position moyenne des parents déjà placés — le point d'ancrage naturel. */
+  const ancrageDe = (id: string): number | null => {
+    const union = unionParentaleDe(id);
+    if (!union) return null;
+    const xs: number[] = [];
+    for (const c of [union.conjointA, union.conjointB]) {
+      if (c && positions.has(c)) xs.push(positions.get(c)!);
+    }
+    return xs.length === 0 ? null : xs.reduce((a, b) => a + b, 0) / xs.length;
+  };
+
+  for (const rang of rangsTries) {
+    const liste = parRang.get(rang) ?? [];
+
+    // Tri : d'abord par ancrage parental (les fratries se retrouvent groupées),
+    // puis par ordre dans la fratrie de leur union, enfin par nom en dernier
+    // recours pour les personnes sans parent placé.
     liste.sort((a, b) => {
+      const ua = unionParentaleDe(a);
+      const ub = unionParentaleDe(b);
+      const anca = ancrageDe(a);
+      const ancb = ancrageDe(b);
+
+      // Les personnes rattachées à un couple placé viennent d'abord, groupées
+      // par couple, dans l'ordre où l'union les a inscrites.
+      if (anca !== null && ancb !== null) {
+        if (anca !== ancb) return anca - ancb;
+        if (ua && ub && ua.id === ub.id) {
+          return ua.enfants.indexOf(a) - ua.enfants.indexOf(b);
+        }
+      } else if (anca !== null) return -1;
+      else if (ancb !== null) return 1;
+
       const na = personnes.get(a)?.nomComplet ?? '';
       const nb = personnes.get(b)?.nomComplet ?? '';
       return na.localeCompare(nb, 'fr');
     });
+
+    // Placement : on essaie de poser chaque personne à son ancrage idéal, mais
+    // on écarte à droite si la précédente occupe déjà la place. Une seconde
+    // passe recentrera les fratries sur leur ancrage réel si elles ont dû être
+    // décalées.
+    let curseur = -Infinity;
+    for (const id of liste) {
+      const ideal = ancrageDe(id);
+      const x = Math.max(ideal ?? curseur + 1, curseur + 1);
+      positions.set(id, x);
+      curseur = x;
+    }
+
+    // Seconde passe : chaque fratrie se centre autour de son ancrage, dans la
+    // limite de ce que ses voisines lui permettent.
+    const parGroupe = new Map<string, string[]>();
+    for (const id of liste) {
+      const u = unionParentaleDe(id);
+      const cle = u ? u.id : '_';
+      const g = parGroupe.get(cle) ?? [];
+      g.push(id);
+      parGroupe.set(cle, g);
+    }
+
+    for (const [cle, groupe] of parGroupe) {
+      if (cle === '_') continue;
+      const xs = groupe.map((id) => positions.get(id)!);
+      const centreActuel = (xs[0]! + xs[xs.length - 1]!) / 2;
+      const ideal = ancrageDe(groupe[0]!);
+      if (ideal === null) continue;
+      const decalage = ideal - centreActuel;
+      if (Math.abs(decalage) < 0.1) continue;
+
+      // On applique le décalage seulement s'il ne crée pas de collision avec
+      // les personnes déjà posées (à gauche ou à droite du groupe).
+      const indexPremier = liste.indexOf(groupe[0]!);
+      const indexDernier = liste.indexOf(groupe[groupe.length - 1]!);
+      const marginGauche = indexPremier > 0 ? positions.get(liste[indexPremier - 1]!)! + 1 : -Infinity;
+      const marginDroite = indexDernier < liste.length - 1 ? positions.get(liste[indexDernier + 1]!)! - 1 : Infinity;
+
+      const decalageEffectif = Math.max(
+        marginGauche - xs[0]!,
+        Math.min(decalage, marginDroite - xs[xs.length - 1]!)
+      );
+      for (const id of groupe) positions.set(id, positions.get(id)! + decalageEffectif);
+    }
   }
 
   const noeuds: NoeudArbre[] = [];
   const place = new Map<string, NoeudArbre>();
-  const rangs_tries = [...parRang.keys()].sort((a, b) => a - b);
-  const rangMin = rangs_tries[0] ?? 0;
-  const rangMax = rangs_tries.at(-1) ?? 0;
+  const rangMin = rangsTries[0] ?? 0;
 
-  for (const rang of rangs_tries) {
-    const liste = parRang.get(rang) ?? [];
-    liste.forEach((id, index) => {
-      const cote =
-        rang === 0
-          ? coteDesBranches(personnes.get(id)?.branches ?? [])
-          : cotePour(id, personnes, 'commune');
-      const noeud: NoeudArbre = {
-        personneId: id,
-        rang: rang - rangMin, // décale pour que le rang 0 soit en haut
-        x: index - (liste.length - 1) / 2,
-        y: rang - rangMin,
-        lien:
-          id === racineId
-            ? 'racine'
-            : rang < 0
-              ? 'ancetre'
-              : rang > 0
-                ? 'descendant'
-                : 'collateral',
-        cote,
-      };
-      place.set(id, noeud);
-      noeuds.push(noeud);
-    });
+  for (const [id, rang] of rangs) {
+    const cote =
+      rang === 0
+        ? coteDesBranches(personnes.get(id)?.branches ?? [])
+        : cotePour(id, personnes, 'commune');
+    const noeud: NoeudArbre = {
+      personneId: id,
+      rang: rang - rangMin,
+      x: positions.get(id) ?? 0,
+      y: rang - rangMin,
+      lien:
+        id === racineId
+          ? 'racine'
+          : rang < 0
+            ? 'ancetre'
+            : rang > 0
+              ? 'descendant'
+              : 'collateral',
+      cote,
+    };
+    place.set(id, noeud);
+    noeuds.push(noeud);
   }
 
   // Liens de filiation : enfant → parent, quand les deux sont placés.
-  for (const [id, noeud] of place) {
+  for (const [id] of place) {
     for (const parentId of parents.get(id) ?? []) {
       if (!place.has(parentId)) continue;
       liens.push({
@@ -516,7 +610,7 @@ function finaliser(
     return {
       noeuds: [], liens: [], unions: [],
       largeur: LARGEUR_NOEUD, hauteur: HAUTEUR_NOEUD,
-      mode, racineId, rangMax: 0,
+      mode, racineId, rangMax: 0, rangRacine: 0,
     };
   }
 
@@ -546,6 +640,7 @@ function finaliser(
     mode,
     racineId,
     rangMax,
+    rangRacine: place.get(racineId)?.rang ?? 0,
   };
 }
 
@@ -573,25 +668,46 @@ function nommerRangFamille(delta: number): string {
  * Nom d'un rang, du point de vue de la personne choisie : « ses
  * arrière-grands-parents » plutôt que « génération 3 ».
  */
-export function nommerRang(rang: number, mode: ModeArbre, prenomRacine: string): string {
-  if (rang === 0) return prenomRacine;
+export function nommerRang(
+  rang: number,
+  mode: ModeArbre,
+  prenomRacine: string,
+  rangRacine = 0
+): string {
+  const delta = rang - rangRacine;
+  if (delta === 0) return prenomRacine;
 
+  // Convention visuelle du projet : la personne choisie est en HAUT (petit y),
+  // ses ancêtres et descendants se déroulent VERS LE BAS. Un rang plus grand
+  // que celui de la racine est donc plus profond dans l'exploration.
   if (mode === 'ascendance') {
     // Au-delà, l'empilement de « arrière- » devient illisible.
-    return ASCENDANCE[rang - 1] ?? `${rang}ᵉ génération au-dessus`;
+    return ASCENDANCE[delta - 1] ?? `${delta}ᵉ génération au-dessus`;
   }
   if (mode === 'descendance') {
-    return DESCENDANCE[rang - 1] ?? `${rang}ᵉ génération en dessous`;
+    return DESCENDANCE[delta - 1] ?? `${delta}ᵉ génération en dessous`;
   }
   if (mode === 'famille') {
-    // Le rang en mode famille est déjà normalisé : la racine est au rang
-    // GENERATIONS_ANCETRES, ses parents au rang GENERATIONS_ANCETRES-1, etc.
-    // On calcule le delta par rapport à la racine pour retrouver la nature.
-    const delta = rang - GENERATIONS_ANCETRES;
-    if (delta === 0) return prenomRacine;
-    return nommerRangFamille(delta);
+    // La vue « famille » mélange ligne directe et collatéraux à chaque
+    // génération. Étiqueter « ses parents » induirait en erreur puisque le
+    // rang contient aussi les oncles et tantes — on parle donc de génération.
+    if (delta < 0) {
+      switch (-delta) {
+        case 1: return 'Génération de ses parents';
+        case 2: return 'Génération de ses grands-parents';
+        case 3: return 'Génération de ses arrière-grands-parents';
+        default: return `${-delta} générations au-dessus`;
+      }
+    }
+    switch (delta) {
+      case 1: return 'Génération de ses enfants';
+      case 2: return 'Génération de ses petits-enfants';
+      default: return `${delta} générations en dessous`;
+    }
   }
-  return rang === 1 ? 'Son entourage direct' : `À ${rang} liens de parenté`;
+  return delta === 1 || delta === -1
+    ? 'Son entourage direct'
+    : `À ${Math.abs(delta)} liens de parenté`;
 }
 
 export const LIBELLE_MODE: Record<ModeArbre, { titre: string; aide: string }> = {

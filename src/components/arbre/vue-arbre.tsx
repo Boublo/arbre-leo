@@ -262,7 +262,7 @@ export function VueArbre({
               className="fill-[var(--encre-tres-douce)] text-[13px]"
               style={{ fontFamily: 'var(--font-titre)' }}
             >
-              {nommerRang(rang, disposition.mode, prenomFocus)}
+              {nommerRang(rang, disposition.mode, prenomFocus, disposition.rangRacine)}
             </text>
           ))}
 
