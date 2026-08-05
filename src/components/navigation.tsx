@@ -58,7 +58,7 @@ export async function Navigation() {
             Administration
             {enAttente ? (
               <span
-                className="grid h-5 min-w-5 place-items-center rounded-full bg-alerte px-1.5 text-xs font-medium text-white"
+                className="grid h-5 min-w-5 place-items-center rounded-full bg-alerte px-1.5 text-xs font-medium text-fond"
                 title={`${enAttente} demande${enAttente > 1 ? 's' : ''} en attente`}
               >
                 {enAttente}

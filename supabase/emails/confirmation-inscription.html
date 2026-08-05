@@ -1,0 +1,102 @@
+<!--
+  Gabarit du courriel de confirmation d'inscription.
+
+  À coller dans Supabase : Authentication → Emails → Templates → « Confirm signup ».
+
+  Les variables entre doubles accolades sont remplacées par Supabase :
+    {{ .ConfirmationURL }}  lien de confirmation
+    {{ .Token }}            code à six chiffres, pour qui préfère recopier
+    {{ .SiteURL }}          adresse du site
+
+  Écrit en tableaux et en styles en ligne : les clients de messagerie, et
+  singulièrement Outlook, ne savent pas faire mieux. Les couleurs sont figées
+  ici plutôt que prises dans la palette du site — un courriel n'a pas accès aux
+  variables CSS de la page.
+-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="background:#f3eee5;margin:0;padding:32px 12px;font-family:Georgia,'Times New Roman',serif;">
+  <tr>
+    <td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+             style="max-width:520px;background:#ffffff;border:1px solid #e4dbcc;border-radius:12px;overflow:hidden;">
+
+        <tr>
+          <td style="background:#2f5d50;padding:28px 32px;text-align:center;">
+            <div style="font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#a8c6bb;">
+              Famille
+            </div>
+            <div style="font-size:26px;color:#ffffff;margin-top:6px;">
+              L&rsquo;arbre de L&eacute;o
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:32px;color:#211c17;">
+            <h1 style="margin:0 0 16px;font-size:20px;font-weight:normal;color:#211c17;">
+              Confirmez votre adresse
+            </h1>
+
+            <p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:#5d5348;font-family:Helvetica,Arial,sans-serif;">
+              Vous avez demand&eacute; un acc&egrave;s &agrave; l&rsquo;arbre g&eacute;n&eacute;alogique de la famille.
+              Confirmez d&rsquo;abord cette adresse en cliquant ci-dessous.
+            </p>
+
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:26px auto;">
+              <tr>
+                <td style="border-radius:8px;background:#2f5d50;">
+                  <a href="{{ .ConfirmationURL }}"
+                     style="display:inline-block;padding:13px 30px;font-size:15px;color:#ffffff;text-decoration:none;font-family:Helvetica,Arial,sans-serif;">
+                    Confirmer mon adresse
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                   style="background:#f3eee5;border:1px solid #e4dbcc;border-radius:8px;margin:0 0 24px;">
+              <tr>
+                <td style="padding:16px;text-align:center;font-family:Helvetica,Arial,sans-serif;">
+                  <div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#8a7f72;">
+                    Ou recopiez ce code
+                  </div>
+                  <div style="font-size:26px;letter-spacing:5px;color:#2f5d50;margin-top:8px;font-family:Georgia,serif;">
+                    {{ .Token }}
+                  </div>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Le point important : confirmer son adresse n'ouvre pas l'accès.
+                 Mieux vaut le dire ici que laisser quelqu'un s'étonner. -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                   style="border-left:3px solid #b08d2f;background:#fbf8f3;">
+              <tr>
+                <td style="padding:14px 16px;font-size:14px;line-height:1.6;color:#5d5348;font-family:Helvetica,Arial,sans-serif;">
+                  Une derni&egrave;re &eacute;tape&nbsp;: un administrateur de la famille doit ensuite
+                  vous ouvrir l&rsquo;acc&egrave;s. L&rsquo;arbre contient des photographies de famille et
+                  des renseignements sur des personnes vivantes, qui ne circulent pas
+                  au-del&agrave; du cercle familial. Vous serez pr&eacute;venu par courriel.
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:#8a7f72;font-family:Helvetica,Arial,sans-serif;">
+              Si vous n&rsquo;avez rien demand&eacute;, ignorez ce message&nbsp;: aucun compte ne sera
+              ouvert sans cette confirmation.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:18px 32px;border-top:1px solid #e4dbcc;background:#fbf8f3;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#8a7f72;font-family:Helvetica,Arial,sans-serif;">
+              L&rsquo;arbre de L&eacute;o &middot; arbre g&eacute;n&eacute;alogique familial priv&eacute;
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>

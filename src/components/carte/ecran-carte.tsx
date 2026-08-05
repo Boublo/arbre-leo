@@ -227,7 +227,7 @@ export function EcranCarte({ donnees }: { donnees: DonneesCarte }) {
   const arcs = useMemo(() => {
     if (!montrerDeplacements) return [];
 
-    const parLieu = new Map(donnees.lieux.map((lieu) => [lieu.id, lieu]));
+    const parLieu = new Map(points.map((point) => [point.lieu.id, point]));
     const paires = new Map<
       string,
       { deId: string; versId: string; cote: Cote; noms: string[]; nombre: number }
@@ -252,23 +252,23 @@ export function EcranCarte({ donnees }: { donnees: DonneesCarte }) {
       const arrivee = parLieu.get(paire.versId);
       if (!depart || !arrivee) return [];
 
-      const a = versEcran(cadre, transformation, depart.longitude, depart.latitude);
-      const b = versEcran(cadre, transformation, arrivee.longitude, arrivee.latitude);
-      if (Math.hypot(b.x - a.x, b.y - a.y) < 3) return [];
+      // Le trait s'arrête au bord des deux points : la flèche reste lisible.
+      const trait = raccourcir(depart, arrivee, depart.rayon + 2, arrivee.rayon + 5);
+      if (!trait) return [];
 
       return [
         {
           cle,
-          chemin: arcCourbe(a, b),
+          chemin: arcCourbe(trait.a, trait.b),
           cote: paire.cote,
           epaisseur: 1 + Math.min(paire.nombre, 6) * 0.45,
-          titre: `${depart.nom} → ${arrivee.nom} · ${paire.noms.slice(0, 4).join(', ')}${
+          titre: `${depart.lieu.nom} → ${arrivee.lieu.nom} · ${paire.noms.slice(0, 4).join(', ')}${
             paire.noms.length > 4 ? ` et ${paire.noms.length - 4} autres` : ''
           }`,
         },
       ];
     });
-  }, [donnees.lieux, donnees.deplacements, montrerDeplacements, debut, fin, cadre, transformation]);
+  }, [points, donnees.deplacements, montrerDeplacements, debut, fin]);
 
   // --- Sélection -------------------------------------------------------------
 
@@ -277,10 +277,12 @@ export function EcranCarte({ donnees }: { donnees: DonneesCarte }) {
     [donnees.lieux, selectionId]
   );
 
-  const apercu = useMemo(() => {
-    const identifiant = survolId ?? selectionId;
-    return points.find((point) => point.lieu.id === identifiant) ?? null;
-  }, [points, survolId, selectionId]);
+  // L'étiquette flottante ne suit que le survol : la sélection, elle, ouvre
+  // le panneau de droite et n'a pas besoin d'être redite.
+  const apercu = useMemo(
+    () => points.find((point) => point.lieu.id === survolId) ?? null,
+    [points, survolId]
+  );
 
   if (donnees.lieux.length === 0) {
     return (
@@ -623,6 +625,27 @@ function Pastille({ couleur }: { couleur: string }) {
 
 function rayonDe(nombre: number, sommet: number): number {
   return RAYON_MIN + (RAYON_MAX - RAYON_MIN) * Math.sqrt(nombre / Math.max(sommet, 1));
+}
+
+/** Ramène les deux extrémités au bord des points, ou rien si le trajet est trop court. */
+function raccourcir(
+  depart: { x: number; y: number },
+  arrivee: { x: number; y: number },
+  margeDepart: number,
+  margeArrivee: number
+): { a: { x: number; y: number }; b: { x: number; y: number } } | null {
+  const dx = arrivee.x - depart.x;
+  const dy = arrivee.y - depart.y;
+  const longueur = Math.hypot(dx, dy);
+  if (longueur < margeDepart + margeArrivee + 6) return null;
+
+  return {
+    a: { x: depart.x + (dx / longueur) * margeDepart, y: depart.y + (dy / longueur) * margeDepart },
+    b: {
+      x: arrivee.x - (dx / longueur) * margeArrivee,
+      y: arrivee.y - (dy / longueur) * margeArrivee,
+    },
+  };
 }
 
 /** Un arc légèrement bombé : deux trajets inverses ne se superposent pas. */

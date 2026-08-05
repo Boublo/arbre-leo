@@ -4,42 +4,10 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { VueArbre, type ArbreSerialise } from '@/components/arbre/vue-arbre';
 import type { PersonneArbre } from '@/lib/arbre';
-import type { NiveauPreuve } from '@/lib/types-base';
+import { PREUVES, trierParFiabilite } from '@/lib/preuves';
 
-/** Ce que vaut une information, dit en clair plutôt qu'en jargon d'archives. */
-const PREUVES: Record<NiveauPreuve, { libelle: string; explication: string; ton: string }> = {
-  acte: {
-    libelle: 'Acte',
-    explication: "Établi par un acte d'état civil détenu ou consulté par la famille.",
-    ton: 'var(--succes)',
-  },
-  anom: {
-    libelle: 'Acte d’Algérie',
-    explication:
-      "Lu dans les registres d'état civil d'Algérie numérisés par les Archives nationales d'outre-mer.",
-    ton: 'var(--succes)',
-  },
-  insee: {
-    libelle: 'Fichier INSEE',
-    explication: "Trouvé au fichier des décès de l'INSEE : très probable, à confirmer par l'acte.",
-    ton: 'var(--alerte)',
-  },
-  memoire: {
-    libelle: 'Mémoire familiale',
-    explication: 'Rapporté par un proche, sans pièce à l’appui pour l’instant.',
-    ton: 'var(--alerte)',
-  },
-  hypothese: {
-    libelle: 'Hypothèse',
-    explication: 'Déduction cohérente, encore à étayer.',
-    ton: 'var(--alerte)',
-  },
-  a_trouver: {
-    libelle: 'À chercher',
-    explication: 'Personne identifiée par son nom, mais rien n’est encore documenté.',
-    ton: 'var(--encre-tres-douce)',
-  },
-};
+// Les niveaux de preuve sont définis une seule fois, dans @/lib/preuves : la
+// fiche d'une personne et ce panneau doivent en donner la même définition.
 
 export function EcranArbre({
   ascendance,
@@ -136,7 +104,7 @@ function FichePersonne({
             Ce qui l’atteste
           </h3>
           <ul className="flex flex-col gap-1.5">
-            {personne.niveauxPreuve.map((niveau) => {
+            {trierParFiabilite(personne.niveauxPreuve).map((niveau) => {
               const p = PREUVES[niveau];
               return (
                 <li key={niveau} className="flex items-start gap-2 text-xs">

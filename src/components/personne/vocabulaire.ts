@@ -1,5 +1,4 @@
 import type {
-  NiveauPreuve,
   PorteeFait,
   Sexe,
   StatutModeration,
@@ -38,40 +37,11 @@ export const LIBELLE_EVENEMENT: Record<TypeEvenement, string> = {
   autre: 'Autre',
 };
 
-/** Ce que vaut une information, sans jargon d'archives. */
-export const PREUVE: Record<NiveauPreuve, { libelle: string; explication: string; teinte: string }> = {
-  acte: {
-    libelle: 'Acte',
-    explication: "Établi par un acte d'état civil détenu ou consulté par la famille.",
-    teinte: 'bg-succes',
-  },
-  anom: {
-    libelle: 'Acte d’Algérie',
-    explication:
-      "Lu dans les registres d'état civil d'Algérie numérisés par les Archives nationales d'outre-mer.",
-    teinte: 'bg-succes',
-  },
-  insee: {
-    libelle: 'Fichier INSEE',
-    explication: "Trouvé au fichier des décès de l'INSEE : très probable, à confirmer par l'acte.",
-    teinte: 'bg-alerte',
-  },
-  memoire: {
-    libelle: 'Mémoire familiale',
-    explication: 'Rapporté par un proche, sans pièce à l’appui pour l’instant.',
-    teinte: 'bg-alerte',
-  },
-  hypothese: {
-    libelle: 'Hypothèse',
-    explication: 'Déduction cohérente, encore à étayer.',
-    teinte: 'bg-alerte',
-  },
-  a_trouver: {
-    libelle: 'À chercher',
-    explication: 'Piste identifiée, mais rien n’est encore documenté.',
-    teinte: 'bg-encre-tres-douce',
-  },
-};
+/**
+ * Les niveaux de preuve viennent d'un module commun : la fiche, l'arbre et
+ * les chantiers doivent en donner exactement la même définition.
+ */
+export { PREUVES as PREUVE, trierParFiabilite, meilleurePreuve } from '@/lib/preuves';
 
 export const LIBELLE_MEDIA: Record<TypeMedia, string> = {
   photo: 'Photographie',

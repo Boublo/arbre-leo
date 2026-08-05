@@ -23,6 +23,27 @@ export const PRENOM_RACINE = process.env.NEXT_PUBLIC_PRENOM_RACINE?.trim() || 'L
 
 export type Cote = 'paternelle' | 'maternelle' | 'commune';
 
+/** Le côté d'une branche prise isolément. */
+export function coteDUneBranche(branche: string): Cote {
+  if (branche === BRANCHE_PATERNELLE) return 'paternelle';
+  if (branche === BRANCHE_MATERNELLE) return 'maternelle';
+  return 'commune';
+}
+
+/** Comment nommer un côté devant la famille. */
+export const LIBELLE_COTE: Record<Cote, string> = {
+  paternelle: 'Côté paternel',
+  maternelle: 'Côté maternel',
+  commune: 'Les deux côtés',
+};
+
+/** La couleur d'un côté, en variable CSS. */
+export const TON_COTE: Record<Cote, string> = {
+  paternelle: 'var(--paternelle)',
+  maternelle: 'var(--maternelle)',
+  commune: 'var(--commune)',
+};
+
 /**
  * Déduit le côté d'une personne des branches auxquelles elle appartient.
  * Une personne présente dans les deux — le couple d'où part l'arbre — est

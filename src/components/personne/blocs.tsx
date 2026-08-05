@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { LienPersonne } from '@/components/personne/donnees';
 import { PREUVE, LIBELLE_MODERATION, nommerBranche } from '@/components/personne/vocabulaire';
 import type { NiveauPreuve, StatutModeration } from '@/lib/types-base';
+import { coteDUneBranche, LIBELLE_COTE, TON_COTE } from '@/lib/branches';
 
 /** Les quelques briques que toutes les parties de la fiche se repassent. */
 
@@ -91,13 +92,31 @@ export function Moderation({ statut }: { statut: StatutModeration }) {
 
 export function Branches({ branches }: { branches: string[] }) {
   if (branches.length === 0) return null;
+
   return (
     <ul className="flex flex-wrap gap-1.5">
-      {branches.map((b) => (
-        <li key={b}>
-          <Etiquette>Branche {nommerBranche(b)}</Etiquette>
-        </li>
-      ))}
+      {branches.map((b) => {
+        const cote = coteDUneBranche(b);
+        // Une branche que la configuration ne reconnaît pas garde son nom brut :
+        // mieux vaut un libellé imparfait qu'une étiquette muette.
+        const libelle = cote === 'commune' ? nommerBranche(b) : LIBELLE_COTE[cote];
+
+        return (
+          <li key={b}>
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs"
+              style={{ borderColor: TON_COTE[cote], color: TON_COTE[cote] }}
+            >
+              <span
+                aria-hidden
+                className="h-1.5 w-1.5 rounded-full"
+                style={{ background: TON_COTE[cote] }}
+              />
+              {libelle}
+            </span>
+          </li>
+        );
+      })}
     </ul>
   );
 }
