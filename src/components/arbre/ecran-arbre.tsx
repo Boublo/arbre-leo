@@ -15,7 +15,10 @@ import {
 } from '@/lib/arbre-graphe';
 import { disposerArbre, LIBELLE_MODE, type ModeArbre } from '@/lib/layout-arbre';
 
-const MODES: ModeArbre[] = ['ascendance', 'descendance', 'eclate'];
+// L'ordre importe : famille est la vue la plus utile au quotidien pour la
+// plupart des membres — cousins, oncles, petits-enfants d'un coup —, on la
+// place avant les vues plus spécialisées.
+const MODES: ModeArbre[] = ['ascendance', 'famille', 'descendance', 'eclate'];
 
 export function EcranArbre({
   graphe,
@@ -150,6 +153,8 @@ export function EcranArbre({
               (entourage.descendants > 0
                 ? `${entourage.descendants} descendants sur ${entourage.generationsEnDessous} générations`
                 : 'Aucune descendance connue.')}
+            {mode === 'famille' &&
+              `${disposition.noeuds.length} personnes autour — parents, frères et sœurs, cousins, enfants`}
             {mode === 'eclate' && `${disposition.noeuds.length} personnes reliées`}
           </p>
         )}

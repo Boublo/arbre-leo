@@ -455,23 +455,54 @@ function Noeud({
         <rect x={0} y={0} width={4} height={HAUTEUR_NOEUD} rx={2} fill="var(--succes)" opacity={0.7} />
       )}
 
+      {/* Avatar : la photo de profil rend le nœud immédiatement reconnaissable.
+          Cerclée pour ne pas rompre la géométrie carrée du nœud, tronquée par
+          un clipPath — sans clipPath, une image dépasserait le rectangle. */}
+      {personne.photoUrl && detaille && (
+        <>
+          <defs>
+            <clipPath id={`clip-avatar-${personne.id}`}>
+              <circle cx={22} cy={HAUTEUR_NOEUD / 2} r={16} />
+            </clipPath>
+          </defs>
+          <image
+            href={personne.photoUrl}
+            x={6}
+            y={HAUTEUR_NOEUD / 2 - 16}
+            width={32}
+            height={32}
+            preserveAspectRatio="xMidYMid slice"
+            clipPath={`url(#clip-avatar-${personne.id})`}
+          />
+          <circle
+            cx={22}
+            cy={HAUTEUR_NOEUD / 2}
+            r={16}
+            fill="none"
+            stroke={couleurs.trait}
+            strokeWidth={1.5}
+            opacity={0.6}
+          />
+        </>
+      )}
+
       <text
-        x={LARGEUR_NOEUD / 2}
+        x={personne.photoUrl && detaille ? 46 : LARGEUR_NOEUD / 2}
         y={detaille ? 24 : 38}
-        textAnchor="middle"
+        textAnchor={personne.photoUrl && detaille ? 'start' : 'middle'}
         className={estFocus ? 'fill-[var(--accent-contraste)]' : 'fill-[var(--encre)]'}
         style={{ fontFamily: 'var(--font-titre)', fontSize: 14, fontWeight: 600 }}
       >
-        {tronquer(personne.nomComplet, 22)}
+        {tronquer(personne.nomComplet, personne.photoUrl && detaille ? 18 : 22)}
       </text>
 
       {detaille && (
         <>
           {vie && (
             <text
-              x={LARGEUR_NOEUD / 2}
+              x={personne.photoUrl ? 46 : LARGEUR_NOEUD / 2}
               y={41}
-              textAnchor="middle"
+              textAnchor={personne.photoUrl ? 'start' : 'middle'}
               className={estFocus ? 'fill-[var(--accent-contraste)]' : 'fill-[var(--encre-douce)]'}
               style={{ fontSize: 11.5 }}
               opacity={0.9}
@@ -481,16 +512,16 @@ function Noeud({
           )}
           {personne.naissance?.lieuCourt && (
             <text
-              x={LARGEUR_NOEUD / 2}
+              x={personne.photoUrl ? 46 : LARGEUR_NOEUD / 2}
               y={55}
-              textAnchor="middle"
+              textAnchor={personne.photoUrl ? 'start' : 'middle'}
               className={
                 estFocus ? 'fill-[var(--accent-contraste)]' : 'fill-[var(--encre-tres-douce)]'
               }
               style={{ fontSize: 10.5 }}
               opacity={0.85}
             >
-              {tronquer(personne.naissance.lieuCourt, 26)}
+              {tronquer(personne.naissance.lieuCourt, personne.photoUrl ? 20 : 26)}
             </text>
           )}
 

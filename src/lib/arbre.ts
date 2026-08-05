@@ -22,6 +22,13 @@ export type PersonneArbre = {
   presumeVivant: boolean;
   notes: string | null;
   photoId: string | null;
+  /**
+   * URL signée de la photo, prête à mettre dans un `<img src>`. Renseignée
+   * uniquement quand la personne a une photo et que le chargement l'a signée.
+   * Le lien expire au bout d'une heure : c'est fait pour être servi par le
+   * rendu, pas stocké ni partagé.
+   */
+  photoUrl: string | null;
   naissance: EvenementResume | null;
   deces: EvenementResume | null;
   profession: string | null;
@@ -130,7 +137,7 @@ const TYPES_RESUME: TypeEvenement[] = ['naissance', 'deces', 'profession', 'mari
 export async function chargerArbre(): Promise<DonneesArbre> {
   const supabase = await creerClientServeur();
 
-  const [personnesRes, unionsRes, filiationsRes, evenementsRes] = await Promise.all([
+  const [personnesRes, unionsRes, filiationsRes, evenementsRes, mediasRes] = await Promise.all([
     supabase
       .from('personnes')
       .select('id, code_gedcom, prenoms, nom, nom_complet, surnom, sexe, branches, niveaux_preuve, presume_vivant, notes, photo_id'),
@@ -140,10 +147,33 @@ export async function chargerArbre(): Promise<DonneesArbre> {
       .from('evenements')
       .select('personne_id, union_id, type, annee, mois, jour, annee_fin, qualificatif, date_texte, detail, lieux(libelle)')
       .in('type', TYPES_RESUME),
+    // Chemins des photos de profil : on ne les charge que pour celles qui
+    // sont vraiment utilisées, en filtrant sur les photo_id référencés.
+    supabase.from('medias').select('id, chemin').eq('type', 'photo'),
   ]);
 
-  const erreur = personnesRes.error ?? unionsRes.error ?? filiationsRes.error ?? evenementsRes.error;
+  const erreur = personnesRes.error ?? unionsRes.error ?? filiationsRes.error ?? evenementsRes.error ?? mediasRes.error;
   if (erreur) throw new Error(`Chargement de l'arbre impossible : ${erreur.message}`);
+
+  // Signature des URL du bucket privé, en un seul appel groupé : moins d'aller-
+  // retours HTTP qu'une signature par personne, et le bucket connaît la limite.
+  const cheminParMedia = new Map((mediasRes.data ?? []).map((m) => [m.id, m.chemin]));
+  const cheminsAsigner = [
+    ...new Set(
+      (personnesRes.data ?? [])
+        .map((p) => (p.photo_id ? cheminParMedia.get(p.photo_id) : null))
+        .filter((c): c is string => typeof c === 'string')
+    ),
+  ];
+  const urlParChemin = new Map<string, string>();
+  if (cheminsAsigner.length > 0) {
+    const { data: urlsSignees } = await supabase.storage
+      .from('arbre-medias')
+      .createSignedUrls(cheminsAsigner, 3600);
+    for (const s of urlsSignees ?? []) {
+      if (s.path && s.signedUrl) urlParChemin.set(s.path, s.signedUrl);
+    }
+  }
 
   // Les événements sont indexés par personne puis par type : une même personne
   // peut avoir plusieurs professions ou résidences successives.
@@ -215,6 +245,7 @@ export async function chargerArbre(): Promise<DonneesArbre> {
     const evts = parPersonne.get(p.id) ?? [];
     const profession = evts.find((e) => e.type === 'profession');
 
+    const chemin = p.photo_id ? cheminParMedia.get(p.photo_id) : null;
     personnes.set(p.id, {
       id: p.id,
       codeGedcom: p.code_gedcom,
@@ -228,6 +259,7 @@ export async function chargerArbre(): Promise<DonneesArbre> {
       presumeVivant: p.presume_vivant,
       notes: p.notes,
       photoId: p.photo_id,
+      photoUrl: chemin ? urlParChemin.get(chemin) ?? null : null,
       naissance: resumer(evts.find((e) => e.type === 'naissance')),
       deces: resumer(evts.find((e) => e.type === 'deces')),
       profession: profession?.detail ?? null,

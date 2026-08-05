@@ -35,7 +35,7 @@ import { coteDesBranches, type Cote } from '@/lib/branches';
  *    dès la mesure, faute de quoi ils chevaucheraient les sous-arbres voisins.
  */
 
-export type ModeArbre = 'ascendance' | 'descendance' | 'eclate';
+export type ModeArbre = 'ascendance' | 'descendance' | 'famille' | 'eclate';
 
 /** Ce qui rattache un nœud à la personne choisie. */
 export type LienRacine = 'racine' | 'ancetre' | 'descendant' | 'collateral' | 'conjoint';
@@ -86,9 +86,154 @@ export function disposerArbre(
   racineId: string,
   mode: ModeArbre = 'ascendance'
 ): Disposition {
-  return mode === 'eclate'
-    ? disposerEclate(donnees, racineId)
-    : disposerHierarchie(donnees, racineId, mode);
+  if (mode === 'eclate') return disposerEclate(donnees, racineId);
+  if (mode === 'famille') return disposerFamille(donnees, racineId);
+  return disposerHierarchie(donnees, racineId, mode);
+}
+
+// ---------------------------------------------------------------------------
+// Famille : ascendance sur trois générations, plus la descendance de chaque
+// couple ancestral (frères et sœurs, oncles, tantes, cousins) et deux
+// générations sous la personne (enfants, petits-enfants).
+// ---------------------------------------------------------------------------
+//
+// C'est le mode qui répond à la question « qui est de la famille ? » plutôt
+// qu'à « d'où viens-je ? ». Il fait naturellement apparaître les cousins et
+// les petits-enfants sans qu'on ait à passer à la vue éclatée.
+
+const GENERATIONS_ANCETRES = 3;
+const GENERATIONS_DESCENDANTS = 2;
+
+function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
+  const { parents, enfants, unions, personnes } = donnees;
+  const rangs = new Map<string, number>();
+  const liens: LienArbre[] = [];
+
+  // Rang négatif = ancêtre, positif = descendant.
+  rangs.set(racineId, 0);
+
+  // On remonte d'abord, en enregistrant tous les ancêtres et en gardant leur
+  // rang exact — négatif, plus loin de zéro pour les générations plus vieilles.
+  const parcoursMontant: Array<{ id: string; rang: number }> = [{ id: racineId, rang: 0 }];
+  let curseur = 0;
+  while (curseur < parcoursMontant.length) {
+    const { id, rang } = parcoursMontant[curseur++]!;
+    if (-rang >= GENERATIONS_ANCETRES) continue;
+    for (const parentId of parents.get(id) ?? []) {
+      if (!personnes.has(parentId) || rangs.has(parentId)) continue;
+      rangs.set(parentId, rang - 1);
+      parcoursMontant.push({ id: parentId, rang: rang - 1 });
+    }
+  }
+
+  // Pour chaque couple ancestral déjà placé, on ajoute tous les enfants dont
+  // on ne connaît pas encore le rang. Ils vivent juste sous leur couple —
+  // c'est ainsi que les frères et sœurs, oncles et tantes se rangent
+  // naturellement au bon niveau.
+  for (const union of unions.values()) {
+    const { conjointA, conjointB, enfants: enfantsUnion } = union;
+    const rangA = conjointA ? rangs.get(conjointA) : undefined;
+    const rangB = conjointB ? rangs.get(conjointB) : undefined;
+    const rangCouple = rangA ?? rangB;
+    if (rangCouple === undefined || rangCouple > 0) continue;
+
+    for (const enfantId of enfantsUnion) {
+      if (!personnes.has(enfantId) || rangs.has(enfantId)) continue;
+      rangs.set(enfantId, rangCouple + 1);
+    }
+  }
+
+  // Descendants de la personne : enfants, petits-enfants, dans la limite fixée.
+  const parcoursDescendant: Array<{ id: string; rang: number }> = [{ id: racineId, rang: 0 }];
+  let cursDesc = 0;
+  while (cursDesc < parcoursDescendant.length) {
+    const { id, rang } = parcoursDescendant[cursDesc++]!;
+    if (rang >= GENERATIONS_DESCENDANTS) continue;
+    for (const enfantId of enfants.get(id) ?? []) {
+      if (!personnes.has(enfantId)) continue;
+      const dejaLa = rangs.get(enfantId);
+      // Si l'enfant était déjà placé en tant que descendant d'ancêtre, on
+      // conserve sa position ; sinon on le pose ici.
+      if (dejaLa === undefined) rangs.set(enfantId, rang + 1);
+      parcoursDescendant.push({ id: enfantId, rang: rang + 1 });
+    }
+  }
+
+  // Placement : les personnes du même rang côte à côte, dans l'ordre où on les
+  // a rencontrées (à peu près chronologique quand les naissances sont datées).
+  const parRang = new Map<number, string[]>();
+  for (const [id, rang] of rangs) {
+    const liste = parRang.get(rang) ?? [];
+    liste.push(id);
+    parRang.set(rang, liste);
+  }
+
+  // Tri chaque rangée par lieu de naissance (proxy stable pour ancrer les
+  // frères et sœurs entre leurs cousins) puis par nom.
+  for (const liste of parRang.values()) {
+    liste.sort((a, b) => {
+      const na = personnes.get(a)?.nomComplet ?? '';
+      const nb = personnes.get(b)?.nomComplet ?? '';
+      return na.localeCompare(nb, 'fr');
+    });
+  }
+
+  const noeuds: NoeudArbre[] = [];
+  const place = new Map<string, NoeudArbre>();
+  const rangs_tries = [...parRang.keys()].sort((a, b) => a - b);
+  const rangMin = rangs_tries[0] ?? 0;
+  const rangMax = rangs_tries.at(-1) ?? 0;
+
+  for (const rang of rangs_tries) {
+    const liste = parRang.get(rang) ?? [];
+    liste.forEach((id, index) => {
+      const cote =
+        rang === 0
+          ? coteDesBranches(personnes.get(id)?.branches ?? [])
+          : cotePour(id, personnes, 'commune');
+      const noeud: NoeudArbre = {
+        personneId: id,
+        rang: rang - rangMin, // décale pour que le rang 0 soit en haut
+        x: index - (liste.length - 1) / 2,
+        y: rang - rangMin,
+        lien:
+          id === racineId
+            ? 'racine'
+            : rang < 0
+              ? 'ancetre'
+              : rang > 0
+                ? 'descendant'
+                : 'collateral',
+        cote,
+      };
+      place.set(id, noeud);
+      noeuds.push(noeud);
+    });
+  }
+
+  // Liens de filiation : enfant → parent, quand les deux sont placés.
+  for (const [id, noeud] of place) {
+    for (const parentId of parents.get(id) ?? []) {
+      if (!place.has(parentId)) continue;
+      liens.push({
+        id: `${id}->${parentId}`,
+        enfantId: id,
+        parentId,
+        reprise: false,
+      });
+    }
+  }
+
+  return finaliser(noeuds, liens, place, donnees, 'famille', racineId);
+}
+
+/**
+ * Lit la couleur d'une personne sur ses branches déclarées, sans propagation.
+ * Utile pour la vue famille où toutes les branches se mélangent.
+ */
+function cotePour(id: string, personnes: DonneesArbre['personnes'], defaut: Cote): Cote {
+  const cote = coteDesBranches(personnes.get(id)?.branches ?? []);
+  return cote === 'commune' ? defaut : cote;
 }
 
 // ---------------------------------------------------------------------------
@@ -417,6 +562,13 @@ const ASCENDANCE = [
 
 const DESCENDANCE = ['Ses enfants', 'Ses petits-enfants', 'Ses arrière-petits-enfants'];
 
+/** Rang absolu (0 = racine, négatif = ancêtre, positif = descendant) → libellé. */
+function nommerRangFamille(delta: number): string {
+  if (delta === 0) return '';
+  if (delta < 0) return ASCENDANCE[-delta - 1] ?? `${-delta}ᵉ génération au-dessus`;
+  return DESCENDANCE[delta - 1] ?? `${delta}ᵉ génération en dessous`;
+}
+
 /**
  * Nom d'un rang, du point de vue de la personne choisie : « ses
  * arrière-grands-parents » plutôt que « génération 3 ».
@@ -431,6 +583,14 @@ export function nommerRang(rang: number, mode: ModeArbre, prenomRacine: string):
   if (mode === 'descendance') {
     return DESCENDANCE[rang - 1] ?? `${rang}ᵉ génération en dessous`;
   }
+  if (mode === 'famille') {
+    // Le rang en mode famille est déjà normalisé : la racine est au rang
+    // GENERATIONS_ANCETRES, ses parents au rang GENERATIONS_ANCETRES-1, etc.
+    // On calcule le delta par rapport à la racine pour retrouver la nature.
+    const delta = rang - GENERATIONS_ANCETRES;
+    if (delta === 0) return prenomRacine;
+    return nommerRangFamille(delta);
+  }
   return rang === 1 ? 'Son entourage direct' : `À ${rang} liens de parenté`;
 }
 
@@ -443,8 +603,12 @@ export const LIBELLE_MODE: Record<ModeArbre, { titre: string; aide: string }> = 
     titre: 'Ce qu’il a laissé',
     aide: 'Ses enfants, ses petits-enfants, et toute sa descendance connue.',
   },
+  famille: {
+    titre: 'La famille autour',
+    aide: 'Ses parents et grands-parents, avec leurs frères, sœurs et cousins, et ses propres enfants et petits-enfants.',
+  },
   eclate: {
-    titre: 'Toute la famille',
+    titre: 'Tout',
     aide: 'Tout ce qui l’entoure, rangé par degré de parenté : frères, cousins, conjoints, ancêtres et descendants.',
   },
 };
