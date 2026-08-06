@@ -280,6 +280,30 @@ export type EntreeJournal = {
   cree_le: string;
 };
 
+export type TypeNotification =
+  | 'demande_acces'
+  | 'acces_valide'
+  | 'acces_refuse'
+  | 'commentaire'
+  | 'reponse_commentaire'
+  | 'nouveau_souvenir'
+  | 'nouvelle_photo'
+  | 'nouvelle_personne';
+
+export type Notification = {
+  id: string;
+  destinataire_id: string;
+  type: TypeNotification;
+  titre: string;
+  corps: string | null;
+  lien: string | null;
+  source_table: string | null;
+  source_id: string | null;
+  auteur_id: string | null;
+  lu_le: string | null;
+  cree_le: string;
+};
+
 // --- Assemblage ------------------------------------------------------------
 
 export type BaseDeDonnees = {
@@ -303,6 +327,7 @@ export type BaseDeDonnees = {
       faits_personnes: Table<FaitPersonne, 'fait_id' | 'personne_id'>;
       chantiers_recherche: Table<ChantierRecherche, 'titre'>;
       commentaires: Table<Commentaire, 'auteur_id' | 'texte'>;
+      notifications: Table<Notification, 'destinataire_id' | 'type' | 'titre'>;
       journal: Table<EntreeJournal, 'action' | 'table_cible'>;
     };
     Views: Record<string, never>;
