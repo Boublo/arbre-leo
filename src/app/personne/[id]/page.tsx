@@ -17,6 +17,7 @@ import { RecitsQuiLaMentionnent } from '@/components/personne/recits';
 import { FaitsPersonne } from '@/components/personne/faits';
 import { CommentairesPersonne } from '@/components/personne/commentaires';
 import { BarreDeSaisie } from '@/components/saisie/lien-ajout';
+import { lireDroitsSaisie } from '@/components/saisie/donnees';
 import { BarreParente } from '@/components/portrait/barre-parente';
 import { NavigationContextuelle } from '@/components/decouverte/navigation-contextuelle';
 import { BarreScroll } from '@/components/interactions/barre-scroll';
@@ -49,10 +50,11 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
   // La fiche vient de plusieurs tables ; l'arbre entier sert au contexte
   // (parenté immédiate, tirage d'un membre au hasard). Les deux appels sont
   // indépendants, on les mène en parallèle.
-  const [fiche, donneesArbre, recits] = await Promise.all([
+  const [fiche, donneesArbre, recits, droits] = await Promise.all([
     chargerFiche(id),
     chargerArbre(),
     chargerRecitsPourPersonne(id),
+    lireDroitsSaisie(),
   ]);
 
   if (!fiche) notFound();
@@ -104,7 +106,11 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
             vue={
               <>
                 <ViePersonne evenements={fiche.evenements} />
-                <SourcesPersonne sources={fiche.sources} />
+                <SourcesPersonne
+                  sources={fiche.sources}
+                  personneId={fiche.personne.id}
+                  peutVerserActe={droits.peutContribuer}
+                />
                 <NotesPersonne notes={fiche.personne.notes} />
                 <FaitsPersonne faits={fiche.faits} />
               </>

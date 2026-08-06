@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Preuve, Rien, Section } from '@/components/personne/blocs';
 import type { SourceFiche } from '@/components/personne/donnees';
 
@@ -9,7 +10,15 @@ import type { SourceFiche } from '@/components/personne/donnees';
  * sans ses sources n'est qu'une rumeur bien présentée — d'où la place donnée
  * ici aux transcriptions d'actes, recopiées mot pour mot.
  */
-export function SourcesPersonne({ sources }: { sources: SourceFiche[] }) {
+export function SourcesPersonne({
+  sources,
+  personneId,
+  peutVerserActe = false,
+}: {
+  sources: SourceFiche[];
+  personneId?: string;
+  peutVerserActe?: boolean;
+}) {
   return (
     <Section
       titre="Les sources"
@@ -19,7 +28,17 @@ export function SourcesPersonne({ sources }: { sources: SourceFiche[] }) {
       {sources.length === 0 ? (
         <Rien>
           Rien n’est encore rattaché à cette fiche. Un acte, une page de registre, même une
-          référence notée à la main : tout se verse ici.
+          référence notée à la main :{' '}
+          {peutVerserActe && personneId ? (
+            <>
+              <Link href={`/personne/${personneId}/acte/nouveau`} className="lien-discret">
+                versez-le ici
+              </Link>
+              .
+            </>
+          ) : (
+            <>tout se verse ici.</>
+          )}
         </Rien>
       ) : (
         <ul className="flex flex-col gap-4">
@@ -27,6 +46,14 @@ export function SourcesPersonne({ sources }: { sources: SourceFiche[] }) {
             <LigneSource key={s.id} source={s} />
           ))}
         </ul>
+      )}
+
+      {peutVerserActe && personneId && sources.length > 0 && (
+        <p className="mt-3 text-sm">
+          <Link href={`/personne/${personneId}/acte/nouveau`} className="lien-discret">
+            Verser un acte ou une pièce
+          </Link>
+        </p>
       )}
     </Section>
   );
