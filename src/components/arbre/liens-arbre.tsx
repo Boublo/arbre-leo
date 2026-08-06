@@ -28,7 +28,9 @@ function SegmentSvg({ segment }: { segment: SegmentLien }) {
       strokeWidth={segment.strokeWidth}
       strokeDasharray={segment.strokeDasharray}
       opacity={segment.opacity}
-      strokeLinecap="round"
+      strokeLinecap="square"
+      strokeLinejoin="miter"
+      shapeRendering="crispEdges"
     />
   );
 }

@@ -369,20 +369,10 @@ export function VueArbre({
         onKeyDown={surClavierArbre}
       >
         <defs>
-          <pattern id="grille" width="40" height="40" patternUnits="userSpaceOnUse">
-            <circle cx="1" cy="1" r="0.9" fill="var(--bordure-forte)" opacity="0.28" />
-          </pattern>
           <filter id="ombre-noeud" x="-20%" y="-20%" width="140%" height="140%">
             <feDropShadow dx="0" dy="2" stdDeviation="4" floodColor="var(--encre)" floodOpacity="0.1" />
           </filter>
-          <radialGradient id="vignette-arbre" cx="50%" cy="50%" r="72%">
-            <stop offset="55%" stopColor="transparent" />
-            <stop offset="100%" stopColor="var(--fond)" stopOpacity="0.55" />
-          </radialGradient>
         </defs>
-
-        <rect width="100%" height="100%" fill="url(#grille)" />
-        <rect width="100%" height="100%" fill="url(#vignette-arbre)" pointerEvents="none" />
 
         <g ref={groupeRef}>
           {/* Filiations et unions — tracé unifié (pedigree + orthogonaux) */}
