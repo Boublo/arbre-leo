@@ -59,7 +59,16 @@ Dernière mise à jour : 6 août 2026 — **v1–v6** (sécurité, lisibilité, 
 ✓ Liens   Couples rapprochés aussi en ascendance / descendance (barre dorée lisible)
 ✓ Tests   test-geometrie-famille-complete.ts (oncle + tante + cousine)
 ✓ Build   Wrapper client EcranArbreDynamique (ssr:false hors Server Component)
+✓ CI      `npm run build` ajouté au workflow Garde-fous arbre
 ```
+
+### Checklist déploiement production
+
+Après merge sur `main` :
+
+1. **Vercel** — relancer le déploiement Production ; si échec avec SHA qui passe en Preview, comparer les variables d’environnement Production vs Preview (`NEXT_PUBLIC_SUPABASE_*`, `NEXT_PUBLIC_SITE_URL`).
+2. **Supabase** — appliquer dans l’ordre les migrations `0009` à `0016` si pas encore faites en prod (`supabase db push` ou SQL manuel depuis `supabase/migrations/`).
+3. **CI** — vérifier que le workflow « Garde-fous arbre » est vert (`typecheck` + `arbre:verifier` + `build`).
 
 ## Correctifs v5 (août 2026) — lisibilité de l’arbre
 
