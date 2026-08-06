@@ -92,7 +92,7 @@ Dernière mise à jour : 6 août 2026 — **v1–v6** (sécurité, lisibilité, 
 ✓ C3  (suit C2) + pas de barre dorée horizontale si distance > 320 px
 ✓ H1  Mode par défaut « La famille autour », mémorisé dans localStorage
 ✓ H2  Refresh photos /api/arbre/photos (sous-graphe retiré : tronquait l'ascendance)
-✓ H4  URL ?suite= conservée vers /attente pour les membres en attente
+✓ H4  URL ?suite= conservée vers /attente (proxy + connexion + callback)
 ✓ M1  Couples = blocs atomiques (personne ne s'intercale entre époux)
 ✓ M3  Mode éclaté : pedigree pour rangs adjacents ; L seulement hors adjacence
 ✓ M4  Barre de fratrie minimale (20 px) pour enfant unique

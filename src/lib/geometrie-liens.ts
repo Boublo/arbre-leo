@@ -11,6 +11,7 @@ export const SEUIL_PONT_COUPLE = 320;
 const LARGEUR_BARRE_FRATRIE_MIN = 20;
 
 const MARGE_SUR_ENFANTS = 10;
+const MARGE_SOUS_PARENTS = 10;
 const MARGE_ENTRE_RANGS = 10;
 /** Espace entre la barre de fratrie et la couche de routage au-dessus. */
 const HAUTEUR_COUCHES_ROUTAGE = 14;
@@ -163,7 +164,7 @@ export function segmentsPedigree({
       // du bas des cartes — plus de trou de 14 px sous les parents.
       adjacents
         ? yCoupleVisuel
-        : yBasParents;
+        : yBasParents + MARGE_SOUS_PARENTS;
 
   // 1. Descente verticale depuis le couple jusqu'à la couche de routage (entre les rangées).
   ajouterSegment(segments, {

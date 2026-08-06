@@ -977,12 +977,19 @@ function recentererFratriesSousCouples(
 
     if (parents.length === 0 || enfants.length === 0) continue;
 
+    const rangParent = Math.max(...parents.map((p) => p.rang));
+    const enfantsAdjacents = enfants.filter(
+      (enfant) => Math.abs(enfant.rang - rangParent) === 1
+    );
+    if (enfantsAdjacents.length === 0) continue;
+
     const cxParents = parents.reduce((s, p) => s + p.x, 0) / parents.length;
-    const cxEnfants = enfants.reduce((s, e) => s + e.x, 0) / enfants.length;
+    const cxEnfants =
+      enfantsAdjacents.reduce((s, e) => s + e.x, 0) / enfantsAdjacents.length;
     const delta = cxParents - cxEnfants;
     if (Math.abs(delta) < 4) continue;
 
-    for (const enfant of enfants) enfant.x += delta;
+    for (const enfant of enfantsAdjacents) enfant.x += delta;
   }
 }
 

@@ -95,7 +95,14 @@ export async function connecter(_precedent: EtatFormulaire, donnees: FormData): 
     // (ou ailleurs) : la page d'attente explique la suite.
     if (!membre || membre.statut !== 'valide') {
       revalidatePath('/', 'layout');
-      redirect('/attente');
+      const suite = String(donnees.get('suite') ?? '/');
+      const destination =
+        suite.startsWith('/') && !suite.startsWith('//') ? suite : '/';
+      redirect(
+        destination === '/'
+          ? '/attente'
+          : `/attente?suite=${encodeURIComponent(destination)}`
+      );
     }
   }
 

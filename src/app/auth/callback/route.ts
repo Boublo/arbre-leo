@@ -32,7 +32,16 @@ export async function GET(request: NextRequest) {
     .eq('id', user.id)
     .maybeSingle();
 
+  const suite = searchParams.get('suite');
+  const suiteValide =
+    suite && suite.startsWith('/') && !suite.startsWith('//') ? suite : null;
+
   // Même domaine que la requête courante : les cookies de session y sont attachés.
-  const destination = membre?.statut === 'valide' ? '/' : '/attente';
+  const destination =
+    membre?.statut === 'valide'
+      ? suiteValide ?? '/'
+      : suiteValide
+        ? `/attente?suite=${encodeURIComponent(suiteValide)}`
+        : '/attente';
   return NextResponse.redirect(`${origin}${destination}`);
 }
