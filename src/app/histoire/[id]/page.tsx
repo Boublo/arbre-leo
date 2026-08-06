@@ -30,7 +30,7 @@ export default async function PageFait({ params }: PageProps<'/histoire/[id]'>) 
     <>
       <Navigation />
 
-      <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
+      <main id="contenu-principal" className="mx-auto w-full max-w-3xl flex-1 px-6 py-10">
         <Link href="/histoire" className="lien-discret text-sm">
           ← La grande Histoire
         </Link>

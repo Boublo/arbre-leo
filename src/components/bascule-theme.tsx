@@ -34,7 +34,7 @@ export function BasculeTheme() {
       onClick={basculer}
       aria-label="Changer de thème clair ou sombre"
       title="Changer de thème"
-      className="grid h-8 w-8 place-items-center rounded-[var(--rayon-petit)] text-encre-douce transition hover:bg-fond-doux"
+      className="grid h-11 w-11 place-items-center rounded-[var(--rayon-petit)] text-encre-douce transition hover:bg-fond-doux"
     >
       <span aria-hidden className="icone-theme-sombre">☾</span>
       <span aria-hidden className="icone-theme-clair">☀</span>

@@ -67,7 +67,7 @@ export default async function PageParente({ searchParams }: ParametresParente) {
       <RaccourciAccueil />
       <Navigation />
 
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
+      <main id="contenu-principal" className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
         <p className="text-xs uppercase tracking-wider text-encre-tres-douce">
           Outil
         </p>
@@ -90,8 +90,8 @@ export default async function PageParente({ searchParams }: ParametresParente) {
                 aria-label="Personnes comparées"
                 className="grid gap-3 sm:grid-cols-2"
               >
-                <Vignette personne={portraitDePersonne(a)} />
-                <Vignette personne={portraitDePersonne(b)} />
+                <Vignette personne={portraitDePersonne(a)} photoUrl={a.photoUrl} />
+                <Vignette personne={portraitDePersonne(b)} photoUrl={b.photoUrl} />
               </section>
 
               <Resultat parente={parente} memePersonne={aValide === bValide} />

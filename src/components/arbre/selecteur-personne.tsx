@@ -105,7 +105,7 @@ export function SelecteurPersonne({
           <ul id={listeId} role="listbox" className="max-h-80 overflow-y-auto pb-1">
             {resultats.length === 0 && (
               <li className="px-3 pb-3 text-sm text-encre-tres-douce">
-                {enRecherche ? 'Personne de ce nom dans l’arbre.' : 'Aucune naissance datée.'}
+                {enRecherche ? 'Aucune personne de ce nom dans l’arbre.' : 'Aucune naissance datée.'}
               </li>
             )}
 

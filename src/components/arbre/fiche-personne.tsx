@@ -56,7 +56,7 @@ export function FichePersonne({
           style={{ background: TON_COTE[cote] }}
         />
         {personne.presumeVivant && (
-          <span className="absolute bottom-2 right-2 rounded-full bg-succes px-2 py-0.5 text-[10px] font-medium text-white">
+          <span className="absolute bottom-2 right-2 rounded-full bg-succes px-2 py-0.5 text-[10px] font-medium text-accent-contraste">
             Vivant
           </span>
         )}

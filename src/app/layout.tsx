@@ -46,15 +46,22 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       className={`${policeTitre.variable} ${policeCorps.variable} h-full antialiased`}
     >
       <head>
-        {/* Applique le thème choisi avant le premier rendu, pour éviter
-            l'éclair blanc au chargement en mode sombre. */}
+        {/* Thème : choix enregistré, sinon préférence système — avant le premier rendu. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('arbre-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}`,
+            __html: `try{var t=localStorage.getItem('arbre-theme');if(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)t='dark';if(t)document.documentElement.dataset.theme=t}catch(e){}`,
           }}
         />
       </head>
-      <body className="flex min-h-full flex-col bg-fond text-encre">{children}</body>
+      <body className="flex min-h-full flex-col bg-fond text-encre">
+        <a
+          href="#contenu-principal"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-[var(--rayon-petit)] focus:border focus:border-bordure focus:bg-fond-carte focus:px-4 focus:py-2.5 focus:text-sm focus:text-encre focus:shadow-[var(--ombre-forte)]"
+        >
+          Aller au contenu principal
+        </a>
+        {children}
+      </body>
     </html>
   );
 }

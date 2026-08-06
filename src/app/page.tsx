@@ -70,7 +70,7 @@ export default async function PageAccueil() {
     return (
       <>
         <Navigation />
-        <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-start gap-6 px-4 py-16 sm:px-6">
+        <main id="contenu-principal" className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-start gap-6 px-4 py-16 sm:px-6">
           <h1 className="text-4xl">{NOM_DU_SITE}</h1>
           <p className="text-lg text-encre-douce">{SOUS_TITRE_DU_SITE}</p>
           <p className="carte w-full p-6 text-encre-douce">
@@ -170,7 +170,7 @@ export default async function PageAccueil() {
   return (
     <>
       <Navigation />
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-14 px-4 py-10 sm:px-6 sm:py-14">
+      <main id="contenu-principal" className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-14 px-4 py-10 sm:px-6 sm:py-14">
         {/* a) En-tête */}
         <section className="flex flex-col gap-5">
           <h1 className="text-4xl leading-tight sm:text-5xl">{NOM_DU_SITE}</h1>
@@ -268,7 +268,7 @@ export default async function PageAccueil() {
           <h2 id="navigation-section" className="text-xl">
             Où aller
           </h2>
-          <ul className="grid gap-4 sm:grid-cols-2">
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <CarteRoute
               href="/arbre"
               titre="L’arbre"
@@ -288,6 +288,31 @@ export default async function PageAccueil() {
               href="/souvenirs"
               titre="Les souvenirs"
               accroche="Ce que les actes ne diront jamais : récits, photos, voix, visages."
+            />
+            <CarteRoute
+              href="/recits"
+              titre="Les récits"
+              accroche="Histoires longues, reconstituées avec soin, pour transmettre ce que les dates ne disent pas."
+            />
+            <CarteRoute
+              href="/recherches"
+              titre="Les recherches"
+              accroche="Les chantiers ouverts : ce qu’on cherche encore, et ce qu’on a trouvé."
+            />
+            <CarteRoute
+              href="/parente"
+              titre="La parenté"
+              accroche="Deux personnes choisies — l’outil cherche comment elles sont liées."
+            />
+            <CarteRoute
+              href="/statistiques"
+              titre="Les statistiques"
+              accroche="Chiffres et formes de l’arbre : générations, longévité, répartition géographique."
+            />
+            <CarteRoute
+              href="/export"
+              titre="Exporter"
+              accroche="Sauvegarder l’arbre en GEDCOM, CSV ou JSON — pour ne rien perdre."
             />
           </ul>
         </section>
@@ -408,7 +433,7 @@ function ApercuEphemeride({ ephemeride }: { ephemeride: Ephemeride }) {
         <p className="text-[0.68rem] font-medium uppercase tracking-[0.09em] text-encre-tres-douce">
           Naissance · {legende}
         </p>
-        <Vignette personne={portraitDePersonne(p)} />
+        <Vignette personne={portraitDePersonne(p)} photoUrl={p.photoUrl} />
         <p className="mt-auto text-xs text-encre-tres-douce">
           {feminin ? 'Née' : 'Né'} le {dateEcrite}.
         </p>
@@ -421,7 +446,7 @@ function ApercuEphemeride({ ephemeride }: { ephemeride: Ephemeride }) {
       <p className="text-[0.68rem] font-medium uppercase tracking-[0.09em] text-encre-tres-douce">
         Décès · {libelleAnneesApercu(ephemeride.annees)}
       </p>
-      <Vignette personne={portraitDePersonne(p)} />
+      <Vignette personne={portraitDePersonne(p)} photoUrl={p.photoUrl} />
       <p className="mt-auto text-xs text-encre-tres-douce">
         {feminin ? 'Décédée' : 'Décédé'} le {dateEcrite}.
       </p>

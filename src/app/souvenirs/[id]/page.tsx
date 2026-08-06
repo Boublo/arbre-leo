@@ -80,7 +80,7 @@ export default async function PageSouvenir({ params }: PageProps<'/souvenirs/[id
     <>
       <Navigation />
 
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6">
+      <main id="contenu-principal" className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6">
         <Link href="/souvenirs" className="lien-discret text-sm">
           ← Revenir au mur
         </Link>

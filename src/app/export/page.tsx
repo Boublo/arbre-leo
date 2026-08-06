@@ -109,7 +109,7 @@ export default async function PageExport() {
     <>
       <Navigation />
 
-      <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
+      <main id="contenu-principal" className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
         <header>
           <h1 className="text-3xl">Exporter l’arbre</h1>
           <p className="mt-3 max-w-2xl leading-relaxed text-encre-douce">

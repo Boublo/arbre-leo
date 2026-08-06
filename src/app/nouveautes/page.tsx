@@ -224,7 +224,7 @@ export default async function PageNouveautes() {
       <RaccourciAccueil />
       <Navigation />
 
-      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
+      <main id="contenu-principal" className="mx-auto w-full max-w-4xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
         <header className="flex flex-col gap-3">
           <h1 className="text-3xl sm:text-4xl">Quoi de neuf</h1>
           <p className="max-w-2xl text-lg leading-relaxed text-encre-douce">

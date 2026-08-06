@@ -7,7 +7,7 @@ export default function FicheIntrouvable() {
     <>
       <Navigation />
 
-      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-6 py-16 text-center">
+      <main id="contenu-principal" className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-6 py-16 text-center">
         <h1 className="text-2xl">Cette fiche n’existe pas</h1>
 
         <p className="mt-4 text-encre-douce">

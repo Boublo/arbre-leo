@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: 'Demander un accès' };
 
 export default function PageInscription() {
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-16">
+    <main id="contenu-principal" className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-16">
       <div className="mb-8 text-center">
         <h1 className="text-3xl">Demander un accès</h1>
         <p className="mt-3 text-sm text-encre-douce">

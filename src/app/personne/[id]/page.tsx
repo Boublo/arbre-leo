@@ -76,7 +76,7 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
       <RaccourciAccueil />
       <Navigation />
 
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
+      <main id="contenu-principal" className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
         <p className="mb-4">
           <Link
             href={`/arbre?personne=${encodeURIComponent(id)}`}

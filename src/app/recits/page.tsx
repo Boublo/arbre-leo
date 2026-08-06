@@ -38,7 +38,7 @@ export default async function PageRecits({ searchParams }: PageProps<'/recits'>)
       <RaccourciAccueil />
       <Navigation />
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
+      <main id="contenu-principal" className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="text-3xl">Récits de famille</h1>

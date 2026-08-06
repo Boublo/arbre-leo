@@ -47,7 +47,7 @@ export default async function PageStatistiques() {
     return (
       <>
         <Navigation />
-        <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-16 sm:px-6">
+        <main id="contenu-principal" className="mx-auto w-full max-w-2xl flex-1 px-4 py-16 sm:px-6">
           <h1 className="text-3xl">Statistiques</h1>
           <p className="mt-4 carte p-6 text-encre-douce">
             L&apos;arbre est encore vide. Aucun chiffre à afficher tant que la
@@ -123,7 +123,7 @@ export default async function PageStatistiques() {
   return (
     <>
       <Navigation />
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-12 px-4 py-10 sm:px-6 sm:py-14">
+      <main id="contenu-principal" className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-12 px-4 py-10 sm:px-6 sm:py-14">
         {/* a) En-tête et intro */}
         <section className="flex flex-col gap-4">
           <h1 className="text-4xl leading-tight sm:text-5xl">Statistiques</h1>

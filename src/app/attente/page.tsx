@@ -23,7 +23,7 @@ export default async function PageAttente() {
   const suspendu = membre?.statut === 'suspendu';
 
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-6 py-16">
+    <main id="contenu-principal" className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-6 py-16">
       <div className="carte p-8 text-center">
         <h1 className="text-2xl">
           {refuse ? 'Demande non retenue' : suspendu ? 'Accès suspendu' : 'Votre demande est enregistrée'}

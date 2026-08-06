@@ -130,7 +130,7 @@ export default async function PageAdmin() {
     <>
       <Navigation />
 
-      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-12 px-6 py-10">
+      <main id="contenu-principal" className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-12 px-6 py-10">
         <header>
           <p className="text-sm uppercase tracking-[0.2em] text-encre-tres-douce">
             Administration

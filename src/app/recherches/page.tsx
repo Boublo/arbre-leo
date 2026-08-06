@@ -95,7 +95,7 @@ export default async function PageRecherches() {
     <>
       <Navigation />
 
-      <main className="mx-auto flex w-full max-w-[100rem] flex-1 flex-col gap-8 px-4 py-8 sm:px-6">
+      <main id="contenu-principal" className="mx-auto flex w-full max-w-[100rem] flex-1 flex-col gap-8 px-4 py-8 sm:px-6">
         <header>
           <div className="flex flex-wrap items-baseline justify-between gap-4">
             <h1 className="text-2xl sm:text-3xl">Chantiers de recherche</h1>

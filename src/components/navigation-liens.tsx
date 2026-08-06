@@ -34,8 +34,8 @@ export function LiensNavigation({
             aria-current={courant ? 'page' : undefined}
             className={
               courant
-                ? 'rounded-[var(--rayon-petit)] bg-fond-doux px-2.5 py-1.5 font-medium text-encre'
-                : 'rounded-[var(--rayon-petit)] px-2.5 py-1.5 text-encre-douce transition hover:bg-fond-doux hover:text-encre'
+                ? 'flex min-h-11 items-center rounded-[var(--rayon-petit)] bg-fond-doux px-2.5 py-2 font-medium text-encre'
+                : 'flex min-h-11 items-center rounded-[var(--rayon-petit)] px-2.5 py-2 text-encre-douce transition hover:bg-fond-doux hover:text-encre'
             }
           >
             {lien.libelle}

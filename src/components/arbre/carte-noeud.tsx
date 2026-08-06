@@ -75,7 +75,7 @@ export function CarteNoeud({
       onContextMenu={onMenu}
       className="cursor-pointer"
       role="button"
-      tabIndex={0}
+      tabIndex={estFocus || selectionne ? 0 : -1}
       aria-label={libelle}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {

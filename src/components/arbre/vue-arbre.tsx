@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { select } from 'd3-selection';
@@ -269,7 +270,7 @@ export function VueArbre({
             <circle cx="1" cy="1" r="0.8" fill="var(--bordure)" opacity="0.35" />
           </pattern>
           <filter id="ombre-noeud" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="2" stdDeviation="4" floodColor="#211c17" floodOpacity="0.1" />
+            <feDropShadow dx="0" dy="2" stdDeviation="4" floodColor="var(--encre)" floodOpacity="0.1" />
           </filter>
           <radialGradient id="vignette-arbre" cx="50%" cy="50%" r="70%">
             <stop offset="70%" stopColor="transparent" />
@@ -396,7 +397,11 @@ export function VueArbre({
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
           <p className="carte pointer-events-auto max-w-sm p-5 text-center text-sm text-encre-douce">
             Rien à montrer dans ce sens : on ne connaît personne de ce côté-là.
-            Essayez un autre sens de lecture, ou ouvrez un chantier de recherche.
+            Essayez un autre sens de lecture, ou{' '}
+            <Link href="/recherches" className="lien-discret">
+              ouvrez un chantier de recherche
+            </Link>
+            .
           </p>
         </div>
       )}

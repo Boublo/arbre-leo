@@ -15,21 +15,47 @@ import {
  * permet de la reconnaître — nom, années, commune de naissance — et une
  * pastille du côté paternel ou maternel, pour situer sans lire.
  */
-export function Vignette({ personne }: { personne: Portrait }) {
+export function Vignette({
+  personne,
+  photoUrl,
+}: {
+  personne: Portrait;
+  /** Portrait signé — facultatif, affiche une miniature à gauche. */
+  photoUrl?: string | null;
+}) {
   const cote = coteDesBranches(personne.branches);
   const annees = formaterAnneesDeVie(personne);
   const meta = [annees, personne.lieuNaissance].filter(Boolean).join(' · ');
+  const initiale = (personne.nomComplet.trim().charAt(0) || '?').toUpperCase();
 
   return (
     <Link
       href={`/personne/${personne.id}`}
-      className="group flex items-start gap-3 rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte px-3 py-2.5 transition hover:border-bordure-forte hover:bg-fond-doux"
+      className="group flex items-start gap-3 rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte px-3 py-2.5 transition hover:border-bordure-forte hover:bg-fond-doux hover:shadow-[var(--ombre-douce)]"
     >
-      <span
-        aria-hidden
-        className="mt-1.5 h-2 w-2 shrink-0 rounded-full"
-        style={{ background: TON_COTE[cote] }}
-      />
+      <span className="relative mt-0.5 h-10 w-10 shrink-0 overflow-hidden rounded-[var(--rayon-petit)] bg-fond-doux">
+        {photoUrl ? (
+          /* eslint-disable-next-line @next/next/no-img-element -- URL signée temporaire */
+          <img
+            src={photoUrl}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <span
+            aria-hidden
+            className="flex h-full w-full items-center justify-center text-sm font-medium text-encre-douce"
+            style={{ fontFamily: 'var(--font-titre)' }}
+          >
+            {initiale}
+          </span>
+        )}
+        <span
+          aria-hidden
+          className="absolute bottom-0 left-0 top-0 w-0.5"
+          style={{ background: TON_COTE[cote] }}
+        />
+      </span>
       <span className="flex min-w-0 flex-col">
         <span className="truncate text-sm font-medium text-encre">
           {personne.nomComplet}

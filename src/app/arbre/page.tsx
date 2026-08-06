@@ -18,7 +18,7 @@ export default async function PageArbre({ searchParams }: PageProps<'/arbre'>) {
     return (
       <>
         <Navigation />
-        <main className="mx-auto flex max-w-lg flex-1 flex-col justify-center px-6 text-center">
+        <main id="contenu-principal" className="mx-auto flex max-w-lg flex-1 flex-col justify-center px-6 text-center">
           <h1 className="text-2xl">L’arbre est encore vide</h1>
           <p className="mt-3 text-encre-douce">
             Personne n’a été versé dans la base. Importez un fichier GEDCOM en suivant

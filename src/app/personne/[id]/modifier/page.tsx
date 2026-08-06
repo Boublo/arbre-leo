@@ -65,7 +65,7 @@ export default async function PageModifierPersonne({ params }: PageProps<'/perso
     <>
       <Navigation />
 
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 sm:px-6">
+      <main id="contenu-principal" className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 sm:px-6">
         <Link href={`/personne/${id}`} className="lien-discret text-sm">
           ← Revenir à sa fiche
         </Link>
