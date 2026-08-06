@@ -101,6 +101,12 @@ export function BarreOutilsArbre({
             <Link href={`/personne/${focusId}`} className="lien-discret">
               Sa fiche
             </Link>
+            <Link
+              href={`/arbre/imprimer?personne=${encodeURIComponent(focusId)}&mode=${mode}`}
+              className="lien-discret"
+            >
+              Version imprimable
+            </Link>
           </div>
         )}
       </div>
@@ -162,6 +168,12 @@ export function BarreOutilsArbre({
           </Link>
           <Link href={`/personne/${focusId}`} className="lien-discret">
             Sa fiche
+          </Link>
+          <Link
+            href={`/arbre/imprimer?personne=${encodeURIComponent(focusId)}&mode=${mode}`}
+            className="lien-discret"
+          >
+            Imprimer
           </Link>
         </div>
       </div>
