@@ -1,9 +1,9 @@
 # Audit complet — L'arbre de Léo
 
-Dernière mise à jour : 6 août 2026 — **v1 + v2 + v3** (sécurité, lisibilité, immersion).
+Dernière mise à jour : 6 août 2026 — **v1 + v2 + v3 + v4** (sécurité, lisibilité, immersion, assistance admin).
 
 > Revue senior du 6 août 2026 : voir le rapport d'audit cloud agent.
-> Correctifs v1–v3 déjà appliqués ; v4 (IA admin-only) reste ouvert.
+> Correctifs v1–v4 appliqués.
 
 ---
 
@@ -37,6 +37,16 @@ Dernière mise à jour : 6 août 2026 — **v1 + v2 + v3** (sécurité, lisibili
 ✓ Immersion  /archives — bibliothèque d’actes cross-personnes
 ✓ Immersion  Motions douces frise + pastilles carte (respect reduced-motion)
 ✓ SEO privé  metadataBase + Open Graph / Twitter génériques (noindex conservé)
+```
+
+## Correctifs v4 (août 2026)
+
+```
+✓ Admin   Rapport de cohérence déterministe (dates, filiations, doublons)
+✓ Fiche   Résumé de branche sourcé sur le graphe (pas d’invention)
+✓ IA      Action admin `genererResumeBrancheIa` + hook `ARBRE_IA_CLE` (fallback déterministe)
+✓ Actes   Transcription étiquetée « brouillon » — scaffold OCR sans pipeline
+✓ CLI     `npm run arbre:diag` (script déjà présent, alias documenté)
 ```
 
 ---
@@ -297,6 +307,7 @@ Redirection vers `/attente` sans conserver `?suite=/arbre?personne=…`.
 ```bash
 npm run build
 npm run arbre:verifier                   # suite anti-régression complète
+npm run arbre:diag                       # santé base (membre + RLS)
 node scripts/verifier-liens-famille.mjs  # grep symboles (insuffisant seul)
 node scripts/verifier-navigation-arbre.mjs
 node scripts/verifier-panneau-arbre.mjs

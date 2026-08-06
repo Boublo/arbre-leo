@@ -22,8 +22,10 @@ import { BarreParente } from '@/components/portrait/barre-parente';
 import { NavigationContextuelle } from '@/components/decouverte/navigation-contextuelle';
 import { BarreScroll } from '@/components/interactions/barre-scroll';
 import { RaccourciAccueil } from '@/components/interactions/raccourci-accueil';
+import { ResumeBrancheFiche } from '@/components/personne/resume-branche';
 import { chargerArbre } from '@/lib/arbre';
 import { chargerRecitsPourPersonne } from '@/lib/recits';
+import { resumerBranche } from '@/lib/resume-branche';
 
 /**
  * La fiche complète d'une personne.
@@ -58,6 +60,8 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
   ]);
 
   if (!fiche) notFound();
+
+  const resumeBranche = resumerBranche(donneesArbre, id);
 
   const compteurs: Compteurs = {
     vue: fiche.evenements.length + fiche.sources.length + fiche.faits.length,
@@ -94,6 +98,8 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
           <EnTetePersonne fiche={fiche} />
 
           <FriseFiche fiche={fiche} />
+
+          {resumeBranche ? <ResumeBrancheFiche resume={resumeBranche} /> : null}
 
           <BarreDeSaisie
             personneId={fiche.personne.id}

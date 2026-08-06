@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Navigation } from '@/components/navigation';
 import { Alerte } from '@/components/ui/champs';
+import { CoherenceAdmin } from '@/components/admin/coherence';
 import { TableauBord } from '@/components/admin/tableau-bord';
 import { DemandesEnAttente } from '@/components/admin/demandes-attente';
 import { DemandesEcartees } from '@/components/admin/demandes-ecartees';
@@ -12,6 +13,8 @@ import type {
   LigneJournal,
   MembreAdmin,
 } from '@/components/admin/vocabulaire';
+import { chargerArbre } from '@/lib/arbre';
+import { analyserCoherence } from '@/lib/coherence';
 import { exigerAdmin } from './garde';
 
 /**
@@ -34,34 +37,46 @@ const ENTREES_JOURNAL = 100;
 export default async function PageAdmin() {
   const { supabase, moi } = await exigerAdmin();
 
-  const [membresRes, personnesRes, naissancesRes, journalRes, souvenirsRes, photosRes] =
-    await Promise.all([
-      supabase
-        .from('membres')
-        .select(
-          'id, email, nom_affiche, role, statut, personne_id, lien_famille, message_demande, motif_refus, valide_le, cree_le'
-        )
-        .order('cree_le', { ascending: false }),
+  // Le rapport de cohérence n'a besoin que du graphe — pas de signatures photo.
+  const [
+    membresRes,
+    personnesRes,
+    naissancesRes,
+    journalRes,
+    souvenirsRes,
+    photosRes,
+    arbre,
+  ] = await Promise.all([
+    supabase
+      .from('membres')
+      .select(
+        'id, email, nom_affiche, role, statut, personne_id, lien_famille, message_demande, motif_refus, valide_le, cree_le'
+      )
+      .order('cree_le', { ascending: false }),
 
-      supabase
-        .from('personnes')
-        .select('id, nom_complet, prenoms, nom', { count: 'exact' }),
+    supabase
+      .from('personnes')
+      .select('id, nom_complet, prenoms, nom', { count: 'exact' }),
 
-      supabase.from('evenements').select('personne_id, annee').eq('type', 'naissance'),
+    supabase.from('evenements').select('personne_id, annee').eq('type', 'naissance'),
 
-      supabase
-        .from('journal')
-        .select('id, acteur_id, action, table_cible, ligne_id, cree_le')
-        .order('cree_le', { ascending: false })
-        .limit(ENTREES_JOURNAL),
+    supabase
+      .from('journal')
+      .select('id, acteur_id, action, table_cible, ligne_id, cree_le')
+      .order('cree_le', { ascending: false })
+      .limit(ENTREES_JOURNAL),
 
-      supabase.from('souvenirs').select('id', { count: 'exact', head: true }),
+    supabase.from('souvenirs').select('id', { count: 'exact', head: true }),
 
-      supabase
-        .from('medias')
-        .select('id', { count: 'exact', head: true })
-        .eq('type', 'photo'),
-    ]);
+    supabase
+      .from('medias')
+      .select('id', { count: 'exact', head: true })
+      .eq('type', 'photo'),
+
+    chargerArbre({ signerPhotosPour: 'aucun' }),
+  ]);
+
+  const rapport = analyserCoherence(arbre);
 
   const membres = membresRes.data ?? [];
 
@@ -155,6 +170,8 @@ export default async function PageAdmin() {
           photos={photosRes.count}
           enAttente={enAttente.length}
         />
+
+        <CoherenceAdmin rapport={rapport} />
 
         <DemandesEnAttente demandes={enAttente} />
 

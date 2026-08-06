@@ -94,12 +94,12 @@ export function FormulaireActe({
       </fieldset>
 
       <ZoneTexte
-        label="Transcription"
+        label="Transcription (brouillon)"
         name="transcription"
         rows={8}
         maxLength={50000}
-        placeholder="Recopiez ici le texte de l’acte, mot pour mot si possible…"
-        aide="Facultatif si vous joignez le scan, mais précieux pour la recherche et la relecture."
+        placeholder="Saisie manuelle pour l’instant. Une assistance OCR pourra préremplir ce champ plus tard — toujours à relire avant publication."
+        aide="Facultatif si vous joignez le scan. L’OCR n’est pas encore branché : ce champ reste une saisie humaine, prête à accueillir un brouillon assisté sans jamais écraser silencieusement une transcription validée."
       />
 
       <Selecteur

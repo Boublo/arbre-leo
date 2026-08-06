@@ -21,6 +21,7 @@
     "arbre:verifier-zoom": "node scripts/verifier-zoom-arbre.mjs",
     "arbre:verifier": "node scripts/verifier-arbre.mjs",
     "arbre:verif": "npm run arbre:verifier",
+    "arbre:diag": "node scripts/diagnostic.mjs",
     "test": "npm run typecheck && npm run arbre:verifier",
     "typecheck": "tsc --noEmit"
   },
