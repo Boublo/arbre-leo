@@ -761,7 +761,7 @@ function disposerHierarchie(
     }
   }
 
-  return finaliser(noeuds, liens, place, donnees, mode, racineId);
+  return finaliser(noeuds, liens, place, donnees, mode, racineId, groupesConjoints(unions));
 }
 
 // ---------------------------------------------------------------------------
@@ -1119,15 +1119,17 @@ function finaliser(
     noeud.y = noeud.rang * ESPACEMENT_Y;
   }
 
-  ecarterCollisions(noeuds, groupesConj);
-  if ((mode === 'famille' || mode === 'eclate') && groupesConj) {
-    rapprocherConjointsNoeuds(noeuds, groupesConj);
-    recentererFratriesSousCouples(noeuds, donnees.unions);
+  if (groupesConj && groupesConj.size > 0) {
     ecarterCollisions(noeuds, groupesConj);
-    // Recentrer les enfants (Sandrine sous ses parents), puis recoller les
-    // couples : le recentrage d'une fratrie d'aînés peut écarter un époux.
-    recentererFratriesSousCouples(noeuds, donnees.unions);
     rapprocherConjointsNoeuds(noeuds, groupesConj);
+    if (mode === 'famille' || mode === 'eclate') {
+      recentererFratriesSousCouples(noeuds, donnees.unions);
+      ecarterCollisions(noeuds, groupesConj);
+      // Recentrer les enfants (Sandrine sous ses parents), puis recoller les
+      // couples : le recentrage d'une fratrie d'aînés peut écarter un époux.
+      recentererFratriesSousCouples(noeuds, donnees.unions);
+      rapprocherConjointsNoeuds(noeuds, groupesConj);
+    }
   }
 
   // Après empilement des unités, recentrer l'origine (bord gauche des cartes ≥ 0).

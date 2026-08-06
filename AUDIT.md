@@ -1,6 +1,6 @@
 # Audit complet — L'arbre de Léo
 
-Dernière mise à jour : 6 août 2026 — **v1–v5** (sécurité, lisibilité, immersion, assistance, densification arbre).
+Dernière mise à jour : 6 août 2026 — **v1–v6** (sécurité, lisibilité, immersion, assistance, densification arbre, garde-fous CI).
 
 > Revue senior du 6 août 2026 : voir le rapport d'audit cloud agent.
 > Correctifs v1–v5 appliqués.
@@ -49,6 +49,18 @@ Dernière mise à jour : 6 août 2026 — **v1–v5** (sécurité, lisibilité, 
 ✓ CLI     `npm run arbre:diag` (script déjà présent, alias documenté)
 ```
 
+## Correctifs v6 (août 2026) — garde-fous et liens famille
+
+```
+✓ CI      `next typegen` avant `tsc` — PageProps/LayoutProps en CI (Next 16)
+✓ CI      Workflow déclenché aussi sur package.json / workflow_dispatch
+✓ Liens   Unions familiales complétées jusqu’au point fixe (ordre en base neutre)
+✓ Liens   groupesConjoints : plusieurs unions par personne, blocs atomiques
+✓ Liens   Couples rapprochés aussi en ascendance / descendance (barre dorée lisible)
+✓ Tests   test-geometrie-famille-complete.ts (oncle + tante + cousine)
+✓ Build   Wrapper client EcranArbreDynamique (ssr:false hors Server Component)
+```
+
 ## Correctifs v5 (août 2026) — lisibilité de l’arbre
 
 ```
@@ -70,7 +82,7 @@ Dernière mise à jour : 6 août 2026 — **v1–v5** (sécurité, lisibilité, 
 | **Cartes personnes** | Bon | Portraits OK ; badge « Fratrie » + contour plein |
 | **Site global** | Bon | 32 routes, auth, navigation améliorées |
 | **Performance `/arbre`** | Acceptable | Graphe complet (nécessaire à l'ascendance) + refresh photos |
-| **Tests auto** | Bon | Suite `npm run arbre:verifier` (9 checks + CI) |
+| **Tests auto** | Bon | Suite `npm run arbre:verifier` (11 checks + CI) |
 
 ### Correctifs appliqués (audit)
 
