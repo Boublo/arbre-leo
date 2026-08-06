@@ -51,6 +51,9 @@ export async function BarreDeSaisie({
         <Link href={`/personne/${personneId}/modifier`} className="lien-discret">
           Corriger cette fiche
         </Link>
+        <Link href={`/personne/${personneId}/photo/nouveau`} className="lien-discret">
+          Déposer une photo
+        </Link>
       </span>
     </section>
   );

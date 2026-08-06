@@ -1,5 +1,6 @@
 import { Navigation } from '@/components/navigation';
 import { EcranArbre } from '@/components/arbre/ecran-arbre';
+import { lireDroitsSaisie } from '@/components/saisie/donnees';
 import { chargerArbre, derniersEnfants, personneOuDefaut } from '@/lib/arbre';
 import { serialiserGraphe } from '@/lib/arbre-graphe';
 
@@ -11,7 +12,7 @@ export const dynamic = 'force-dynamic';
 export default async function PageArbre({ searchParams }: PageProps<'/arbre'>) {
   const { personne: focusDemande } = await searchParams;
 
-  const donnees = await chargerArbre();
+  const [donnees, droits] = await Promise.all([chargerArbre(), lireDroitsSaisie()]);
 
   if (donnees.personnes.size === 0) {
     return (
@@ -45,6 +46,7 @@ export default async function PageArbre({ searchParams }: PageProps<'/arbre'>) {
           graphe={graphe}
           focusInitial={focus?.id ?? graphe.personnes[0]!.id}
           derniersEnfants={derniersEnfants(donnees).map((p) => p.id)}
+          peutDeposerPhoto={droits.peutContribuer}
         />
       </div>
     </>
