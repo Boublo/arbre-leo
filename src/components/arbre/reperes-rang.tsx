@@ -28,6 +28,8 @@ export function ReperesRang({
   const repères: { rang: number; y: number; libelle: string }[] = [];
 
   for (let rang = 0; rang <= disposition.rangMax; rang++) {
+    if (!disposition.noeuds.some((n) => n.rang === rang)) continue;
+
     const mondeY = rang * ESPACEMENT_Y + HAUTEUR_NOEUD / 2;
     const ecranY = transform.y + transform.k * mondeY;
     if (ecranY < 8 || ecranY > hauteurVue - 8) continue;

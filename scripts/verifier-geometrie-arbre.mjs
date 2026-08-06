@@ -46,6 +46,18 @@ if (/mode !== 'eclate' && rangProche/.test(geo) || /mode !== ['"]eclate['"] &&/.
   process.exit(1);
 }
 
+// Ascendance : le trait doit partir du haut des parents, pas flotter au-dessus.
+if (/yHautParents\s*-\s*MARGE_SOUS_PARENTS/.test(geo)) {
+  console.error(
+    'geometrie-liens.ts : yHautParents - MARGE crée un trou au-dessus des parents (ascendance)'
+  );
+  process.exit(1);
+}
+if (!geo.includes('yHautParents')) {
+  console.error('geometrie-liens.ts : yDepart ascendance doit utiliser yHautParents');
+  process.exit(1);
+}
+
 const test = spawnSync('npx', ['--yes', 'tsx', 'scripts/test-geometrie-laura.ts'], {
   cwd: racine,
   encoding: 'utf8',

@@ -10,7 +10,7 @@ Ce document recense **où ça coince**, **pourquoi**, et **dans quel ordre corri
 
 | Zone | Verdict | Problème principal |
 | --- | --- | --- |
-| **Liens de l'arbre** | Bon | Pedigree (famille + éclaté adjacent), couples atomiques |
+| **Liens de l'arbre** | Bon | Pedigree contacte les cartes ; couples atomiques ; fratrie centrée |
 | **Cartes personnes** | Bon | Portraits OK ; badge « Fratrie » + contour plein |
 | **Site global** | Bon | 32 routes, auth, navigation améliorées |
 | **Performance `/arbre`** | Acceptable | Graphe complet (nécessaire à l'ascendance) + refresh photos |
@@ -33,6 +33,7 @@ Ce document recense **où ça coince**, **pourquoi**, et **dans quel ordre corri
 ✓ M6  Repères repliables + mini-carte compacte sur mobile
 ✓ H3  Test géométrie Laura via layout TS réel (scripts/test-geometrie-laura.ts)
 ✓ C3  Recentrage fratries sous couples après collision (recentererFratriesSousCouples)
+✓     Ascendance : trait parent collé au haut de carte + parents centrés sous fratrie
 ```
 
 ---
