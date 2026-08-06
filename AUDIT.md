@@ -1,9 +1,9 @@
 # Audit complet — L'arbre de Léo
 
-Dernière mise à jour : 6 août 2026 — **v1 + v2** (sécurité, lisibilité, perf perçue).
+Dernière mise à jour : 6 août 2026 — **v1 + v2 + v3** (sécurité, lisibilité, immersion).
 
 > Revue senior du 6 août 2026 : voir le rapport d'audit cloud agent.
-> Correctifs v1 et v2 déjà appliqués ci-dessous ; v3 (immersion) reste ouvert.
+> Correctifs v1–v3 déjà appliqués ; v4 (IA admin-only) reste ouvert.
 
 ---
 
@@ -28,6 +28,15 @@ Dernière mise à jour : 6 août 2026 — **v1 + v2** (sécurité, lisibilité, 
 ✓ S2  Storage SELECT restreint + préfixe {userId}/ à l’upload (0016)
 ✓ S3  Tables liées aux fiches confidentielles filtrées (0016)
 ✓ AX3 Flèches clavier sur l’arbre (voisin spatial)
+```
+
+## Correctifs v3 (août 2026)
+
+```
+✓ Immersion  Chapitre « Sur la route » (faits nationaux + récit vedette)
+✓ Immersion  /archives — bibliothèque d’actes cross-personnes
+✓ Immersion  Motions douces frise + pastilles carte (respect reduced-motion)
+✓ SEO privé  metadataBase + Open Graph / Twitter génériques (noindex conservé)
 ```
 
 ---
