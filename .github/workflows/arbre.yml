@@ -1,0 +1,34 @@
+name: Garde-fous arbre
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'src/components/arbre/**'
+      - 'src/components/interactions/panneau-mobile.tsx'
+      - 'src/app/arbre/**'
+      - 'src/app/actions/arbre.ts'
+      - 'src/lib/layout-arbre.ts'
+      - 'src/lib/geometrie-liens.ts'
+      - 'src/lib/arbre-graphe.ts'
+      - 'scripts/verifier-*.mjs'
+      - 'scripts/test-geometrie-*.ts'
+      - '.github/workflows/arbre.yml'
+
+jobs:
+  verifier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - run: npm run arbre:verifier
