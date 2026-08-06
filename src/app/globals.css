@@ -213,6 +213,67 @@ p {
   transition: opacity 0.22s ease, r 0.22s ease;
 }
 
+/* --- Fond atmosphérique de l’arbre (parchemin vivant) --------------------- */
+
+@keyframes fond-arbre-derive {
+  0%,
+  100% {
+    transform: translate(0, 0);
+    opacity: 0.55;
+  }
+  35% {
+    transform: translate(calc(var(--fond-dx, 8) * 1px), calc(var(--fond-dy, -10) * 1px));
+    opacity: 1;
+  }
+  70% {
+    transform: translate(calc(var(--fond-dx, 8) * -0.4px), calc(var(--fond-dy, -10) * 0.5px));
+    opacity: 0.7;
+  }
+}
+
+@keyframes fond-arbre-souffle {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes fond-arbre-petale {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(1.2px, -1.8px) rotate(6deg);
+  }
+}
+
+.fond-arbre-mote {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-name: fond-arbre-derive;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+.fond-arbre-souffle {
+  animation: fond-arbre-souffle 14s ease-in-out infinite;
+  transform-origin: 50% 40%;
+}
+
+.fond-arbre-petale {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-name: fond-arbre-petale;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
 /* --- Éléments récurrents ------------------------------------------------- */
 
 @utility carte {

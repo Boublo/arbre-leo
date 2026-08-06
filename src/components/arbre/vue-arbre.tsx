@@ -20,6 +20,7 @@ import { Legende } from '@/components/arbre/legende';
 import { ReperesRang } from '@/components/arbre/reperes-rang';
 import { LiensArbre } from '@/components/arbre/liens-arbre';
 import { CarteNoeud } from '@/components/arbre/carte-noeud';
+import { FondAtmospherique } from '@/components/arbre/fond-atmospherique';
 
 type EtatMenu = { personneId: string; x: number; y: number } | null;
 
@@ -335,12 +336,14 @@ export function VueArbre({
   );
 
   return (
-    <div ref={cadreRef} className="relative h-full w-full overflow-hidden bg-fond">
+    <div ref={cadreRef} className="relative h-full w-full overflow-hidden">
+      <FondAtmospherique transform={transform} />
+
       {/* Liserés de branche : rappel latéral, deux ans après avoir découvert
           l'arbre on ne se rappelle plus toujours quelle couleur est quel côté. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-y-0 left-0 w-1"
+        className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-1"
         style={{
           background:
             'linear-gradient(to bottom, transparent, var(--paternelle) 20%, var(--paternelle) 80%, transparent)',
@@ -349,7 +352,7 @@ export function VueArbre({
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-y-0 right-0 w-1"
+        className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-1"
         style={{
           background:
             'linear-gradient(to bottom, transparent, var(--maternelle) 20%, var(--maternelle) 80%, transparent)',
@@ -359,22 +362,22 @@ export function VueArbre({
 
       <svg
         ref={svgRef}
-        className="h-full w-full cursor-grab active:cursor-grabbing"
+        className="relative z-[1] h-full w-full cursor-grab active:cursor-grabbing"
         role="application"
         tabIndex={0}
         aria-label="Arbre généalogique. Flèches pour parcourir les personnes, Entrée pour ouvrir la fiche, glisser pour déplacer, molette pour zoomer."
         onKeyDown={surClavierArbre}
       >
         <defs>
-          <pattern id="grille" width="48" height="48" patternUnits="userSpaceOnUse">
-            <circle cx="1" cy="1" r="0.8" fill="var(--bordure)" opacity="0.35" />
+          <pattern id="grille" width="40" height="40" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="0.9" fill="var(--bordure-forte)" opacity="0.28" />
           </pattern>
           <filter id="ombre-noeud" x="-20%" y="-20%" width="140%" height="140%">
             <feDropShadow dx="0" dy="2" stdDeviation="4" floodColor="var(--encre)" floodOpacity="0.1" />
           </filter>
-          <radialGradient id="vignette-arbre" cx="50%" cy="50%" r="70%">
-            <stop offset="70%" stopColor="transparent" />
-            <stop offset="100%" stopColor="var(--fond)" stopOpacity="0.45" />
+          <radialGradient id="vignette-arbre" cx="50%" cy="50%" r="72%">
+            <stop offset="55%" stopColor="transparent" />
+            <stop offset="100%" stopColor="var(--fond)" stopOpacity="0.55" />
           </radialGradient>
         </defs>
 
