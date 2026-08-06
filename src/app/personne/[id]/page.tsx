@@ -23,6 +23,7 @@ import { NavigationContextuelle } from '@/components/decouverte/navigation-conte
 import { BarreScroll } from '@/components/interactions/barre-scroll';
 import { RaccourciAccueil } from '@/components/interactions/raccourci-accueil';
 import { ResumeBrancheFiche } from '@/components/personne/resume-branche';
+import { personneEstVivante } from '@/lib/vivant';
 import { chargerArbre } from '@/lib/arbre';
 import { chargerRecitsPourPersonne } from '@/lib/recits';
 import { resumerBranche } from '@/lib/resume-branche';
@@ -91,7 +92,9 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
         </p>
 
         <div className="flex flex-col gap-6">
-          {fiche.personne.presume_vivant && <BandeauVivant />}
+          {personneEstVivante(fiche.personne.presume_vivant, { aEvenementFinDeVie: Boolean(fiche.deces) }) && (
+            <BandeauVivant />
+          )}
 
           <BarreParente focusId={fiche.personne.id} donnees={donneesArbre} />
 

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { creerClientServeur } from '@/lib/supabase/server';
+import { resoudrePresumeVivant } from '@/lib/vivant';
 import { meilleurePreuve } from '@/lib/preuves';
 import {
   ANNEE_MIN,
@@ -719,7 +720,7 @@ export async function enregistrerPersonne(
       sexe: v.sexe,
       notes: v.notes ?? null,
       niveaux_preuve: v.preuves,
-      presume_vivant: v.presumeVivant,
+      presume_vivant: resoudrePresumeVivant(v.presumeVivant, v.deces),
       ...(branches.length > 0 ? { branches } : {}),
       cree_par: user.id,
     })
@@ -808,7 +809,7 @@ export async function modifierPersonne(
       sexe: v.sexe,
       notes: v.notes ?? null,
       niveaux_preuve: v.preuves,
-      presume_vivant: v.presumeVivant,
+      presume_vivant: resoudrePresumeVivant(v.presumeVivant, v.deces),
       modifie_par: user.id,
     })
     .eq('id', id)
