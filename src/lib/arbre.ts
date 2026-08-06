@@ -377,7 +377,7 @@ async function chargerArbreInterne(
       sexe: p.sexe,
       branches: p.branches ?? [],
       niveauxPreuve: p.niveaux_preuve ?? [],
-      presumeVivant: p.presume_vivant,
+      presumeVivant: p.presume_vivant && !evts.some((e) => e.type === 'deces'),
       notes: p.notes,
       photoId: p.photo_id,
       photoUrl: chemin ? urlParChemin.get(chemin) ?? null : null,
