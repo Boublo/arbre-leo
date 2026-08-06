@@ -1,9 +1,9 @@
 # Audit complet — L'arbre de Léo
 
-Dernière mise à jour : 6 août 2026 — **v1 + v2 + v3 + v4** (sécurité, lisibilité, immersion, assistance admin).
+Dernière mise à jour : 6 août 2026 — **v1–v5** (sécurité, lisibilité, immersion, assistance, densification arbre).
 
 > Revue senior du 6 août 2026 : voir le rapport d'audit cloud agent.
-> Correctifs v1–v4 appliqués.
+> Correctifs v1–v5 appliqués.
 
 ---
 
@@ -47,6 +47,16 @@ Dernière mise à jour : 6 août 2026 — **v1 + v2 + v3 + v4** (sécurité, lis
 ✓ IA      Action admin `genererResumeBrancheIa` + hook `ARBRE_IA_CLE` (fallback déterministe)
 ✓ Actes   Transcription étiquetée « brouillon » — scaffold OCR sans pipeline
 ✓ CLI     `npm run arbre:diag` (script déjà présent, alias documenté)
+```
+
+## Correctifs v5 (août 2026) — lisibilité de l’arbre
+
+```
+✓ Densité   ESPACEMENT_X/Y resserrés ; cousins moins écartés ; collision −12 px
+✓ Traits    Pedigree en encre douce 2.5 px ; descente depuis la barre de couple
+✓ Centrage  Recentrage fratrie + re-colle couples (plus d’enfant qui flotte)
+✓ Zoom      recadrer à k ≈ 1.0–1.05 ; noms de cartes un peu plus grands
+✓ Cadre     Bbox aligné sur les bords de cartes (moins de vide asymétrique)
 ```
 
 ---
