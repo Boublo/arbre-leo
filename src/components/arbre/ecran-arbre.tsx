@@ -261,6 +261,7 @@ export function EcranArbre({
               onRepartirDIci={() => changerFocus(personneSelectionnee.id)}
               onFermer={() => setSelectionId(null)}
               peutDeposerPhoto={peutDeposerPhoto}
+              modeArbre={mode}
             />
           </aside>
         )}
@@ -280,6 +281,7 @@ export function EcranArbre({
             onRepartirDIci={() => changerFocus(personneSelectionnee.id)}
             onFermer={() => setSelectionId(null)}
             peutDeposerPhoto={peutDeposerPhoto}
+            modeArbre={mode}
           />
         )}
       </PanneauMobile>

@@ -41,6 +41,7 @@ export default async function PageArbreImprimer({
     profondeur: typeof params.profondeur === 'string' ? params.profondeur : undefined,
     photos: typeof params.photos === 'string' ? params.photos : undefined,
     format: typeof params.format === 'string' ? params.format : undefined,
+    decoupage: typeof params.decoupage === 'string' ? params.decoupage : undefined,
   });
 
   const donnees = await chargerArbre();
@@ -292,7 +293,22 @@ function stylesImprimables(format: 'landscape' | 'portrait'): string {
     text-align: center;
   }
 
-  .arbre-impr-figure { margin: 0; }
+  .arbre-impr-figure { margin: 0 0 1.5rem; }
+  .arbre-impr-figure-page {
+    break-before: page;
+    page-break-before: always;
+    padding-top: 0.5rem;
+  }
+  .arbre-impr-tranche-titre {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333333;
+    margin: 0 0 0.5rem;
+  }
+  .arbre-impr-tranche-num {
+    font-weight: 400;
+    color: #666666;
+  }
   .arbre-impr-svg {
     display: block;
     width: 100%;
@@ -388,7 +404,7 @@ function stylesImprimables(format: 'landscape' | 'portrait'): string {
       max-width: 100%;
     }
     .arbre-impr-legende { font-size: 0.6rem; }
-    .arbre-impr-liste { break-before: page; page-break-before: always; }
+    .arbre-impr-figure-page { break-before: page; page-break-before: always; }
     .arbre-impr-liste-colonnes { columns: 3; font-size: 0.7rem; }
     /* Pas d'ombre à l'impression */
     .arbre-impr-svg filter { display: none; }

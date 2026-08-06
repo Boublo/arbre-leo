@@ -84,6 +84,20 @@ export function OptionsImpressionArbre({
             Portrait
           </LienOption>
         </Groupe>
+        <Groupe label="Découpage">
+          <LienOption
+            href={urlOptionsImpression(base, { ...options, decoupage: 'complet' })}
+            actif={options.decoupage === 'complet'}
+          >
+            Une page
+          </LienOption>
+          <LienOption
+            href={urlOptionsImpression(base, { ...options, decoupage: 'pages' })}
+            actif={options.decoupage === 'pages'}
+          >
+            Plusieurs pages
+          </LienOption>
+        </Groupe>
       </div>
     </div>
   );

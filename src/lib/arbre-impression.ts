@@ -7,6 +7,7 @@ export type OptionsImpressionArbre = {
   profondeur: ProfondeurImpression;
   avecPhotos: boolean;
   format: 'paysage' | 'portrait';
+  decoupage: 'complet' | 'pages';
 };
 
 export const PROFONDEURS: { valeur: ProfondeurImpression; libelle: string }[] = [
@@ -22,12 +23,14 @@ export const OPTIONS_IMPRESSION_DEFAUT: OptionsImpressionArbre = {
   profondeur: 5,
   avecPhotos: true,
   format: 'paysage',
+  decoupage: 'complet',
 };
 
 export function parserOptionsImpression(params: {
   profondeur?: string;
   photos?: string;
   format?: string;
+  decoupage?: string;
 }): OptionsImpressionArbre {
   const profondeurBrute = params.profondeur;
   const profondeurValide = PROFONDEURS.some((p) => String(p.valeur) === profondeurBrute)
@@ -38,7 +41,20 @@ export function parserOptionsImpression(params: {
     profondeur: profondeurValide,
     avecPhotos: params.photos !== '0',
     format: params.format === 'portrait' ? 'portrait' : 'paysage',
+    decoupage: params.decoupage === 'pages' ? 'pages' : 'complet',
   };
+}
+
+/** Lien court vers la page imprimable, avec options par défaut modifiables. */
+export function urlImpressionArbre(
+  personneId: string,
+  mode: string,
+  partiel?: Partial<OptionsImpressionArbre>
+): string {
+  return urlOptionsImpression(
+    { personne: personneId, mode },
+    { ...OPTIONS_IMPRESSION_DEFAUT, ...partiel }
+  );
 }
 
 export function urlOptionsImpression(
@@ -51,6 +67,7 @@ export function urlOptionsImpression(
     profondeur: String(options.profondeur),
     photos: options.avecPhotos ? '1' : '0',
     format: options.format,
+    decoupage: options.decoupage,
   });
   return `/arbre/imprimer?${q.toString()}`;
 }
@@ -114,4 +131,71 @@ export function listePersonnesOrdonnee(
       rang: n.rang,
     }))
     .sort((a, b) => a.nom.localeCompare(b.nom, 'fr') || a.rang - b.rang);
+}
+
+/** Nombre de rangs par feuille quand le découpage multi-pages est actif. */
+export const RANGS_PAR_PAGE = 4;
+
+export type TrancheImpression = {
+  disposition: Disposition;
+  /** Libellé du type « Générations 0 à 3 ». */
+  libelle: string;
+  index: number;
+  total: number;
+};
+
+/**
+ * Découpe une disposition en tranches de quelques générations pour l'impression
+ * multi-pages. Chaque tranche ne garde que les liens internes.
+ */
+export function decouperDispositionParPages(disposition: Disposition): TrancheImpression[] {
+  if (disposition.rangMax <= RANGS_PAR_PAGE) {
+    return [{ disposition, libelle: '', index: 0, total: 1 }];
+  }
+
+  const tranches: TrancheImpression[] = [];
+  const nbPages = Math.ceil((disposition.rangMax + 1) / RANGS_PAR_PAGE);
+
+  for (let page = 0; page < nbPages; page++) {
+    const rangDebut = page * RANGS_PAR_PAGE;
+    const rangFin = Math.min(rangDebut + RANGS_PAR_PAGE - 1, disposition.rangMax);
+
+    const ids = new Set(
+      disposition.noeuds
+        .filter((n) => n.rang >= rangDebut && n.rang <= rangFin)
+        .map((n) => n.personneId)
+    );
+
+    const noeuds = disposition.noeuds.filter((n) => ids.has(n.personneId));
+    if (noeuds.length === 0) continue;
+
+    const liens = disposition.liens.filter(
+      (l) => ids.has(l.enfantId) && ids.has(l.parentId)
+    );
+    const unions = disposition.unions.filter(
+      (u) => ids.has(u.aId) && ids.has(u.bId)
+    );
+    const rangMax = Math.max(...noeuds.map((n) => n.rang), 0);
+
+    tranches.push({
+      disposition: {
+        ...disposition,
+        noeuds,
+        liens,
+        unions,
+        rangMax,
+        largeur: recalculerEtendue(noeuds, 'x'),
+        hauteur: recalculerEtendue(noeuds, 'y'),
+      },
+      libelle:
+        rangDebut === rangFin
+          ? `Génération ${rangDebut}`
+          : `Générations ${rangDebut} à ${rangFin}`,
+      index: tranches.length,
+      total: 0,
+    });
+  }
+
+  const total = tranches.length;
+  return tranches.map((t) => ({ ...t, total }));
 }

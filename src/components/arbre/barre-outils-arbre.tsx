@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { SelecteurPersonne } from '@/components/arbre/selecteur-personne';
 import { LIBELLE_MODE, type ModeArbre } from '@/lib/layout-arbre';
+import { urlImpressionArbre } from '@/lib/arbre-impression';
 import type { PersonneRecherche } from '@/lib/arbre-graphe';
 import type { PersonneArbre } from '@/lib/arbre';
 
@@ -102,7 +103,7 @@ export function BarreOutilsArbre({
               Sa fiche
             </Link>
             <Link
-              href={`/arbre/imprimer?personne=${encodeURIComponent(focusId)}&mode=${mode}&profondeur=5&photos=1&format=paysage`}
+              href={urlImpressionArbre(focusId, mode)}
               className="lien-discret"
             >
               Version imprimable
@@ -169,10 +170,7 @@ export function BarreOutilsArbre({
           <Link href={`/personne/${focusId}`} className="lien-discret">
             Sa fiche
           </Link>
-          <Link
-            href={`/arbre/imprimer?personne=${encodeURIComponent(focusId)}&mode=${mode}&profondeur=5&photos=1&format=paysage`}
-            className="lien-discret"
-          >
+          <Link href={urlImpressionArbre(focusId, mode)} className="lien-discret">
             Imprimer
           </Link>
         </div>
