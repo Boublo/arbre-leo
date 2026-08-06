@@ -21,6 +21,7 @@ const COULEUR_COTE = {
 
 const LIBELLE_LIEN: Partial<Record<LienRacine, string>> = {
   collateral: 'Frère ou sœur',
+  cousin: 'Cousin ou cousine',
   conjoint: 'Conjoint',
   ancetre: 'Ancêtre',
   descendant: 'Descendant',
@@ -200,30 +201,12 @@ export function CarteNoeud({
         />
       )}
 
-      {/* Fratrie : pastille discrète pour ne pas confondre avec un conjoint (pointillé). */}
-      {detaille && noeud.lien === 'collateral' && !estFocus && (
-        <g aria-hidden>
-          <rect
-            x={LARGEUR_NOEUD - 52}
-            y={6}
-            width={46}
-            height={14}
-            rx={7}
-            fill="var(--fond-carte)"
-            stroke={couleurs.trait}
-            strokeWidth={0.75}
-            opacity={0.95}
-          />
-          <text
-            x={LARGEUR_NOEUD - 29}
-            y={16}
-            textAnchor="middle"
-            className="fill-[var(--encre-douce)]"
-            style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.02em' }}
-          >
-            FRATRIE
-          </text>
-        </g>
+      {/* Fratrie / cousin : pastille pour ne pas confondre avec un conjoint (pointillé). */}
+      {detaille && (noeud.lien === 'collateral' || noeud.lien === 'cousin') && !estFocus && (
+        <PastilleLien
+          libelle={noeud.lien === 'collateral' ? 'FRATRIE' : 'COUSIN'}
+          couleurTrait={couleurs.trait}
+        />
       )}
 
       {/* Nom — toujours visible */}
@@ -304,6 +287,34 @@ export function CarteNoeud({
           )}
         </>
       )}
+    </g>
+  );
+}
+
+function PastilleLien({ libelle, couleurTrait }: { libelle: string; couleurTrait: string }) {
+  const largeur = libelle.length > 6 ? 52 : 46;
+  return (
+    <g aria-hidden>
+      <rect
+        x={LARGEUR_NOEUD - largeur - 6}
+        y={6}
+        width={largeur}
+        height={14}
+        rx={7}
+        fill="var(--fond-carte)"
+        stroke={couleurTrait}
+        strokeWidth={0.75}
+        opacity={0.95}
+      />
+      <text
+        x={LARGEUR_NOEUD - largeur / 2 - 6}
+        y={16}
+        textAnchor="middle"
+        className="fill-[var(--encre-douce)]"
+        style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.02em' }}
+      >
+        {libelle}
+      </text>
     </g>
   );
 }

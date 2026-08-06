@@ -27,8 +27,10 @@ Ce document recense **où ça coince**, **pourquoi**, et **dans quel ordre corri
 ✓ H4  URL ?suite= conservée vers /attente pour les membres en attente
 ✓ M4  Barre de fratrie minimale (20 px) pour enfant unique
 ✓ M5  Médias filtrés par photo_id référencés (plus de scan de tout le bucket)
-✓ M6  Repères de génération repliables sur mobile
-✓ M3  Bandeau d'avertissement en mode « Tout (éclaté) »
+✓ M2  Badge COUSIN distinct de FRATRIE (lien + cartes + légende)
+✓ M6  Repères repliables + mini-carte compacte sur mobile
+✓ H3  Test géométrie Laura via layout TS réel (scripts/test-geometrie-laura.ts)
+✓ C3  Recentrage fratries sous couples après collision (recentererFratriesSousCouples)
 ```
 
 ---

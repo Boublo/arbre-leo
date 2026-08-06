@@ -382,14 +382,26 @@ export function VueArbre({
           )}
         </div>
 
-        <div className="hidden md:block">
-          <MiniMap
-            disposition={disposition}
-            transform={transform}
-            tailleVue={tailleVue}
-            onDeplacer={deplacerVersPointMonde}
-            focusId={focusId}
-          />
+        <div className="flex flex-col items-end gap-1">
+          <div className="md:hidden">
+            <MiniMap
+              disposition={disposition}
+              transform={transform}
+              tailleVue={tailleVue}
+              onDeplacer={deplacerVersPointMonde}
+              focusId={focusId}
+              variante="compact"
+            />
+          </div>
+          <div className="hidden md:block">
+            <MiniMap
+              disposition={disposition}
+              transform={transform}
+              tailleVue={tailleVue}
+              onDeplacer={deplacerVersPointMonde}
+              focusId={focusId}
+            />
+          </div>
         </div>
       </div>
 

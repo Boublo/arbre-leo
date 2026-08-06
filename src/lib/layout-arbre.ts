@@ -38,7 +38,13 @@ import { coteDesBranches, type Cote } from '@/lib/branches';
 export type ModeArbre = 'ascendance' | 'descendance' | 'famille' | 'eclate';
 
 /** Ce qui rattache un nœud à la personne choisie. */
-export type LienRacine = 'racine' | 'ancetre' | 'descendant' | 'collateral' | 'conjoint';
+export type LienRacine =
+  | 'racine'
+  | 'ancetre'
+  | 'descendant'
+  | 'collateral'
+  | 'cousin'
+  | 'conjoint';
 
 export type NoeudArbre = {
   personneId: string;
@@ -202,7 +208,9 @@ function lienVisuelFamille(
     if (fratrie.some((f) => f !== id && rangs.get(f) === rang)) return 'collateral';
   }
 
-  if (rang === 0) return 'collateral';
+  const rangFocus = rangs.get(racineId) ?? 0;
+  if (rang === rangFocus && id !== racineId) return 'cousin';
+
   return 'descendant';
 }
 
@@ -784,6 +792,56 @@ function ecarterCollisions(
   }
 }
 
+/** Après collision en pixels : recolle les conjoints sur une rangée. */
+function rapprocherConjointsNoeuds(
+  noeuds: NoeudArbre[],
+  pairesConj: Map<string, string>
+): void {
+  const parId = new Map(noeuds.map((n) => [n.personneId, n]));
+  const traites = new Set<string>();
+
+  for (const [a, b] of pairesConj) {
+    const cle = a < b ? `${a}|${b}` : `${b}|${a}`;
+    if (traites.has(cle)) continue;
+    traites.add(cle);
+
+    const na = parId.get(a);
+    const nb = parId.get(b);
+    if (!na || !nb || na.rang !== nb.rang) continue;
+
+    const centre = (na.x + nb.x) / 2;
+    const demi = ECART_MINIMUM_CENTRES / 2;
+    na.x = centre - demi;
+    nb.x = centre + demi;
+  }
+}
+
+/** Aligne le centre d'une fratrie sur le centre de ses parents visibles. */
+function recentererFratriesSousCouples(
+  noeuds: NoeudArbre[],
+  unions: Map<string, UnionArbre>
+): void {
+  const parId = new Map(noeuds.map((n) => [n.personneId, n]));
+
+  for (const union of unions.values()) {
+    const parents = [union.conjointA, union.conjointB]
+      .map((id) => (id ? parId.get(id) : undefined))
+      .filter((n): n is NoeudArbre => n !== undefined);
+    const enfants = union.enfants
+      .map((id) => parId.get(id))
+      .filter((n): n is NoeudArbre => n !== undefined);
+
+    if (parents.length === 0 || enfants.length === 0) continue;
+
+    const cxParents = parents.reduce((s, p) => s + p.x, 0) / parents.length;
+    const cxEnfants = enfants.reduce((s, e) => s + e.x, 0) / enfants.length;
+    const delta = cxParents - cxEnfants;
+    if (Math.abs(delta) < 4) continue;
+
+    for (const enfant of enfants) enfant.x += delta;
+  }
+}
+
 function disposerEclate(donnees: DonneesArbre, racineId: string): Disposition {
   const { parents, enfants, unions, personnes } = donnees;
 
@@ -910,6 +968,11 @@ function finaliser(
   }
 
   ecarterCollisions(noeuds, pairesConj);
+  if (mode === 'famille' && pairesConj) {
+    rapprocherConjointsNoeuds(noeuds, pairesConj);
+    recentererFratriesSousCouples(noeuds, donnees.unions);
+    ecarterCollisions(noeuds, pairesConj);
+  }
 
   const unionsAffichees: LienUnion[] = [];
   for (const union of donnees.unions.values()) {

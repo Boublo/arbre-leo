@@ -35,7 +35,11 @@ export function Legende() {
 
       <span className="flex items-center gap-1.5">
         <span className="h-4 w-7 rounded-[3px] border border-bordure-forte bg-fond-carte" />
-        Frère, sœur, cousin
+        Frère, sœur
+      </span>
+      <span className="flex items-center gap-1.5">
+        <span className="h-4 w-7 rounded-[3px] border border-bordure bg-fond-carte opacity-80" />
+        Cousin, cousine
       </span>
       <span className="flex items-center gap-1.5">
         <span className="h-4 w-7 rounded-[3px] border border-dashed border-bordure-forte bg-fond-carte" />
