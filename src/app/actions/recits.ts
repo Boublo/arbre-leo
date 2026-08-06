@@ -81,8 +81,6 @@ const schemaRecit = z
     }
   });
 
-type RecitValide = z.infer<typeof schemaRecit>;
-
 function texte(valeur: FormDataEntryValue | null): string | null {
   const brut = String(valeur ?? '').trim();
   return brut === '' ? null : brut;

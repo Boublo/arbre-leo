@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Navigation } from '@/components/navigation';
-import { chargerArbre, type DonneesArbre, type PersonneArbre } from '@/lib/arbre';
+import { chargerArbre, formaterDate, type DonneesArbre, type PersonneArbre } from '@/lib/arbre';
 import { creerClientServeur } from '@/lib/supabase/server';
 import { NOM_DU_SITE, SOUS_TITRE_DU_SITE } from '@/lib/site';
 import {
@@ -12,6 +12,12 @@ import {
   type BandeGeneration,
 } from '@/components/decouverte/silhouette-genealogique';
 import { CartePortrait } from '@/components/decouverte/carte-portrait';
+import { Vignette } from '@/components/portrait/vignette';
+import { portraitDePersonne } from '@/components/portrait/types';
+import {
+  prochainesEphemerides,
+  type Ephemeride,
+} from '@/lib/ephemerides';
 
 /**
  * Page d'accueil.
@@ -124,6 +130,13 @@ export default async function PageAccueil() {
     },
   ];
 
+  // --- Ces jours-ci -------------------------------------------------------
+  //
+  // Un aperçu volontairement bref : les trois anniversaires les plus proches
+  // — d'abord ceux du jour, puis, à défaut, ceux des jours qui viennent. La
+  // page /aujourdhui accueille la liste complète.
+  const ephemerides = prochainesEphemerides(donnees, new Date(), 3);
+
   // --- Silhouette ---------------------------------------------------------
   const bandes = calculerBandes(generations, nombreGenerations);
 
@@ -186,6 +199,9 @@ export default async function PageAccueil() {
           aide="Ce que la famille a documenté à ce jour."
           chiffres={chiffres}
         />
+
+        {/* b bis) Ces jours-ci */}
+        <SectionCesJoursCi ephemerides={ephemerides} />
 
         {/* c) Silhouette */}
         <section aria-labelledby="silhouette-section" className="flex flex-col gap-4">
@@ -310,6 +326,118 @@ function CarteRoute({
       </Link>
     </li>
   );
+}
+
+// ---------------------------------------------------------------------------
+// Aperçu des éphémérides
+// ---------------------------------------------------------------------------
+
+/**
+ * Petit encart d'accueil qui montre les trois anniversaires les plus proches
+ * — d'aujourd'hui puis, à défaut, des jours qui viennent. Renvoie vers la page
+ * complète pour tout le reste ; se tait sobrement si rien ne se présente.
+ */
+function SectionCesJoursCi({ ephemerides }: { ephemerides: Ephemeride[] }) {
+  return (
+    <section
+      aria-labelledby="ces-jours-ci"
+      className="flex flex-col gap-4"
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <h2 id="ces-jours-ci" className="text-xl">
+          Ces jours-ci
+        </h2>
+        <Link
+          href="/aujourdhui"
+          className="text-sm text-encre-douce underline-offset-4 hover:text-accent hover:underline"
+        >
+          Voir tout le calendrier
+        </Link>
+      </div>
+
+      {ephemerides.length === 0 ? (
+        <p className="carte p-5 text-sm text-encre-douce">
+          Rien à signaler ces prochains jours. Le calendrier de la famille se
+          repose.
+        </p>
+      ) : (
+        <ul className="grid gap-3 sm:grid-cols-3">
+          {ephemerides.map((e) => (
+            <li key={cleApercuEphemeride(e)}>
+              <ApercuEphemeride ephemeride={e} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function ApercuEphemeride({ ephemeride }: { ephemeride: Ephemeride }) {
+  const dateEcrite = formaterDate({
+    annee: ephemeride.annee,
+    mois: ephemeride.mois,
+    jour: ephemeride.jour,
+  });
+
+  if (ephemeride.type === 'mariage') {
+    const noms = ephemeride.conjoints.map((p) => p.nomComplet).join(' et ');
+    return (
+      <article className="carte flex h-full flex-col gap-2 p-4">
+        <p className="text-[0.68rem] font-medium uppercase tracking-[0.09em] text-encre-tres-douce">
+          Mariage · {libelleAnneesApercu(ephemeride.annees)}
+        </p>
+        <p className="text-sm font-medium leading-snug text-encre">{noms}</p>
+        <p className="mt-auto text-xs text-encre-tres-douce">
+          Union célébrée le {dateEcrite}.
+        </p>
+      </article>
+    );
+  }
+
+  const p = ephemeride.personne;
+  const feminin = p.sexe === 'F';
+
+  if (ephemeride.type === 'naissance') {
+    const legende = ephemeride.vivant
+      ? `Fête ses ${ephemeride.annees} ans`
+      : `Aurait ${ephemeride.annees} ans`;
+
+    return (
+      <article className="carte flex h-full flex-col gap-2 p-4">
+        <p className="text-[0.68rem] font-medium uppercase tracking-[0.09em] text-encre-tres-douce">
+          Naissance · {legende}
+        </p>
+        <Vignette personne={portraitDePersonne(p)} />
+        <p className="mt-auto text-xs text-encre-tres-douce">
+          {feminin ? 'Née' : 'Né'} le {dateEcrite}.
+        </p>
+      </article>
+    );
+  }
+
+  return (
+    <article className="carte flex h-full flex-col gap-2 p-4">
+      <p className="text-[0.68rem] font-medium uppercase tracking-[0.09em] text-encre-tres-douce">
+        Décès · {libelleAnneesApercu(ephemeride.annees)}
+      </p>
+      <Vignette personne={portraitDePersonne(p)} />
+      <p className="mt-auto text-xs text-encre-tres-douce">
+        {feminin ? 'Décédée' : 'Décédé'} le {dateEcrite}.
+      </p>
+    </article>
+  );
+}
+
+function libelleAnneesApercu(annees: number): string {
+  if (annees <= 0) return 'ce jour même';
+  if (annees === 1) return 'il y a un an';
+  return `il y a ${annees} ans`;
+}
+
+function cleApercuEphemeride(e: Ephemeride): string {
+  if (e.type === 'mariage') return `mariage:${e.unionId}`;
+  return `${e.type}:${e.personne.id}`;
 }
 
 // ---------------------------------------------------------------------------

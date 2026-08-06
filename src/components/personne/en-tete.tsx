@@ -62,14 +62,21 @@ export function EnTetePersonne({ fiche }: { fiche: Fiche }) {
         </div>
       )}
 
-      {/* Repères de navigation : rejoindre l’arbre à cet endroit précis, ou
-          sortir la fiche imprimable pour un cousin sans écran ou un classeur. */}
+      {/* Repères de navigation : rejoindre l’arbre à cet endroit précis, ouvrir
+          l’outil de parenté à partir de cette personne, ou sortir la fiche
+          imprimable pour un cousin sans écran ou un classeur. */}
       <div className="mt-4 flex flex-wrap items-center justify-end gap-x-4 gap-y-1 border-t border-bordure pt-3">
         <Link
           href={`/arbre?personne=${encodeURIComponent(personne.id)}`}
           className="lien-discret text-sm"
         >
           Ouvrir sur l’arbre
+        </Link>
+        <Link
+          href={`/parente?a=${encodeURIComponent(personne.id)}`}
+          className="lien-discret text-sm"
+        >
+          Calculer la parenté avec cette personne
         </Link>
         <Link
           href={`/personne/${personne.id}/imprimer`}
