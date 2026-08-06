@@ -20,6 +20,7 @@
     "arbre:verifier-chargement": "node scripts/verifier-chargement-arbre.mjs",
     "arbre:verifier-zoom": "node scripts/verifier-zoom-arbre.mjs",
     "arbre:verifier": "node scripts/verifier-arbre.mjs",
+    "arbre:verifier-config-prod": "node scripts/verifier-config-prod.mjs",
     "arbre:verif": "npm run arbre:verifier",
     "arbre:diag": "node scripts/diagnostic.mjs",
     "test": "npm run typecheck && npm run arbre:verifier",

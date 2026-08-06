@@ -26,11 +26,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/connexion`);
   }
 
-  const { data: membre } = await supabase
-    .from('membres')
-    .select('statut')
-    .eq('id', user.id)
-    .maybeSingle();
+  const { data: membre, error: erreurFiche } = await supabase.rpc('assurer_fiche_membre');
+  if (erreurFiche || !membre) {
+    return NextResponse.redirect(`${origin}/connexion?erreur=lien_invalide`);
+  }
 
   const suite = searchParams.get('suite');
   const suiteValide =
@@ -38,7 +37,7 @@ export async function GET(request: NextRequest) {
 
   // Même domaine que la requête courante : les cookies de session y sont attachés.
   const destination =
-    membre?.statut === 'valide'
+    membre.statut === 'valide'
       ? suiteValide ?? '/'
       : suiteValide
         ? `/attente?suite=${encodeURIComponent(suiteValide)}`

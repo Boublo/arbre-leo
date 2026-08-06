@@ -310,6 +310,7 @@ export type BaseDeDonnees = {
       est_membre_valide: { Args: Record<string, never>; Returns: boolean };
       est_admin: { Args: Record<string, never>; Returns: boolean };
       peut_contribuer: { Args: Record<string, never>; Returns: boolean };
+      assurer_fiche_membre: { Args: Record<string, never>; Returns: Membre };
     };
     Enums: {
       role_membre: RoleMembre;

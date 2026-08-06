@@ -11,14 +11,11 @@ export default async function PageAttente({ searchParams }: PageProps<'/attente'
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/connexion');
 
-  const { data: membre } = await supabase
-    .from('membres')
-    .select('nom_affiche, statut, motif_refus')
-    .eq('id', user.id)
-    .maybeSingle();
+  const { data: membre, error: erreurFiche } = await supabase.rpc('assurer_fiche_membre');
+  if (erreurFiche || !membre) redirect('/connexion');
 
   // L'accès vient d'être ouvert : reprendre la page demandée avant l'attente.
-  if (membre?.statut === 'valide') {
+  if (membre.statut === 'valide') {
     const destination =
       typeof suite === 'string' && suite.startsWith('/') && !suite.startsWith('//')
         ? suite
@@ -26,8 +23,8 @@ export default async function PageAttente({ searchParams }: PageProps<'/attente'
     redirect(destination);
   }
 
-  const refuse = membre?.statut === 'refuse';
-  const suspendu = membre?.statut === 'suspendu';
+  const refuse = membre.statut === 'refuse';
+  const suspendu = membre.statut === 'suspendu';
 
   return (
     <main id="contenu-principal" className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-6 py-16">
@@ -46,7 +43,7 @@ export default async function PageAttente({ searchParams }: PageProps<'/attente'
             <>Votre accès a été suspendu. Prenez contact avec l&apos;administrateur de l&apos;arbre.</>
           ) : (
             <>
-              Bonjour {membre?.nom_affiche ?? ''}. Un administrateur de la famille doit
+              Bonjour {membre.nom_affiche}. Un administrateur de la famille doit
               maintenant ouvrir votre accès. Vous recevrez la nouvelle par e-mail —
               en général sous un jour ou deux.
             </>
