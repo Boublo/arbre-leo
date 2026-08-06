@@ -4,6 +4,7 @@ import { deconnecter } from '@/app/actions/auth';
 import { BasculeTheme } from '@/components/bascule-theme';
 import { NOM_DU_SITE } from '@/lib/site';
 import { LiensNavigation } from '@/components/navigation-liens';
+import { MenuMobile } from '@/components/menu-mobile';
 
 const LIENS = [
   { href: '/', libelle: 'Accueil' },
@@ -19,7 +20,7 @@ const LIENS = [
   { href: '/nouveautes', libelle: 'Quoi de neuf' },
 ];
 
-export async function Navigation() {
+export async function Navigation({ compact = false }: { compact?: boolean }) {
   const supabase = await creerClientServeur();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -36,18 +37,32 @@ export async function Navigation() {
       : { count: 0 };
 
   return (
-    <header className="z-20 flex shrink-0 flex-wrap items-center gap-x-6 gap-y-2 border-b border-bordure bg-fond-carte px-4 py-2.5">
-      <Link href="/" className="flex items-baseline gap-2">
-        <span className="font-titre text-lg">{NOM_DU_SITE}</span>
+    <header className="z-20 flex shrink-0 items-center gap-2 border-b border-bordure bg-fond-carte px-4 py-2.5 sm:gap-3">
+      <MenuMobile
+        liens={LIENS}
+        admin={
+          membre?.role === 'admin'
+            ? { href: '/admin', enAttente: enAttente ?? 0 }
+            : undefined
+        }
+      />
+
+      <Link
+        href="/"
+        className={`min-w-0 items-baseline gap-2 truncate ${compact ? 'hidden flex-1 lg:flex lg:flex-none' : 'flex flex-1 lg:flex-none'}`}
+      >
+        <span className="truncate font-titre text-lg">{NOM_DU_SITE}</span>
       </Link>
 
-      <LiensNavigation liens={LIENS} />
+      <div className="hidden lg:block">
+        <LiensNavigation liens={LIENS} />
+      </div>
 
-      <div className="ml-auto flex items-center gap-2 text-sm">
+      <div className="ml-auto flex shrink-0 items-center gap-1 text-sm sm:gap-2">
         {membre?.role === 'admin' && (
           <Link
             href="/admin"
-            className="flex items-center gap-1.5 rounded-[var(--rayon-petit)] px-2.5 py-1.5 text-encre-douce transition hover:bg-fond-doux hover:text-encre"
+            className="hidden items-center gap-1.5 rounded-[var(--rayon-petit)] px-2.5 py-2 text-encre-douce transition hover:bg-fond-doux hover:text-encre lg:flex"
           >
             Administration
             {enAttente ? (
@@ -64,13 +79,15 @@ export async function Navigation() {
         <BasculeTheme />
 
         {membre && (
-          <span className="hidden text-encre-tres-douce sm:inline">{membre.nom_affiche}</span>
+          <span className="hidden max-w-[8rem] truncate text-encre-tres-douce sm:inline md:max-w-none">
+            {membre.nom_affiche}
+          </span>
         )}
 
         <form action={deconnecter}>
           <button
             type="submit"
-            className="rounded-[var(--rayon-petit)] px-2.5 py-1.5 text-encre-douce transition hover:bg-fond-doux hover:text-encre"
+            className="min-h-11 rounded-[var(--rayon-petit)] px-3 py-2 text-encre-douce transition hover:bg-fond-doux hover:text-encre"
           >
             Quitter
           </button>

@@ -1,24 +1,18 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { VueArbre } from '@/components/arbre/vue-arbre';
-import { SelecteurPersonne } from '@/components/arbre/selecteur-personne';
+import { BarreOutilsArbre } from '@/components/arbre/barre-outils-arbre';
 import { FichePersonne } from '@/components/arbre/fiche-personne';
+import { PanneauMobile } from '@/components/interactions/panneau-mobile';
 import { PaletteCommandes } from '@/components/arbre/palette-commandes';
 import {
   anneesDeVie,
-  compterEntourage,
   reconstruireGraphe,
   type GrapheSerialise,
 } from '@/lib/arbre-graphe';
-import { disposerArbre, LIBELLE_MODE, type ModeArbre } from '@/lib/layout-arbre';
-
-// L'ordre importe : famille est la vue la plus utile au quotidien pour la
-// plupart des membres — cousins, oncles, petits-enfants d'un coup —, on la
-// place avant les vues plus spécialisées.
-const MODES: ModeArbre[] = ['ascendance', 'famille', 'descendance', 'eclate'];
+import { disposerArbre, type ModeArbre } from '@/lib/layout-arbre';
 
 export function EcranArbre({
   graphe,
@@ -47,10 +41,6 @@ export function EcranArbre({
   );
 
   const focus = donnees.personnes.get(focusId) ?? null;
-  const entourage = useMemo(
-    () => (focus ? compterEntourage(donnees, focusId) : null),
-    [donnees, focusId, focus]
-  );
 
   /**
    * L'adresse suit la personne regardée, sans recharger la page : un membre
@@ -110,64 +100,17 @@ export function EcranArbre({
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
-      {/* --- Barre de choix ------------------------------------------------ */}
-      <div className="z-10 flex flex-wrap items-center gap-x-5 gap-y-3 border-b border-bordure bg-fond-carte px-4 py-3">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-encre-tres-douce">Partir de</span>
-          <SelecteurPersonne
-            personnes={graphe.personnes}
-            suggestions={suggestions}
-            choisie={focus}
-            onChoix={changerFocus}
-          />
-        </div>
-
-        <div className="flex flex-wrap gap-1" role="tablist" aria-label="Sens de lecture">
-          {MODES.map((m) => (
-            <button
-              key={m}
-              type="button"
-              role="tab"
-              aria-selected={mode === m}
-              title={LIBELLE_MODE[m].aide}
-              onClick={() => setMode(m)}
-              className={`rounded-[var(--rayon-petit)] px-3 py-1.5 text-sm transition ${
-                mode === m
-                  ? 'bg-accent text-accent-contraste'
-                  : 'text-encre-douce hover:bg-fond-doux hover:text-encre'
-              }`}
-            >
-              {LIBELLE_MODE[m].titre}
-            </button>
-          ))}
-        </div>
-
-        {entourage && (
-          <p className="text-xs text-encre-tres-douce">
-            {mode === 'ascendance' &&
-              (entourage.ascendants > 0
-                ? `${entourage.ascendants} ascendants sur ${entourage.generationsAuDessus} générations`
-                : 'Aucun ascendant connu — c’est une piste à ouvrir.')}
-            {mode === 'descendance' &&
-              (entourage.descendants > 0
-                ? `${entourage.descendants} descendants sur ${entourage.generationsEnDessous} générations`
-                : 'Aucune descendance connue.')}
-            {mode === 'famille' &&
-              `${disposition.noeuds.length} personnes autour — parents, frères et sœurs, cousins, enfants`}
-            {mode === 'eclate' && `${disposition.noeuds.length} personnes reliées`}
-          </p>
-        )}
-
-        <div className="ml-auto flex items-center gap-3 text-xs">
-          <Link href={`/chronologie?personne=${encodeURIComponent(focusId)}`} className="lien-discret">
-            Sa chronologie
-          </Link>
-          <Link href={`/personne/${focusId}`} className="lien-discret">
-            Sa fiche
-          </Link>
-        </div>
-      </div>
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <BarreOutilsArbre
+        graphe={graphe}
+        focus={focus}
+        focusId={focusId}
+        mode={mode}
+        onMode={setMode}
+        suggestions={suggestions}
+        onFocus={changerFocus}
+        onChercher={() => setPaletteOuverte(true)}
+      />
 
       {/* --- Arbre et panneau ---------------------------------------------- */}
       <div className="relative flex flex-1 overflow-hidden">
@@ -183,7 +126,7 @@ export function EcranArbre({
         </div>
 
         {personneSelectionnee && (
-          <aside className="w-full max-w-sm shrink-0 overflow-y-auto border-l border-bordure bg-fond-carte">
+          <aside className="hidden w-full max-w-sm shrink-0 overflow-y-auto border-l border-bordure bg-fond-carte lg:block">
             <FichePersonne
               personne={personneSelectionnee}
               annees={anneesDeVie(personneSelectionnee)}
@@ -194,6 +137,22 @@ export function EcranArbre({
           </aside>
         )}
       </div>
+
+      <PanneauMobile
+        ouvert={personneSelectionnee !== null}
+        onFermer={() => setSelectionId(null)}
+        etiquette={personneSelectionnee?.nomComplet}
+      >
+        {personneSelectionnee && (
+          <FichePersonne
+            personne={personneSelectionnee}
+            annees={anneesDeVie(personneSelectionnee)}
+            estFocus={personneSelectionnee.id === focusId}
+            onRepartirDIci={() => changerFocus(personneSelectionnee.id)}
+            onFermer={() => setSelectionId(null)}
+          />
+        )}
+      </PanneauMobile>
 
       <PaletteCommandes
         personnes={graphe.personnes}

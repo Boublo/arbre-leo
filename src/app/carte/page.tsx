@@ -530,7 +530,7 @@ export default async function PageCarte() {
       <Navigation />
 
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="flex shrink-0 flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-bordure px-4 py-3">
+        <div className="flex shrink-0 flex-col gap-1 border-b border-bordure px-4 py-3 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-4">
           <h1 className="text-xl leading-none">Les lieux et les migrations</h1>
           <p className="text-sm text-encre-douce">
             Les libellés sont ceux des actes : les communes changent de nom, les frontières

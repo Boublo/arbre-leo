@@ -6,6 +6,7 @@ import { zoom, zoomIdentity, type ZoomBehavior } from 'd3-zoom';
 import { CurseurPeriode } from '@/components/carte/curseur-periode';
 import { FondCarte } from '@/components/carte/fond-carte';
 import { PanneauLieu } from '@/components/carte/panneau-lieu';
+import { PanneauMobile } from '@/components/interactions/panneau-mobile';
 import {
   calculerCadre,
   contraindre,
@@ -540,7 +541,7 @@ export function EcranCarte({ donnees }: { donnees: DonneesCarte }) {
         </div>
 
         {/* --- Légende dynamique de bas de carte : pays → région → ville */}
-        <div className="carte pointer-events-none absolute right-4 top-4 max-w-xs p-3 text-xs text-encre-douce">
+        <div className="carte pointer-events-none absolute right-2 top-2 max-w-[min(100%,14rem)] p-2 text-xs text-encre-douce sm:right-4 sm:top-4 sm:max-w-xs sm:p-3">
           <p className="text-encre">
             <span className="uppercase tracking-wider text-encre-tres-douce">
               {niveauLegende === 'pays'
@@ -578,7 +579,7 @@ export function EcranCarte({ donnees }: { donnees: DonneesCarte }) {
         </div>
 
         {/* --- Commandes ------------------------------------------------- */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-3 p-4">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-2 p-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-3 sm:p-4">
           <div className="carte pointer-events-auto w-full max-w-sm p-3">
             <CurseurPeriode
               anneeMin={donnees.anneeMin}
@@ -614,7 +615,7 @@ export function EcranCarte({ donnees }: { donnees: DonneesCarte }) {
             </div>
           </div>
 
-          <div className="carte pointer-events-auto flex items-center gap-1 p-1">
+          <div className="carte pointer-events-auto flex w-fit items-center gap-1 self-end p-1">
             <BoutonRond titre="Agrandir" onClick={() => zoomer(1.4)}>
               +
             </BoutonRond>
@@ -629,7 +630,7 @@ export function EcranCarte({ donnees }: { donnees: DonneesCarte }) {
       </div>
 
       {selection && (
-        <aside className="w-full max-w-sm shrink-0 overflow-y-auto border-l border-bordure bg-fond-carte">
+        <aside className="hidden w-full max-w-sm shrink-0 overflow-y-auto border-l border-bordure bg-fond-carte lg:block">
           <PanneauLieu
             lieu={selection}
             debut={debut}
@@ -638,6 +639,21 @@ export function EcranCarte({ donnees }: { donnees: DonneesCarte }) {
           />
         </aside>
       )}
+
+      <PanneauMobile
+        ouvert={selection !== null}
+        onFermer={() => setSelectionId(null)}
+        etiquette={selection?.nom}
+      >
+        {selection && (
+          <PanneauLieu
+            lieu={selection}
+            debut={debut}
+            fin={fin}
+            surFermeture={() => setSelectionId(null)}
+          />
+        )}
+      </PanneauMobile>
     </div>
   );
 }
@@ -745,7 +761,7 @@ function BoutonRond({
       onClick={onClick}
       title={titre}
       aria-label={titre}
-      className="grid h-9 w-9 place-items-center rounded-[var(--rayon-petit)] text-lg text-encre-douce transition hover:bg-fond-doux"
+      className="grid h-11 w-11 place-items-center rounded-[var(--rayon-petit)] text-lg text-encre-douce transition hover:bg-fond-doux sm:h-9 sm:w-9"
     >
       {children}
     </button>

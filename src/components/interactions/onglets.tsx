@@ -57,7 +57,7 @@ export function Onglets<T extends Valeur>({
     <div
       role="tablist"
       aria-label={etiquette}
-      className="flex flex-wrap gap-1 border-b border-bordure"
+      className="-mx-1 flex gap-1 overflow-x-auto border-b border-bordure px-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden"
     >
       {valeurs.map((v) => {
         const actif = v.id === valeur;
@@ -78,8 +78,8 @@ export function Onglets<T extends Valeur>({
             onKeyDown={surTouche}
             className={
               actif
-                ? '-mb-px border-b-2 border-accent px-3 py-2 text-sm font-medium text-encre'
-                : '-mb-px border-b-2 border-transparent px-3 py-2 text-sm text-encre-douce transition hover:text-encre'
+                ? '-mb-px shrink-0 border-b-2 border-accent px-3 py-2.5 text-sm font-medium text-encre sm:py-2'
+                : '-mb-px shrink-0 border-b-2 border-transparent px-3 py-2.5 text-sm text-encre-douce transition hover:text-encre sm:py-2'
             }
           >
             {v.libelle}
