@@ -23,7 +23,11 @@ const ETAPES = [
   { cmd: ['node', 'scripts/verifier-geometrie-arbre.mjs'], label: 'géométrie Laura + constantes' },
   { cmd: ['npx', '--yes', 'tsx', 'scripts/test-geometrie-ascendance.ts'], label: 'ascendance profonde' },
   { cmd: ['npx', '--yes', 'tsx', 'scripts/test-geometrie-ascendance-fratrie.ts'], label: 'ascendance fratrie + parent' },
+  { cmd: ['npx', '--yes', 'tsx', 'scripts/test-geometrie-ascendance-couple.ts'], label: 'ascendance couple adjacent' },
+  { cmd: ['npx', '--yes', 'tsx', 'scripts/test-geometrie-famille-complete.ts'], label: 'famille complète + ordre unions' },
   { cmd: ['npx', '--yes', 'tsx', 'scripts/test-geometrie-eclate.ts'], label: 'éclaté pedigree partiel' },
+  { cmd: ['npx', '--yes', 'tsx', 'scripts/test-geometrie-meme-rang.ts'], label: 'lien même rangée' },
+  { cmd: ['npx', '--yes', 'tsx', 'scripts/test-geometrie-couloirs.ts'], label: 'couloirs pedigree bornés' },
 ];
 
 const echecs = [];

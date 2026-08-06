@@ -23,7 +23,7 @@
     "arbre:verif": "npm run arbre:verifier",
     "arbre:diag": "node scripts/diagnostic.mjs",
     "test": "npm run typecheck && npm run arbre:verifier",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

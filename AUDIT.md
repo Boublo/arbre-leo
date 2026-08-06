@@ -1,6 +1,6 @@
 # Audit complet — L'arbre de Léo
 
-Dernière mise à jour : 6 août 2026 — **v1–v5** (sécurité, lisibilité, immersion, assistance, densification arbre).
+Dernière mise à jour : 6 août 2026 — **v1–v6** (sécurité, lisibilité, immersion, assistance, densification arbre, garde-fous CI).
 
 > Revue senior du 6 août 2026 : voir le rapport d'audit cloud agent.
 > Correctifs v1–v5 appliqués.
@@ -49,6 +49,30 @@ Dernière mise à jour : 6 août 2026 — **v1–v5** (sécurité, lisibilité, 
 ✓ CLI     `npm run arbre:diag` (script déjà présent, alias documenté)
 ```
 
+## Correctifs v6 (août 2026) — garde-fous et liens famille
+
+```
+✓ CI      `next typegen` avant `tsc` — PageProps/LayoutProps en CI (Next 16)
+✓ CI      Workflow déclenché aussi sur package.json / workflow_dispatch
+✓ Liens   Unions familiales complétées jusqu’au point fixe (ordre en base neutre)
+✓ Liens   groupesConjoints : plusieurs unions par personne, blocs atomiques
+✓ Liens   Couples rapprochés aussi en ascendance / descendance (barre dorée lisible)
+✓ Liens   segmentOrthogonal même rangée ; pedigree par rang adjacent ; couloirs bornés
+✓ Liens   finaliser : collision après dernier rapprochement de couples
+✓ Tests   test-geometrie-famille-complete.ts (oncle + tante + cousine)
+✓ Tests   même rangée + 20 unions disjointes (14 garde-fous arbre)
+✓ Build   Wrapper client EcranArbreDynamique (ssr:false hors Server Component)
+✓ CI      `npm run build` ajouté au workflow Garde-fous arbre
+```
+
+### Checklist déploiement production
+
+Après merge sur `main` :
+
+1. **Vercel** — relancer le déploiement Production ; si échec avec SHA qui passe en Preview, comparer les variables d’environnement Production vs Preview (`NEXT_PUBLIC_SUPABASE_*`, `NEXT_PUBLIC_SITE_URL`).
+2. **Supabase** — appliquer dans l’ordre les migrations `0009` à `0016` si pas encore faites en prod (`supabase db push` ou SQL manuel depuis `supabase/migrations/`).
+3. **CI** — vérifier que le workflow « Garde-fous arbre » est vert (`typecheck` + `arbre:verifier` + `build`).
+
 ## Correctifs v5 (août 2026) — lisibilité de l’arbre
 
 ```
@@ -70,7 +94,7 @@ Dernière mise à jour : 6 août 2026 — **v1–v5** (sécurité, lisibilité, 
 | **Cartes personnes** | Bon | Portraits OK ; badge « Fratrie » + contour plein |
 | **Site global** | Bon | 32 routes, auth, navigation améliorées |
 | **Performance `/arbre`** | Acceptable | Graphe complet (nécessaire à l'ascendance) + refresh photos |
-| **Tests auto** | Bon | Suite `npm run arbre:verifier` (9 checks + CI) |
+| **Tests auto** | Bon | Suite `npm run arbre:verifier` (11 checks + CI) |
 
 ### Correctifs appliqués (audit)
 
@@ -80,7 +104,7 @@ Dernière mise à jour : 6 août 2026 — **v1–v5** (sécurité, lisibilité, 
 ✓ C3  (suit C2) + pas de barre dorée horizontale si distance > 320 px
 ✓ H1  Mode par défaut « La famille autour », mémorisé dans localStorage
 ✓ H2  Refresh photos /api/arbre/photos (sous-graphe retiré : tronquait l'ascendance)
-✓ H4  URL ?suite= conservée vers /attente pour les membres en attente
+✓ H4  URL ?suite= conservée vers /attente (proxy + connexion + callback)
 ✓ M1  Couples = blocs atomiques (personne ne s'intercale entre époux)
 ✓ M3  Mode éclaté : pedigree pour rangs adjacents ; L seulement hors adjacence
 ✓ M4  Barre de fratrie minimale (20 px) pour enfant unique

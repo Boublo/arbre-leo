@@ -34,6 +34,10 @@ if (!layout.includes('unitesAtomiquesSurRang') || !layout.includes('ordonnerAvec
   console.error('layout-arbre.ts : couples atomiques manquants (AUDIT M1)');
   process.exit(1);
 }
+if (!layout.includes('groupesConjoints')) {
+  console.error('layout-arbre.ts : groupesConjoints manquant (multi-unions / ordre)');
+  process.exit(1);
+}
 
 if (!geo.includes('enfantsPedigree') && !geo.includes("mode === 'famille'")) {
   // Le mode éclaté doit pouvoir utiliser le pedigree (AUDIT M3) — pas d'exclusion hardcodée.

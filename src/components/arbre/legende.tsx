@@ -95,8 +95,8 @@ function TraitDePreuve({
           y1={4}
           x2={21}
           y2={4}
-          stroke={mode === 'pointille' ? 'var(--or)' : 'var(--bordure-forte)'}
-          strokeWidth={mode === 'pointille' ? 2 : 1.5}
+          stroke={mode === 'pointille' ? 'var(--or)' : 'var(--encre-douce)'}
+          strokeWidth={2.5}
           strokeDasharray={mode === 'pointille' ? '4 3' : undefined}
         />
       </svg>
