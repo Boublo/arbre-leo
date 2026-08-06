@@ -86,23 +86,39 @@ avoir ajouté un domaine, refaire l'étape 5 avec la nouvelle URL — et penser
 
 ### DNS chez Gandi (modulyx.eu)
 
-Dans **Gandi → Domaines → modulyx.eu → Enregistrements DNS**, ajouter :
+Gandi ajoute souvent `.modulyx.eu` à la fin des CNAME, ce qui casse le
+domaine (`cname.vercel-dns.com.modulyx.eu` au lieu de `cname.vercel-dns.com`).
+**Solution recommandée : utiliser un enregistrement A** (plus simple, pas de piège).
 
-| Type  | Nom   | Valeur                 | TTL  |
-| ----- | ----- | ---------------------- | ---- |
-| CNAME | `arbre` | `cname.vercel-dns.com` | 10800 |
+Dans **Gandi → Domaines → modulyx.eu → Enregistrements DNS** :
 
-**Attention — erreur fréquente :** la cible doit être exactement
-`cname.vercel-dns.com`, **sans** `.modulyx.eu` à la fin. Si Gandi affiche
-`cname.vercel-dns.com.modulyx.eu`, le domaine ne résout pas et le site est
-inaccessible.
+1. **Supprimer** l'enregistrement CNAME `arbre` (s'il existe).
+2. **Ajouter** :
 
-Vérifier depuis un terminal :
+| Type | Nom   | Valeur        | TTL  |
+| ---- | ----- | ------------- | ---- |
+| A    | `arbre` | `76.76.21.21` | 10800 |
+
+Ne pas toucher à `atelio` (A → `46.225.79.113`).
+
+3. Sur **Vercel → projet arbre-leo → Settings → Domains**, vérifier que
+   `arbre.modulyx.eu` est listé (sinon l'ajouter).
+
+**Alternative CNAME** (si tu préfères) : cible `cname.vercel-dns.com.` avec
+un **point final** obligatoire. Sans ce point, Gandi concatène `.modulyx.eu`.
+
+Vérifier (PowerShell sous Windows) :
+
+```powershell
+Resolve-DnsName arbre.modulyx.eu -Type A
+# Attendu : 76.76.21.21
+```
+
+Ou en ligne de commande Linux/macOS :
 
 ```bash
-dig arbre.modulyx.eu CNAME +short
-# Attendu : cname.vercel-dns.com.
-# Erreur : cname.vercel-dns.com.modulyx.eu.
+dig arbre.modulyx.eu A +short
+# Attendu : 76.76.21.21
 ```
 
 La propagation DNS peut prendre jusqu'à une heure. Tant que le domaine

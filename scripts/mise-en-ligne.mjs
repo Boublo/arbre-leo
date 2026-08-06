@@ -132,9 +132,10 @@ if (codeDep === 0) {
 // --- 4. Rappels post-mise-en-ligne ---------------------------------------
 
 console.log('=== À faire à la main ensuite ===\n');
-console.log(`  1. Configurer le CNAME chez Gandi (modulyx.eu → Enregistrements DNS) :`);
-console.log(`     Type CNAME · Nom arbre · Valeur cname.vercel-dns.com`);
-console.log(`     (sans .modulyx.eu à la fin — erreur fréquente chez Gandi)`);
+console.log(`  1. DNS chez Gandi (modulyx.eu → Enregistrements DNS) :`);
+console.log(`     Supprimer le CNAME arbre s il existe.`);
+console.log(`     Ajouter : Type A · Nom arbre · Valeur 76.76.21.21`);
+console.log(`     (Ne pas toucher à atelio → 46.225.79.113)`);
 console.log('');
 console.log(`  2. Une fois arbre.modulyx.eu actif, mettre :`);
 console.log(`     NEXT_PUBLIC_SITE_URL=https://arbre.modulyx.eu`);
