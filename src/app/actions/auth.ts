@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { creerClientServeur } from '@/lib/supabase/server';
+import { obtenirUrlSite } from '@/lib/url-site';
 
 export type EtatFormulaire = { erreur?: string; message?: string };
 
@@ -41,7 +42,7 @@ export async function inscrire(_precedent: EtatFormulaire, donnees: FormData): P
     email,
     password: motDePasse,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      emailRedirectTo: `${obtenirUrlSite()}/auth/callback`,
       // Repris par le déclencheur `gerer_nouvelle_inscription` pour remplir la fiche membre.
       data: { nom_affiche: nomAffiche, lien_famille: lienFamille, message_demande: message ?? '' },
     },
@@ -80,6 +81,22 @@ export async function connecter(_precedent: EtatFormulaire, donnees: FormData): 
 
   if (error) {
     return { erreur: traduireErreur(error.message) };
+  }
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    const { data: membre } = await supabase
+      .from('membres')
+      .select('statut')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    // Tant qu'un admin n'a pas ouvert l'accès, on évite d'envoyer sur l'accueil
+    // (ou ailleurs) : la page d'attente explique la suite.
+    if (!membre || membre.statut !== 'valide') {
+      revalidatePath('/', 'layout');
+      redirect('/attente');
+    }
   }
 
   const suite = String(donnees.get('suite') ?? '/');

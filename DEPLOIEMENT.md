@@ -84,6 +84,47 @@ Vercel accepte les domaines personnalisés (**Settings → Domains**). Après
 avoir ajouté un domaine, refaire l'étape 5 avec la nouvelle URL — et penser
 à basculer `NEXT_PUBLIC_SITE_URL` dessus.
 
+### DNS chez Gandi (modulyx.eu)
+
+Gandi ajoute souvent `.modulyx.eu` à la fin des CNAME, ce qui casse le
+domaine (`cname.vercel-dns.com.modulyx.eu` au lieu de `cname.vercel-dns.com`).
+**Solution recommandée : utiliser un enregistrement A** (plus simple, pas de piège).
+
+Dans **Gandi → Domaines → modulyx.eu → Enregistrements DNS** :
+
+1. **Supprimer** l'enregistrement CNAME `arbre` (s'il existe).
+2. **Ajouter** :
+
+| Type | Nom   | Valeur        | TTL  |
+| ---- | ----- | ------------- | ---- |
+| A    | `arbre` | `76.76.21.21` | 10800 |
+
+Ne pas toucher à `atelio` (A → `46.225.79.113`).
+
+3. Sur **Vercel → projet arbre-leo → Settings → Domains**, vérifier que
+   `arbre.modulyx.eu` est listé (sinon l'ajouter).
+
+**Alternative CNAME** (si tu préfères) : cible `cname.vercel-dns.com.` avec
+un **point final** obligatoire. Sans ce point, Gandi concatène `.modulyx.eu`.
+
+Vérifier (PowerShell sous Windows) :
+
+```powershell
+Resolve-DnsName arbre.modulyx.eu -Type A
+# Attendu : 76.76.21.21
+```
+
+Ou en ligne de commande Linux/macOS :
+
+```bash
+dig arbre.modulyx.eu A +short
+# Attendu : 76.76.21.21
+```
+
+La propagation DNS peut prendre jusqu'à une heure. Tant que le domaine
+personnalisé ne répond pas, laisser `NEXT_PUBLIC_SITE_URL` sur l'URL Vercel
+(`https://arbre-leo.vercel.app`) — l'application y fonctionne déjà.
+
 ## 7. Suite
 
 Chaque `git push` sur `main` déclenche un nouveau déploiement de production.

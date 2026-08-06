@@ -32,5 +32,7 @@ export async function GET(request: NextRequest) {
     .eq('id', user.id)
     .maybeSingle();
 
-  return NextResponse.redirect(`${origin}${membre?.statut === 'valide' ? '/' : '/attente'}`);
+  // Même domaine que la requête courante : les cookies de session y sont attachés.
+  const destination = membre?.statut === 'valide' ? '/' : '/attente';
+  return NextResponse.redirect(`${origin}${destination}`);
 }

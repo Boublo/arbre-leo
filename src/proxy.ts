@@ -67,7 +67,7 @@ export async function proxy(request: NextRequest) {
       .eq('id', user.id)
       .maybeSingle();
 
-    if (membre && membre.statut !== 'valide') {
+    if (!membre || membre.statut !== 'valide') {
       const url = request.nextUrl.clone();
       url.pathname = '/attente';
       url.search = '';
