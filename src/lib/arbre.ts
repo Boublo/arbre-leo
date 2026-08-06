@@ -1,4 +1,5 @@
 import { cache } from 'react';
+import { PRENOM_RACINE } from '@/lib/branches';
 import { creerClientServeur } from '@/lib/supabase/server';
 import { personneEstVivante } from '@/lib/vivant';
 import type { Evenement, NiveauPreuve, Sexe, TypeEvenement } from '@/lib/types-base';
@@ -473,10 +474,44 @@ export function derniersEnfants(donnees: DonneesArbre, combien = 12): PersonneAr
 }
 
 /**
- * La personne montrée à l'ouverture, faute de choix explicite : le plus jeune
- * des derniers-nés. C'est de lui que la famille remonte le plus naturellement.
+ * La personne montrée à l'ouverture, faute de choix explicite.
+ *
+ * Ordre de priorité : identifiant configuré, prénom racine (ex. Léo), puis le
+ * plus jeune des derniers-nés. Ainsi l'arbre s'ouvre toujours sur l'enfant
+ * autour duquel il est construit, même si un cousin plus jeune est ajouté.
  */
+function normaliserPourComparaison(texte: string): string {
+  return texte
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/[''`’]/g, "'");
+}
+
+function personneParPrenomRacine(donnees: DonneesArbre): PersonneArbre | null {
+  const cible = normaliserPourComparaison(PRENOM_RACINE);
+  if (!cible || cible === "l'enfant") return null;
+
+  for (const personne of donnees.personnes.values()) {
+    const prenom = personne.prenoms?.split(/[\s,]+/)[0]?.trim();
+    if (prenom && normaliserPourComparaison(prenom) === cible) return personne;
+
+    const premierMot = personne.nomComplet.split(/\s+/)[0]?.trim();
+    if (premierMot && normaliserPourComparaison(premierMot) === cible) return personne;
+  }
+
+  return null;
+}
+
 export function racineParDefaut(donnees: DonneesArbre): PersonneArbre | null {
+  const idConfigure = process.env.NEXT_PUBLIC_PERSONNE_RACINE?.trim();
+  if (idConfigure && donnees.personnes.has(idConfigure)) {
+    return donnees.personnes.get(idConfigure)!;
+  }
+
+  const parPrenom = personneParPrenomRacine(donnees);
+  if (parPrenom) return parPrenom;
+
   return derniersEnfants(donnees, 1)[0] ?? [...donnees.personnes.values()][0] ?? null;
 }
 

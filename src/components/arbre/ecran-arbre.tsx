@@ -7,6 +7,7 @@ import { BarreOutilsArbre } from '@/components/arbre/barre-outils-arbre';
 import { FichePersonne } from '@/components/arbre/fiche-personne';
 import { PanneauMobile } from '@/components/interactions/panneau-mobile';
 import { PaletteCommandes } from '@/components/arbre/palette-commandes';
+import { GuideArbre, guideDejaVu } from '@/components/arbre/guide-arbre';
 import { useRafraichirPhotosArbre } from '@/components/arbre/use-rafraichir-photos-arbre';
 import { chargerGrapheArbre } from '@/app/actions/arbre';
 import {
@@ -21,14 +22,14 @@ const CLE_MODE_ARBRE = 'arbre-mode';
 const MODES_ARBRE: ModeArbre[] = ['ascendance', 'famille', 'descendance', 'eclate'];
 
 function lireModeInitial(): ModeArbre {
-  if (typeof window === 'undefined') return 'famille';
+  if (typeof window === 'undefined') return 'ascendance';
   try {
     const sauve = localStorage.getItem(CLE_MODE_ARBRE);
     if (sauve && MODES_ARBRE.includes(sauve as ModeArbre)) return sauve as ModeArbre;
   } catch {
     /* localStorage indisponible */
   }
-  return 'famille';
+  return 'ascendance';
 }
 
 export function EcranArbre({
@@ -52,6 +53,7 @@ export function EcranArbre({
   const [mode, setMode] = useState<ModeArbre>('famille');
   const [selectionId, setSelectionId] = useState<string | null>(null);
   const [paletteOuverte, setPaletteOuverte] = useState(false);
+  const [guideOuvert, setGuideOuvert] = useState(false);
   const [chargementFocus, startTransition] = useTransition();
 
   useEffect(() => {
@@ -60,6 +62,10 @@ export function EcranArbre({
 
   useEffect(() => {
     setMode(lireModeInitial());
+  }, []);
+
+  useEffect(() => {
+    if (!guideDejaVu()) setGuideOuvert(true);
   }, []);
 
   useEffect(() => {
@@ -163,6 +169,7 @@ export function EcranArbre({
         recherchePersonnes={recherchePersonnes}
         onFocus={changerFocus}
         onChercher={() => setPaletteOuverte(true)}
+        onOuvrirGuide={() => setGuideOuvert(true)}
       />
 
       {mode === 'eclate' && (
@@ -196,7 +203,7 @@ export function EcranArbre({
         dépasse l'écran grossit la ligne et overflow-y-auto ne s'active jamais.
         inset-y-0 borne la hauteur au cadre visible, le défilement devient fiable.
       */}
-      <div className="relative min-h-0 flex-1 overflow-hidden">
+      <div className="relative min-h-0 flex-1 overflow-hidden" data-guide="arbre">
         <div className="absolute inset-0 min-h-0 min-w-0">
           <VueArbre
             donnees={donnees}
@@ -245,6 +252,8 @@ export function EcranArbre({
         onFermer={() => setPaletteOuverte(false)}
         onChoix={changerFocus}
       />
+
+      <GuideArbre ouvert={guideOuvert} onFermer={() => setGuideOuvert(false)} />
     </div>
   );
 }
