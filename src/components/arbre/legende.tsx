@@ -24,6 +24,15 @@ export function Legende() {
       <Separateur />
 
       <span className="flex items-center gap-1.5">
+        <svg width={22} height={8} aria-hidden>
+          <line x1={1} y1={4} x2={21} y2={4} stroke="var(--or)" strokeWidth={3} opacity={0.85} />
+        </svg>
+        Couple (union)
+      </span>
+
+      <Separateur />
+
+      <span className="flex items-center gap-1.5">
         <span className="grid h-4 w-6 place-items-center rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte">
           <span className="mr-4 h-3 w-1 rounded-[var(--rayon-petit)] bg-succes" />
         </span>
