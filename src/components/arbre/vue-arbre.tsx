@@ -243,7 +243,7 @@ export function VueArbre({
         ref={svgRef}
         className="h-full w-full cursor-grab active:cursor-grabbing"
         role="application"
-        aria-label="Arbre généalogique. Faites glisser pour vous déplacer, la molette pour zoomer, cliquez sur une personne pour l’ouvrir, F pour chercher."
+        aria-label="Arbre généalogique. Glissez pour vous déplacer, pincez pour zoomer, appuyez sur une personne pour l’ouvrir."
       >
         <defs>
           <pattern id="grille" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -369,9 +369,9 @@ export function VueArbre({
         </div>
       )}
 
-      {/* Légende à gauche, mini-carte à droite. */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-3 p-4">
-        <div className="flex flex-col gap-3">
+      {/* Légende à gauche, mini-carte à droite (masquée sur très petit écran). */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-2 p-3 sm:gap-3 sm:p-4">
+        <div className="flex max-w-[calc(100%-1rem)] flex-col gap-2 sm:max-w-none sm:gap-3">
           <Legende />
           <div className="pointer-events-auto carte flex w-fit items-center gap-1 p-1">
             <BoutonRond titre="Voir tout l’arbre" onClick={toutVoir}>
@@ -380,13 +380,15 @@ export function VueArbre({
           </div>
         </div>
 
-        <MiniMap
-          disposition={disposition}
-          transform={transform}
-          tailleVue={tailleVue}
-          onDeplacer={deplacerVersPointMonde}
-          focusId={focusId}
-        />
+        <div className="hidden sm:block">
+          <MiniMap
+            disposition={disposition}
+            transform={transform}
+            tailleVue={tailleVue}
+            onDeplacer={deplacerVersPointMonde}
+            focusId={focusId}
+          />
+        </div>
       </div>
 
       {disposition.noeuds.length <= 1 && (
@@ -670,7 +672,7 @@ function BoutonRond({
       onClick={onClick}
       title={titre}
       aria-label={titre}
-      className="grid h-9 w-9 place-items-center rounded-[var(--rayon-petit)] text-lg text-encre-douce transition hover:bg-fond-doux"
+      className="grid h-11 w-11 place-items-center rounded-[var(--rayon-petit)] text-lg text-encre-douce transition hover:bg-fond-doux sm:h-9 sm:w-9"
     >
       {children}
     </button>

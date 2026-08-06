@@ -40,7 +40,7 @@ export function FichePersonne({
           type="button"
           onClick={onFermer}
           aria-label="Fermer le panneau"
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-[var(--rayon-petit)] text-encre-douce hover:bg-fond-doux"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-[var(--rayon-petit)] text-encre-douce hover:bg-fond-doux sm:h-8 sm:w-8"
         >
           ✕
         </button>

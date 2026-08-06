@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { VueArbre } from '@/components/arbre/vue-arbre';
 import { SelecteurPersonne } from '@/components/arbre/selecteur-personne';
 import { FichePersonne } from '@/components/arbre/fiche-personne';
+import { PanneauMobile } from '@/components/interactions/panneau-mobile';
 import { PaletteCommandes } from '@/components/arbre/palette-commandes';
 import {
   anneesDeVie,
@@ -112,9 +113,9 @@ export function EcranArbre({
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* --- Barre de choix ------------------------------------------------ */}
-      <div className="z-10 flex flex-wrap items-center gap-x-5 gap-y-3 border-b border-bordure bg-fond-carte px-4 py-3">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-encre-tres-douce">Partir de</span>
+      <div className="z-10 flex flex-col gap-3 border-b border-bordure bg-fond-carte px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-5 sm:gap-y-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="shrink-0 text-sm text-encre-tres-douce">Partir de</span>
           <SelecteurPersonne
             personnes={graphe.personnes}
             suggestions={suggestions}
@@ -123,7 +124,11 @@ export function EcranArbre({
           />
         </div>
 
-        <div className="flex flex-wrap gap-1" role="tablist" aria-label="Sens de lecture">
+        <div
+          className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden"
+          role="tablist"
+          aria-label="Sens de lecture"
+        >
           {MODES.map((m) => (
             <button
               key={m}
@@ -132,7 +137,7 @@ export function EcranArbre({
               aria-selected={mode === m}
               title={LIBELLE_MODE[m].aide}
               onClick={() => setMode(m)}
-              className={`rounded-[var(--rayon-petit)] px-3 py-1.5 text-sm transition ${
+              className={`shrink-0 rounded-[var(--rayon-petit)] px-3 py-2.5 text-sm transition sm:py-1.5 ${
                 mode === m
                   ? 'bg-accent text-accent-contraste'
                   : 'text-encre-douce hover:bg-fond-doux hover:text-encre'
@@ -144,7 +149,7 @@ export function EcranArbre({
         </div>
 
         {entourage && (
-          <p className="text-xs text-encre-tres-douce">
+          <p className="hidden text-xs text-encre-tres-douce sm:block">
             {mode === 'ascendance' &&
               (entourage.ascendants > 0
                 ? `${entourage.ascendants} ascendants sur ${entourage.generationsAuDessus} générations`
@@ -159,7 +164,7 @@ export function EcranArbre({
           </p>
         )}
 
-        <div className="ml-auto flex items-center gap-3 text-xs">
+        <div className="hidden items-center gap-3 text-xs sm:ml-auto sm:flex">
           <Link href={`/chronologie?personne=${encodeURIComponent(focusId)}`} className="lien-discret">
             Sa chronologie
           </Link>
@@ -183,7 +188,7 @@ export function EcranArbre({
         </div>
 
         {personneSelectionnee && (
-          <aside className="w-full max-w-sm shrink-0 overflow-y-auto border-l border-bordure bg-fond-carte">
+          <aside className="hidden w-full max-w-sm shrink-0 overflow-y-auto border-l border-bordure bg-fond-carte lg:block">
             <FichePersonne
               personne={personneSelectionnee}
               annees={anneesDeVie(personneSelectionnee)}
@@ -194,6 +199,22 @@ export function EcranArbre({
           </aside>
         )}
       </div>
+
+      <PanneauMobile
+        ouvert={personneSelectionnee !== null}
+        onFermer={() => setSelectionId(null)}
+        etiquette={personneSelectionnee?.nomComplet}
+      >
+        {personneSelectionnee && (
+          <FichePersonne
+            personne={personneSelectionnee}
+            annees={anneesDeVie(personneSelectionnee)}
+            estFocus={personneSelectionnee.id === focusId}
+            onRepartirDIci={() => changerFocus(personneSelectionnee.id)}
+            onFermer={() => setSelectionId(null)}
+          />
+        )}
+      </PanneauMobile>
 
       <PaletteCommandes
         personnes={graphe.personnes}

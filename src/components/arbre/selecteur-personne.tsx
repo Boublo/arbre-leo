@@ -74,15 +74,15 @@ export function SelecteurPersonne({
         onClick={() => (ouvert ? fermer() : setOuvert(true))}
         aria-expanded={ouvert}
         aria-haspopup="listbox"
-        className="flex items-center gap-2 rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte px-3 py-1.5 text-left transition hover:border-bordure-forte"
+        className="flex max-w-full items-center gap-2 rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte px-3 py-2.5 text-left transition hover:border-bordure-forte"
       >
-        <span className="font-medium text-encre">{choisie.nomComplet}</span>
-        {annees && <span className="text-xs text-encre-tres-douce">{annees}</span>}
-        <span aria-hidden className="text-encre-tres-douce">▾</span>
+        <span className="truncate font-medium text-encre">{choisie.nomComplet}</span>
+        {annees && <span className="shrink-0 text-xs text-encre-tres-douce">{annees}</span>}
+        <span aria-hidden className="shrink-0 text-encre-tres-douce">▾</span>
       </button>
 
       {ouvert && (
-        <div className="absolute left-0 top-full z-30 mt-1 w-80 overflow-hidden rounded-[var(--rayon)] border border-bordure bg-fond-carte shadow-[var(--ombre-forte)]">
+        <div className="absolute left-0 top-full z-30 mt-1 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-[var(--rayon)] border border-bordure bg-fond-carte shadow-[var(--ombre-forte)] sm:w-80">
           <div className="border-b border-bordure p-2">
             <input
               ref={champRef}
