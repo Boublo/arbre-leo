@@ -1,4 +1,5 @@
 import { creerClientServeur } from '@/lib/supabase/server';
+import { personneEstVivante } from '@/lib/vivant';
 import { formaterDate, lieuCourt } from '@/lib/arbre';
 import { LIBELLE_EVENEMENT } from '@/components/personne/vocabulaire';
 import type {
@@ -365,7 +366,7 @@ export async function chargerFiche(id: string): Promise<Fiche | null> {
           .from('evenements')
           .select('personne_id, type, annee')
           .in('personne_id', idsPersonnesCitees)
-          .in('type', ['naissance', 'deces'])
+          .in('type', ['naissance', 'deces', 'inhumation', 'cremation'])
       : rienATrouver<DateDeVie>(),
     filtreSources ? supabase.from('sources').select('*').or(filtreSources) : rienATrouver<Source>(),
     idsSouvenirs.length
@@ -445,12 +446,15 @@ export async function chargerFiche(id: string): Promise<Fiche | null> {
     if (!idPersonne) return null;
     const p = personnesCitees.find((c) => c.id === idPersonne);
     if (!p) return null;
+    const aFinDeVie = datesDeVie.some(
+      (e) => e.personne_id === p.id && (e.type === 'deces' || e.type === 'inhumation' || e.type === 'cremation')
+    );
     return {
       id: p.id,
       nomComplet: p.nom_complet?.trim() || p.prenoms || p.nom || 'Personne sans nom',
       surnom: p.surnom,
       sexe: p.sexe,
-      presumeVivant: p.presume_vivant,
+      presumeVivant: personneEstVivante(p.presume_vivant, { aEvenementFinDeVie: aFinDeVie }),
       branches: p.branches ?? [],
       annees: anneesDeVie.get(p.id) ?? null,
     };

@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import { creerClientServeur } from '@/lib/supabase/server';
+import { personneEstVivante } from '@/lib/vivant';
 import type { Evenement, NiveauPreuve, Sexe, TypeEvenement } from '@/lib/types-base';
 
 /**
@@ -377,7 +378,7 @@ async function chargerArbreInterne(
       sexe: p.sexe,
       branches: p.branches ?? [],
       niveauxPreuve: p.niveaux_preuve ?? [],
-      presumeVivant: p.presume_vivant,
+      presumeVivant: personneEstVivante(p.presume_vivant, { typesEvenements: evts.map((e) => e.type) }),
       notes: p.notes,
       photoId: p.photo_id,
       photoUrl: chemin ? urlParChemin.get(chemin) ?? null : null,
