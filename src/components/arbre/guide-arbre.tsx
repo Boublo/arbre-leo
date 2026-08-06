@@ -1,30 +1,31 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState, type CSSProperties } from 'react';
 import { PRENOM_RACINE } from '@/lib/branches';
+import { LIBELLE_MODE, type ModeArbre } from '@/lib/layout-arbre';
 
-const CLE_GUIDE_VU = 'arbre-guide-v2';
+const CLE_GUIDE_VU = 'arbre-guide-v3';
 
 type EtapeGuide = {
   id: string;
   icone: string;
   titre: string;
-  texte: string;
-  /** Sélecteur `[data-guide="…"]` à mettre en avant ; absent = carte centrée. */
+  texte: string | ((ctx: { mode: ModeArbre; prenom: string }) => string);
   cible?: string;
-  /** Le bouton Suivant reste grisé tant qu'aucune personne n'est sélectionnée. */
   attendreSelection?: boolean;
 };
 
 function etapesGuide(nomFocus: string): EtapeGuide[] {
-  const prenom = PRENOM_RACINE === 'L’enfant' ? nomFocus.split(/\s+/)[0] ?? PRENOM_RACINE : PRENOM_RACINE;
+  const prenom =
+    PRENOM_RACINE === 'L’enfant' ? (nomFocus.split(/\s+/)[0] ?? PRENOM_RACINE) : PRENOM_RACINE;
 
   return [
     {
       id: 'bienvenue',
       icone: '🌳',
       titre: 'Bienvenue dans l’arbre',
-      texte: `L’arbre part de ${prenom}. Vous voyez sa famille s’étendre autour de lui — parents, grands-parents, cousins. C’est votre point de départ pour explorer.`,
+      texte: `L’arbre part de ${prenom}. Vous le voyez au centre, entouré de sa famille — parents, grands-parents, cousins. C’est votre point de départ.`,
+      cible: 'arbre',
     },
     {
       id: 'partir-de',
@@ -37,14 +38,21 @@ function etapesGuide(nomFocus: string): EtapeGuide[] {
       id: 'modes',
       icone: '🔀',
       titre: 'Choisir ce que l’on montre',
-      texte: '« D’où il vient » remonte les ancêtres. « La famille autour » élargit le tableau. « Ce qu’il a laissé » descend vers les descendants.',
+      texte: ({ mode }) =>
+        mode === 'ascendance'
+          ? 'Vous êtes en « D’où il vient » : les ancêtres remontent vers le haut. Essayez les autres onglets pour élargir ou descendre.'
+          : mode === 'famille'
+            ? '« La famille autour » montre parents, fratrie, cousins et enfants — une vue équilibrée pour se repérer.'
+            : mode === 'descendance'
+              ? '« Ce qu’il a laissé » suit les enfants et petits-enfants vers le bas.'
+              : 'Le mode « Tout » déploie l’entourage complet — utile pour une vue d’ensemble.',
       cible: 'modes',
     },
     {
       id: 'explorer',
       icone: '👆',
       titre: 'Essayez par vous-même',
-      texte: 'Cliquez ou appuyez sur une personne pour ouvrir sa fiche. Double-cliquez pour repartir d’elle. Zoomez et déplacez-vous librement dans le dessin.',
+      texte: 'La carte qui pulse est cliquable : ouvrez la fiche d’un parent ou d’un proche. Double-cliquez sur quelqu’un pour repartir d’elle.',
       cible: 'arbre',
       attendreSelection: true,
     },
@@ -52,21 +60,29 @@ function etapesGuide(nomFocus: string): EtapeGuide[] {
       id: 'fiche',
       icone: '📋',
       titre: 'La fiche latérale',
-      texte: 'La fiche résume l’essentiel : dates, liens, photos. Le bouton « Repartir d’ici » recentre tout l’arbre sur cette personne.',
+      texte: 'La fiche résume l’essentiel : dates, liens, photos. « Repartir d’ici » recentre tout l’arbre sur cette personne.',
       cible: 'fiche',
+    },
+    {
+      id: 'controles',
+      icone: '🎛',
+      titre: 'Zoom et légende',
+      texte: 'Agrandissez, réduisez ou cadrez tout l’arbre d’un clic. La légende en bas rappelle les couleurs des branches et les symboles.',
+      cible: 'controles',
     },
     {
       id: 'chercher',
       icone: '🔍',
       titre: 'Trouver quelqu’un vite',
-      texte: 'Appuyez sur F (ou sur la loupe sur mobile) pour chercher une personne par son nom et vous y rendre en un clic.',
+      texte: 'Appuyez sur F (ou sur la loupe) pour chercher une personne par son nom et vous y rendre en un clic.',
       cible: 'chercher',
     },
     {
       id: 'fin',
       icone: '✨',
       titre: 'C’est parti',
-      texte: 'Relancez ce guide à tout moment avec le bouton ? en haut de l’écran. Bonne exploration !',
+      texte: 'Relancez ce guide à tout moment avec le bouton ?. Bonne exploration !',
+      cible: 'guide-aide',
     },
   ];
 }
@@ -132,6 +148,66 @@ function positionCarte(rectangle: Rectangle | null): CSSProperties {
   };
 }
 
+function MasqueGuide({
+  rectangle,
+  onFermer,
+}: {
+  rectangle: Rectangle | null;
+  onFermer: () => void;
+}) {
+  const masqueId = useId().replace(/:/g, '');
+
+  if (!rectangle) {
+    return (
+      <button
+        type="button"
+        className="absolute inset-0 bg-encre/55"
+        aria-label="Fermer le guide"
+        onClick={onFermer}
+      />
+    );
+  }
+
+  const { top, left, width, height } = rectangle;
+
+  return (
+  <svg className="absolute inset-0 h-full w-full" aria-hidden>
+      <defs>
+        <mask id={masqueId}>
+          <rect width="100%" height="100%" fill="white" />
+          <rect
+            x={left}
+            y={top}
+            width={width}
+            height={height}
+            rx={12}
+            fill="black"
+          />
+        </mask>
+      </defs>
+      <rect
+        width="100%"
+        height="100%"
+        fill="rgba(15, 12, 8, 0.55)"
+        mask={`url(#${masqueId})`}
+        className="pointer-events-auto"
+        onClick={onFermer}
+      />
+      <rect
+        x={left}
+        y={top}
+        width={width}
+        height={height}
+        rx={12}
+        fill="none"
+        stroke="var(--accent)"
+        strokeWidth={2}
+        className="pointer-events-none animate-pulse"
+      />
+    </svg>
+  );
+}
+
 export function guideDejaVu(): boolean {
   if (typeof window === 'undefined') return true;
   try {
@@ -157,6 +233,7 @@ export function GuideArbre({
   ouvert,
   onFermer,
   nomFocus,
+  mode,
   selectionFaite,
   ficheVisible,
   onEtapeChange,
@@ -164,6 +241,7 @@ export function GuideArbre({
   ouvert: boolean;
   onFermer: () => void;
   nomFocus: string;
+  mode: ModeArbre;
   selectionFaite: boolean;
   ficheVisible: boolean;
   onEtapeChange?: (etapeId: string) => void;
@@ -174,6 +252,10 @@ export function GuideArbre({
 
   const etape = etapes[etapeCourante]!;
   const derniere = etapeCourante === etapes.length - 1;
+  const prenom =
+    PRENOM_RACINE === 'L’enfant' ? (nomFocus.split(/\s+/)[0] ?? PRENOM_RACINE) : PRENOM_RACINE;
+  const texteEtape =
+    typeof etape.texte === 'function' ? etape.texte({ mode, prenom }) : etape.texte;
 
   const peutAvancer = useMemo(() => {
     if (etape.id === 'explorer') return selectionFaite;
@@ -227,22 +309,22 @@ export function GuideArbre({
     };
   }, [ouvert, etapeCourante, actualiserRectangle]);
 
+  const fermer = useCallback(() => {
+    marquerGuideVu();
+    onFermer();
+  }, [onFermer]);
+
+  const suivant = useCallback(() => {
+    if (!peutAvancer) return;
+    if (derniere) {
+      fermer();
+      return;
+    }
+    setEtapeCourante((i) => i + 1);
+  }, [peutAvancer, derniere, fermer]);
+
   useEffect(() => {
     if (!ouvert) return;
-
-    function fermerClavier() {
-      marquerGuideVu();
-      onFermer();
-    }
-
-    function suivantClavier() {
-      if (!peutAvancer) return;
-      if (derniere) {
-        fermerClavier();
-        return;
-      }
-      setEtapeCourante((i) => i + 1);
-    }
 
     function surTouche(evt: KeyboardEvent) {
       const cible = evt.target as HTMLElement | null;
@@ -258,65 +340,32 @@ export function GuideArbre({
 
       if (evt.key === 'Escape') {
         evt.preventDefault();
-        fermerClavier();
+        fermer();
         return;
       }
 
       if (evt.key === 'Enter' && peutAvancer) {
         evt.preventDefault();
-        suivantClavier();
+        suivant();
       }
     }
 
     document.addEventListener('keydown', surTouche);
     return () => document.removeEventListener('keydown', surTouche);
-  }, [ouvert, peutAvancer, derniere, onFermer]);
+  }, [ouvert, peutAvancer, fermer, suivant]);
 
   if (!ouvert) return null;
 
-  function fermer() {
-    marquerGuideVu();
-    onFermer();
-  }
-
-  function suivant() {
-    if (!peutAvancer) return;
-    if (derniere) {
-      fermer();
-      return;
-    }
-    setEtapeCourante((i) => i + 1);
-  }
-
   const libelleSuivant = (() => {
     if (derniere) return 'Explorer l’arbre';
-    if (etape.id === 'explorer' && !selectionFaite) return 'Cliquez sur une personne…';
+    if (etape.id === 'explorer' && !selectionFaite) return 'Cliquez sur la carte qui pulse…';
     if (etape.id === 'fiche' && !ficheVisible) return 'Ouvrez une fiche…';
     return 'Suivant';
   })();
 
   return (
     <div className="fixed inset-0 z-[60]" role="presentation">
-      {rectangle ? (
-        <div
-          className="pointer-events-none absolute animate-pulse rounded-[var(--rayon)] ring-2 ring-accent"
-          style={{
-            top: rectangle.top,
-            left: rectangle.left,
-            width: rectangle.width,
-            height: rectangle.height,
-            boxShadow: '0 0 0 9999px rgba(15, 12, 8, 0.55)',
-          }}
-          aria-hidden
-        />
-      ) : (
-        <button
-          type="button"
-          className="absolute inset-0 bg-encre/55"
-          aria-label="Fermer le guide"
-          onClick={fermer}
-        />
-      )}
+      <MasqueGuide rectangle={rectangle} onFermer={fermer} />
 
       <div
         role="dialog"
@@ -339,7 +388,13 @@ export function GuideArbre({
           </div>
         </div>
 
-        <p className="mt-3 text-sm leading-relaxed text-encre-douce">{etape.texte}</p>
+        <p className="mt-3 text-sm leading-relaxed text-encre-douce">{texteEtape}</p>
+
+        {etape.id === 'modes' && (
+          <p className="mt-2 text-xs text-encre-tres-douce">
+            Mode actuel : <strong className="text-encre">{LIBELLE_MODE[mode].titre}</strong>
+          </p>
+        )}
 
         <div className="mt-4 flex gap-1" aria-hidden>
           {etapes.map((e, index) => (

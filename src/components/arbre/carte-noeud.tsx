@@ -33,6 +33,7 @@ type Props = {
   estFocus: boolean;
   selectionne: boolean;
   detaille: boolean;
+  invitationGuide?: boolean;
   onClick: () => void;
   onDoubleClick: () => void;
   onMenu: (evenement: React.MouseEvent) => void;
@@ -49,6 +50,7 @@ export function CarteNoeud({
   estFocus,
   selectionne,
   detaille,
+  invitationGuide = false,
   onClick,
   onDoubleClick,
   onMenu,
@@ -110,6 +112,20 @@ export function CarteNoeud({
         strokeWidth={selectionne ? 3 : estFocus ? 2.5 : noeud.lien === 'conjoint' ? 1.5 : 1}
         strokeDasharray={noeud.lien === 'conjoint' ? '5 4' : undefined}
       />
+
+      {invitationGuide && (
+        <rect
+          x={-4}
+          y={-4}
+          width={LARGEUR_NOEUD + 8}
+          height={HAUTEUR_NOEUD + 8}
+          rx={RAYON_NOEUD + 2}
+          fill="none"
+          stroke="var(--accent)"
+          strokeWidth={3}
+          className="invitation-guide-noeud"
+        />
+      )}
 
       {/* Teinte de branche en fond doux (sauf focus) */}
       {!estFocus && (

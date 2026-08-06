@@ -33,9 +33,11 @@ function marquerBandeauVu() {
 export function BandeauAide({
   signalActivite,
   masquer = false,
+  guideTermine = false,
 }: {
   signalActivite: number;
   masquer?: boolean;
+  guideTermine?: boolean;
 }) {
   const [visible, setVisible] = useState(false);
   const [signalAuMontage, setSignalAuMontage] = useState(signalActivite);
@@ -46,7 +48,7 @@ export function BandeauAide({
       return;
     }
     setVisible(true);
-  }, [masquer]);
+  }, [masquer, guideTermine]);
 
   if (visible && signalActivite !== signalAuMontage) {
     setSignalAuMontage(signalActivite);

@@ -54,6 +54,8 @@ export function EcranArbre({
   const [selectionId, setSelectionId] = useState<string | null>(null);
   const [paletteOuverte, setPaletteOuverte] = useState(false);
   const [guideOuvert, setGuideOuvert] = useState(false);
+  const [guideTermine, setGuideTermine] = useState(false);
+  const [etapeGuide, setEtapeGuide] = useState<string | null>(null);
   const [chargementFocus, startTransition] = useTransition();
 
   useEffect(() => {
@@ -66,6 +68,7 @@ export function EcranArbre({
       setGuideOuvert(true);
     } else {
       setMode(lireModeInitial());
+      setGuideTermine(true);
     }
   }, []);
 
@@ -119,10 +122,29 @@ export function EcranArbre({
 
   const personneSelectionnee = selectionId ? donnees.personnes.get(selectionId) ?? null : null;
 
+  const noeudSuggestion = useMemo(() => {
+    if (etapeGuide !== 'explorer') return null;
+    const parents = donnees.parents.get(focusId) ?? [];
+    if (parents[0]) return parents[0];
+    const enfants = donnees.enfants.get(focusId) ?? [];
+    return enfants[0] ?? null;
+  }, [donnees, focusId, etapeGuide]);
+
   const surEtapeGuide = useCallback((etapeId: string) => {
+    setEtapeGuide(etapeId);
     if (etapeId === 'modes' || etapeId === 'bienvenue') {
       setMode('ascendance');
     }
+  }, []);
+
+  const fermerGuide = useCallback(() => {
+    setGuideOuvert(false);
+    setEtapeGuide(null);
+    setGuideTermine(true);
+  }, []);
+
+  const ouvrirGuide = useCallback(() => {
+    setGuideOuvert(true);
   }, []);
 
   useEffect(() => {
@@ -177,7 +199,7 @@ export function EcranArbre({
         recherchePersonnes={recherchePersonnes}
         onFocus={changerFocus}
         onChercher={() => setPaletteOuverte(true)}
-        onOuvrirGuide={() => setGuideOuvert(true)}
+        onOuvrirGuide={ouvrirGuide}
       />
 
       {mode === 'eclate' && (
@@ -221,6 +243,9 @@ export function EcranArbre({
             onSelection={setSelectionId}
             onRecentrer={changerFocus}
             masquerAide={guideOuvert}
+            guideTermine={guideTermine}
+            etapeGuide={etapeGuide}
+            noeudSuggestion={noeudSuggestion}
           />
         </div>
 
@@ -268,8 +293,9 @@ export function EcranArbre({
 
       <GuideArbre
         ouvert={guideOuvert}
-        onFermer={() => setGuideOuvert(false)}
+        onFermer={fermerGuide}
         nomFocus={focus.nomComplet}
+        mode={mode}
         selectionFaite={selectionId !== null}
         ficheVisible={personneSelectionnee !== null}
         onEtapeChange={surEtapeGuide}

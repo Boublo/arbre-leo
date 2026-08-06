@@ -69,6 +69,7 @@ export function BarreOutilsArbre({
           <button
             type="button"
             onClick={onOuvrirGuide}
+            data-guide="guide-aide"
             aria-label="Ouvrir le guide de l’arbre"
             title="Guide de l’arbre"
             className="grid h-11 w-11 shrink-0 place-items-center rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte text-sm text-encre-douce"
@@ -149,6 +150,7 @@ export function BarreOutilsArbre({
           <button
             type="button"
             onClick={onOuvrirGuide}
+            data-guide="guide-aide"
             aria-label="Ouvrir le guide de l’arbre"
             title="Guide de l’arbre"
             className="grid h-8 w-8 place-items-center rounded-full border border-bordure text-sm text-encre-douce transition hover:bg-fond-doux hover:text-encre"
