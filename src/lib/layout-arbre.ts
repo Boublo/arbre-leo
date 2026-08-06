@@ -1136,6 +1136,7 @@ function finaliser(
       // couples : le recentrage d'une fratrie d'aînés peut écarter un époux.
       recentererFratriesSousCouples(noeuds, donnees.unions);
       rapprocherConjointsNoeuds(noeuds, groupesConj);
+      ecarterCollisions(noeuds, groupesConj);
     }
   }
 

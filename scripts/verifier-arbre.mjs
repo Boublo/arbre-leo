@@ -26,6 +26,8 @@ const ETAPES = [
   { cmd: ['npx', '--yes', 'tsx', 'scripts/test-geometrie-ascendance-couple.ts'], label: 'ascendance couple adjacent' },
   { cmd: ['npx', '--yes', 'tsx', 'scripts/test-geometrie-famille-complete.ts'], label: 'famille complète + ordre unions' },
   { cmd: ['npx', '--yes', 'tsx', 'scripts/test-geometrie-eclate.ts'], label: 'éclaté pedigree partiel' },
+  { cmd: ['npx', '--yes', 'tsx', 'scripts/test-geometrie-meme-rang.ts'], label: 'lien même rangée' },
+  { cmd: ['npx', '--yes', 'tsx', 'scripts/test-geometrie-couloirs.ts'], label: 'couloirs pedigree bornés' },
 ];
 
 const echecs = [];
