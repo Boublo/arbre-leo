@@ -15,6 +15,7 @@
     "arbre:verifier-liens": "node scripts/verifier-liens-famille.mjs",
     "arbre:verifier-navigation": "node scripts/verifier-navigation-arbre.mjs",
     "arbre:test-geometrie": "npx tsx scripts/test-geometrie-laura.ts",
+    "arbre:test-eclate": "npx tsx scripts/test-geometrie-eclate.ts",
     "arbre:verifier-geometrie": "node scripts/verifier-geometrie-arbre.mjs",
     "arbre:verifier-chargement": "node scripts/verifier-chargement-arbre.mjs",
     "arbre:verifier-zoom": "node scripts/verifier-zoom-arbre.mjs",

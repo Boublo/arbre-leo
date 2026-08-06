@@ -1024,7 +1024,15 @@ function disposerEclate(donnees: DonneesArbre, racineId: string): Disposition {
     }
   }
 
-  return finaliser(noeuds, liens, place, donnees, 'eclate', racineId);
+  return finaliser(
+    noeuds,
+    liens,
+    place,
+    donnees,
+    'eclate',
+    racineId,
+    pairesConjoints(unions)
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -1068,7 +1076,7 @@ function finaliser(
   }
 
   ecarterCollisions(noeuds, pairesConj);
-  if (mode === 'famille' && pairesConj) {
+  if ((mode === 'famille' || mode === 'eclate') && pairesConj) {
     rapprocherConjointsNoeuds(noeuds, pairesConj);
     recentererFratriesSousCouples(noeuds, donnees.unions);
     ecarterCollisions(noeuds, pairesConj);

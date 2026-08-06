@@ -22,6 +22,7 @@ const ETAPES = [
   { cmd: ['node', 'scripts/verifier-liens-famille.mjs'], label: 'symboles liens famille' },
   { cmd: ['node', 'scripts/verifier-geometrie-arbre.mjs'], label: 'géométrie Laura + constantes' },
   { cmd: ['npx', '--yes', 'tsx', 'scripts/test-geometrie-ascendance.ts'], label: 'ascendance profonde' },
+  { cmd: ['npx', '--yes', 'tsx', 'scripts/test-geometrie-eclate.ts'], label: 'éclaté pedigree partiel' },
 ];
 
 const echecs = [];
