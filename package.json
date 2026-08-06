@@ -19,6 +19,7 @@
     "arbre:verifier-chargement": "node scripts/verifier-chargement-arbre.mjs",
     "arbre:verifier-zoom": "node scripts/verifier-zoom-arbre.mjs",
     "arbre:verifier": "node scripts/verifier-arbre.mjs",
+    "arbre:verif": "npm run arbre:verifier",
     "test": "npm run typecheck && npm run arbre:verifier",
     "typecheck": "tsc --noEmit"
   },
