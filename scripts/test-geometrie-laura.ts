@@ -135,6 +135,7 @@ if (!pierre || !sophie || !laura || !leo || !julie) {
 }
 
 const distCouple = Math.abs(pierre!.x - sophie!.x);
+const paul = noeudParId.get('paul');
 
 const { segments } = planifierLiens(
   donnees,
@@ -159,10 +160,20 @@ for (const seg of segments) {
   }
 }
 
-if (distCouple > SEUIL_COUPLE_ADJACENT + 120) {
-  console.warn(
-    `  ⚠ Couple Pierre–Sophie éloignés (${Math.round(distCouple)} px) — pas de barre longue si > ${SEUIL_PONT_COUPLE} px`
+// AUDIT M1 : couple atomique — personne entre les époux, distance courte.
+if (distCouple > SEUIL_COUPLE_ADJACENT) {
+  erreurs.push(
+    `Couple Pierre–Sophie trop éloignés : ${Math.round(distCouple)} px > ${SEUIL_COUPLE_ADJACENT} px (doit être collé)`
   );
+}
+if (paul) {
+  const xMin = Math.min(pierre!.x, sophie!.x);
+  const xMax = Math.max(pierre!.x, sophie!.x);
+  if (paul.x > xMin && paul.x < xMax) {
+    erreurs.push(
+      `Paul (x=${Math.round(paul.x)}) est intercalé entre Pierre et Sophie — couple non atomique`
+    );
+  }
 }
 
 const centreParents = (pierre!.x + sophie!.x) / 2;

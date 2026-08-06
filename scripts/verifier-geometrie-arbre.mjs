@@ -30,6 +30,10 @@ if (!layout.includes('recentererFratriesSousCouples')) {
   console.error('layout-arbre.ts : recentererFratriesSousCouples manquant (AUDIT C3)');
   process.exit(1);
 }
+if (!layout.includes('unitesAtomiquesSurRang') || !layout.includes('ordonnerAvecCouplesAtomiques')) {
+  console.error('layout-arbre.ts : couples atomiques manquants (AUDIT M1)');
+  process.exit(1);
+}
 
 const test = spawnSync('npx', ['--yes', 'tsx', 'scripts/test-geometrie-laura.ts'], {
   cwd: racine,
