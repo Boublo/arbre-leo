@@ -50,7 +50,7 @@ export function EcranArbre({
 
   const [graphe, setGraphe] = useState(grapheInitial);
   const [focusId, setFocusId] = useState(focusInitial);
-  const [mode, setMode] = useState<ModeArbre>('famille');
+  const [mode, setMode] = useState<ModeArbre>('ascendance');
   const [selectionId, setSelectionId] = useState<string | null>(null);
   const [paletteOuverte, setPaletteOuverte] = useState(false);
   const [guideOuvert, setGuideOuvert] = useState(false);
@@ -61,11 +61,12 @@ export function EcranArbre({
   }, [grapheInitial]);
 
   useEffect(() => {
-    setMode(lireModeInitial());
-  }, []);
-
-  useEffect(() => {
-    if (!guideDejaVu()) setGuideOuvert(true);
+    if (!guideDejaVu()) {
+      setMode('ascendance');
+      setGuideOuvert(true);
+    } else {
+      setMode(lireModeInitial());
+    }
   }, []);
 
   useEffect(() => {
@@ -118,8 +119,15 @@ export function EcranArbre({
 
   const personneSelectionnee = selectionId ? donnees.personnes.get(selectionId) ?? null : null;
 
+  const surEtapeGuide = useCallback((etapeId: string) => {
+    if (etapeId === 'modes' || etapeId === 'bienvenue') {
+      setMode('ascendance');
+    }
+  }, []);
+
   useEffect(() => {
     function surTouche(evenement: KeyboardEvent) {
+      if (guideOuvert) return;
       if (evenement.defaultPrevented) return;
       if (evenement.key !== 'f' && evenement.key !== 'F') return;
       if (evenement.ctrlKey || evenement.metaKey || evenement.altKey) return;
@@ -140,7 +148,7 @@ export function EcranArbre({
     }
     window.addEventListener('keydown', surTouche);
     return () => window.removeEventListener('keydown', surTouche);
-  }, []);
+  }, [guideOuvert]);
 
   if (!focus && chargementFocus) {
     return (
@@ -212,11 +220,15 @@ export function EcranArbre({
             personneSelectionnee={selectionId}
             onSelection={setSelectionId}
             onRecentrer={changerFocus}
+            masquerAide={guideOuvert}
           />
         </div>
 
         {personneSelectionnee && (
-          <aside className="absolute inset-y-0 right-0 z-10 hidden w-full max-w-sm overflow-y-auto overscroll-y-contain border-l border-bordure bg-fond-carte [-webkit-overflow-scrolling:touch] lg:block">
+          <aside
+            data-guide="fiche"
+            className="absolute inset-y-0 right-0 z-10 hidden w-full max-w-sm overflow-y-auto overscroll-y-contain border-l border-bordure bg-fond-carte [-webkit-overflow-scrolling:touch] lg:block"
+          >
             <FichePersonne
               personne={personneSelectionnee}
               annees={anneesDeVie(personneSelectionnee)}
@@ -233,6 +245,7 @@ export function EcranArbre({
         ouvert={personneSelectionnee !== null}
         onFermer={() => setSelectionId(null)}
         etiquette={personneSelectionnee?.nomComplet}
+        guideCible="fiche"
       >
         {personneSelectionnee && (
           <FichePersonne
@@ -253,7 +266,14 @@ export function EcranArbre({
         onChoix={changerFocus}
       />
 
-      <GuideArbre ouvert={guideOuvert} onFermer={() => setGuideOuvert(false)} />
+      <GuideArbre
+        ouvert={guideOuvert}
+        onFermer={() => setGuideOuvert(false)}
+        nomFocus={focus.nomComplet}
+        selectionFaite={selectionId !== null}
+        ficheVisible={personneSelectionnee !== null}
+        onEtapeChange={surEtapeGuide}
+      />
     </div>
   );
 }

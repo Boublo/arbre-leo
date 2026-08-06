@@ -68,6 +68,7 @@ export function VueArbre({
   personneSelectionnee,
   onSelection,
   onRecentrer,
+  masquerAide = false,
 }: {
   donnees: DonneesArbre;
   disposition: Disposition;
@@ -75,6 +76,7 @@ export function VueArbre({
   personneSelectionnee: string | null;
   onSelection: (id: string | null) => void;
   onRecentrer: (id: string) => void;
+  masquerAide?: boolean;
 }) {
   const [transform, setTransform] = useState({ x: 0, y: 0, k: 1 });
   const [tailleVue, setTailleVue] = useState({ largeur: 0, hauteur: 0 });
@@ -412,7 +414,7 @@ export function VueArbre({
         hauteurVue={tailleVue.hauteur}
       />
 
-      <IndicationsMobile />
+      <IndicationsMobile masquer={masquerAide} />
 
       {/* Menu contextuel */}
       {menu && personneMenu && (
@@ -427,7 +429,7 @@ export function VueArbre({
 
       {/* Bandeau d'aide détaillé — grands écrans ; sur mobile voir IndicationsMobile. */}
       <div className="pointer-events-none absolute inset-x-0 top-3 z-20 hidden justify-center px-3 sm:flex">
-        <BandeauAide signalActivite={signalActivite} />
+        <BandeauAide signalActivite={signalActivite} masquer={masquerAide} />
       </div>
 
       {/* Confirmation discrète après un « Copier le lien ». */}

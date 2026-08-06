@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Bandeau d'aide montré au premier chargement.
+ * Bandeau d'aide montré après le guide de découverte.
  *
  * Il rappelle en une ligne les gestes de base, puis s'efface : après huit
  * secondes, ou dès qu'un mouvement est fait dans l'arbre. Sur mobile, les
@@ -9,41 +9,81 @@
  */
 
 import { useEffect, useState } from 'react';
+import { guideDejaVu } from '@/components/arbre/guide-arbre';
 
+const CLE_BANDEAU_VU = 'arbre-bandeau-aide-v1';
 const DUREE_AVANT_FERMETURE = 8000;
 
-export function BandeauAide({ signalActivite }: { signalActivite: number }) {
-  const [visible, setVisible] = useState(true);
+function bandeauDejaVu(): boolean {
+  try {
+    return localStorage.getItem(CLE_BANDEAU_VU) === '1';
+  } catch {
+    return true;
+  }
+}
+
+function marquerBandeauVu() {
+  try {
+    localStorage.setItem(CLE_BANDEAU_VU, '1');
+  } catch {
+    /* localStorage indisponible */
+  }
+}
+
+export function BandeauAide({
+  signalActivite,
+  masquer = false,
+}: {
+  signalActivite: number;
+  masquer?: boolean;
+}) {
+  const [visible, setVisible] = useState(false);
   const [signalAuMontage, setSignalAuMontage] = useState(signalActivite);
+
+  useEffect(() => {
+    if (masquer || bandeauDejaVu() || !guideDejaVu()) {
+      setVisible(false);
+      return;
+    }
+    setVisible(true);
+  }, [masquer]);
 
   if (visible && signalActivite !== signalAuMontage) {
     setSignalAuMontage(signalActivite);
+    marquerBandeauVu();
     setVisible(false);
   }
 
   useEffect(() => {
-    const id = window.setTimeout(() => setVisible(false), DUREE_AVANT_FERMETURE);
+    if (!visible) return;
+    const id = window.setTimeout(() => {
+      marquerBandeauVu();
+      setVisible(false);
+    }, DUREE_AVANT_FERMETURE);
     return () => window.clearTimeout(id);
-  }, []);
+  }, [visible]);
 
-  if (!visible) return null;
+  if (!visible || masquer) return null;
+
+  function fermer() {
+    marquerBandeauVu();
+    setVisible(false);
+  }
 
   return (
     <div
       role="status"
       aria-live="polite"
-      className="pointer-events-auto carte flex max-w-lg items-start gap-3 px-3 py-2.5 text-xs text-encre-douce sm:max-w-none sm:items-center"
+      className="pointer-events-auto carte flex max-w-lg items-start gap-3 px-3 py-2.5 text-xs text-encre-douce sm:max-w-none sm:items-center apparition-douce"
       style={{ boxShadow: 'var(--ombre-douce)' }}
     >
       <span className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-        {/* Mobile : gestes tactiles */}
         <span className="sm:hidden">
           <strong className="font-medium text-encre">Pincer</strong> pour zoomer ·{' '}
           <strong className="font-medium text-encre">Glisser</strong> pour se déplacer ·{' '}
           <strong className="font-medium text-encre">Appuyer</strong> sur une personne pour l’ouvrir
         </span>
 
-        {/* Grand écran : souris et clavier */}
         <span className="hidden flex-wrap items-center gap-x-3 gap-y-1 sm:flex">
           <span>
             <kbd className="mr-1 rounded-[var(--rayon-petit)] border border-bordure bg-fond-doux px-1 py-0.5 text-[10px]">
@@ -74,7 +114,7 @@ export function BandeauAide({ signalActivite }: { signalActivite: number }) {
 
       <button
         type="button"
-        onClick={() => setVisible(false)}
+        onClick={fermer}
         aria-label="Fermer l’aide"
         className="grid h-9 w-9 shrink-0 place-items-center rounded-[var(--rayon-petit)] text-encre-tres-douce hover:bg-fond-doux hover:text-encre"
       >

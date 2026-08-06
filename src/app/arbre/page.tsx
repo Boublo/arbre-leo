@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { Navigation } from '@/components/navigation';
 import { EcranArbreDynamique } from '@/components/arbre/ecran-arbre-dynamique';
 import { lireDroitsSaisie } from '@/components/saisie/donnees';
@@ -35,6 +36,10 @@ export default async function PageArbre({ searchParams }: PageProps<'/arbre'>) {
   );
 
   const focusId = focus?.id ?? [...donnees.personnes.keys()][0]!;
+
+  if (!focusDemande && focus) {
+    redirect(`/arbre?personne=${focus.id}`);
+  }
 
   // Graphe complet côté client : le layout est instantané et l'ascendance
   // a besoin de toute la chaîne des ancêtres (un sous-graphe BFS la tronque).
