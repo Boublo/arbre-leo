@@ -1,6 +1,6 @@
 # Audit complet — L'arbre de Léo
 
-Dernière mise à jour : 6 août 2026 — couples atomiques (M1) + correctifs audit.
+Dernière mise à jour : 6 août 2026 — mode éclaté lisible (M3) + couples atomiques.
 
 Ce document recense **où ça coince**, **pourquoi**, et **dans quel ordre corriger**.
 
@@ -10,11 +10,11 @@ Ce document recense **où ça coince**, **pourquoi**, et **dans quel ordre corri
 
 | Zone | Verdict | Problème principal |
 | --- | --- | --- |
-| **Liens de l'arbre** | Bon | Conjoints collés (blocs atomiques), fratrie ≠ conjoint |
+| **Liens de l'arbre** | Bon | Pedigree (famille + éclaté adjacent), couples atomiques |
 | **Cartes personnes** | Bon | Portraits OK ; badge « Fratrie » + contour plein |
 | **Site global** | Bon | 32 routes, auth, navigation améliorées |
 | **Performance `/arbre`** | Acceptable | Graphe complet (nécessaire à l'ascendance) + refresh photos |
-| **Tests auto** | Bon | Suite `npm run arbre:verifier` (8 checks + CI) |
+| **Tests auto** | Bon | Suite `npm run arbre:verifier` (9 checks + CI) |
 
 ### Correctifs appliqués (audit)
 
@@ -26,6 +26,7 @@ Ce document recense **où ça coince**, **pourquoi**, et **dans quel ordre corri
 ✓ H2  Refresh photos /api/arbre/photos (sous-graphe retiré : tronquait l'ascendance)
 ✓ H4  URL ?suite= conservée vers /attente pour les membres en attente
 ✓ M1  Couples = blocs atomiques (personne ne s'intercale entre époux)
+✓ M3  Mode éclaté : pedigree pour rangs adjacents ; L seulement hors adjacence
 ✓ M4  Barre de fratrie minimale (20 px) pour enfant unique
 ✓ M5  Médias filtrés par photo_id référencés (plus de scan de tout le bucket)
 ✓ M2  Badge COUSIN distinct de FRATRIE (lien + cartes + légende)
@@ -43,7 +44,7 @@ Ce document recense **où ça coince**, **pourquoi**, et **dans quel ordre corri
 | D'où il vient | `disposerHierarchie` asc | Si même rangée + ≤248 px | Si rang adjacent + parents même rangée | Sinon |
 | Ce qu'il a laissé | `disposerHierarchie` desc | Idem | Idem | Idem |
 | **La famille autour** | `disposerFamille` | **Toujours** si 2 parents visibles | **Toujours** | Rare |
-| Tout (éclaté) | `disposerEclate` | Même rangée seulement | **Jamais** | Toujours |
+| Tout (éclaté) | `disposerEclate` | Même rangée + couples atomiques | Si rang adjacent + parents même rangée | Implexe / non adjacent |
 
 Fichiers clés :
 - `src/lib/layout-arbre.ts` — où sont posées les cartes
@@ -168,7 +169,7 @@ Redirection vers `/attente` sans conserver `?suite=/arbre?personne=…`.
 | --- | --- | --- | --- |
 | M1 | `ecarterCollisions` sépare des conjoints déjà adjacents | `layout-arbre.ts` | **Corrigé** — couples = unités atomiques |
 | M2 | Cousin et frère : même `lien: collateral` | `layout-arbre.ts` | **Corrigé** — sous-type `cousin` + badges |
-| M3 | Mode éclaté : que des L orthogonaux, illisible | `geometrie-liens.ts` | Pedigree partiel ou avertissement UI |
+| M3 | Mode éclaté : que des L orthogonaux, illisible | `geometrie-liens.ts` | **Corrigé** — pedigree si rang adjacent |
 | M4 | Enfant unique : barre fratrie invisible (x1=x2) | `geometrie-liens.ts` | **Corrigé** — barre min 20 px |
 | M5 | `chargerArbre()` charge **toutes** les photos médias | `arbre.ts` | **Corrigé** — filtre `photo_id` |
 | M6 | Mobile : pas de mini-carte, repères gauche larges | `vue-arbre.tsx`, `reperes-rang.tsx` | **Corrigé** |
@@ -199,7 +200,7 @@ Redirection vers `/attente` sans conserver `?suite=/arbre?personne=…`.
 | Fratrie + cousins même rangée | Groupes écartés | Raccord long | **C3** |
 | Frère à côté du focus | `collateral` | — | **C1** (style) |
 | 1 parent visible | 1 carte | Pedigree solo | OK |
-| Implexe (éclaté) | BFS | Trait pointillé or | OK mais dense (M3) |
+| Implexe (éclaté) | BFS | Pedigree si adjacent, sinon L | OK |
 
 ---
 
@@ -232,7 +233,7 @@ Redirection vers `/attente` sans conserver `?suite=/arbre?personne=…`.
 
 | Module | Note | Commentaire |
 | --- | --- | --- |
-| Arbre | ★★★★☆ | Cartes, liens famille, couples atomiques, garde-fous CI |
+| Arbre | ★★★★☆ | Cartes, liens famille/éclaté, couples atomiques, garde-fous CI |
 | Fiche personne | ★★★★☆ | Riche, dépôt photo/acte |
 | Chronologie / Carte | ★★★★☆ | Solide |
 | Souvenirs / Récits | ★★★★☆ | Solide |

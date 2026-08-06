@@ -311,24 +311,39 @@ export function planifierLiens(
 
     if (enfantsPlaces.length === 0) continue;
 
-    const yMoyenEnfants = enfantsPlaces.reduce((s, e) => s + e.y, 0) / enfantsPlaces.length;
-    const yMoyenParents = parents.reduce((s, p) => s + p.y, 0) / parents.length;
-    const enfantsAuDessus = yMoyenEnfants < yMoyenParents;
-
     const rangParent = Math.max(...parents.map((p) => p.rang));
-    const rangProche = enfantsPlaces.every((e) => Math.abs(e.rang - rangParent) === 1);
+
+    // Mode famille : tous les enfants visibles. Autres modes (y compris éclaté) :
+    // pedigree seulement pour les enfants sur un rang adjacent — les L orthogonaux
+    // restent pour l'implexe / distances BFS non adjacentes (AUDIT M3).
+    const enfantsPedigree =
+      mode === 'famille'
+        ? enfantsPlaces
+        : enfantsPlaces.filter((e) => Math.abs(e.rang - rangParent) === 1);
 
     const parentsSurMemeRang =
       parents.length === 1 || Math.abs(parents[0]!.y - parents[1]!.y) < 1;
 
     const utiliserPedigree =
-      mode === 'famille' || (mode !== 'eclate' && rangProche && parentsSurMemeRang);
+      mode === 'famille'
+        ? enfantsPedigree.length > 0
+        : enfantsPedigree.length > 0 && parentsSurMemeRang;
 
-    if (utiliserPedigree) {
-      unionsPedigree.push({ id, parents, enfants: enfantsPlaces, enfantsAuDessus });
-      for (const enfant of enfantsPlaces) {
-        enfantsParUnion.add(enfant.personneId);
-      }
+    if (!utiliserPedigree) continue;
+
+    const yMoyenEnfants =
+      enfantsPedigree.reduce((s, e) => s + e.y, 0) / enfantsPedigree.length;
+    const yMoyenParents = parents.reduce((s, p) => s + p.y, 0) / parents.length;
+    const enfantsAuDessus = yMoyenEnfants < yMoyenParents;
+
+    unionsPedigree.push({
+      id,
+      parents,
+      enfants: enfantsPedigree,
+      enfantsAuDessus,
+    });
+    for (const enfant of enfantsPedigree) {
+      enfantsParUnion.add(enfant.personneId);
     }
   }
 

@@ -35,6 +35,17 @@ if (!layout.includes('unitesAtomiquesSurRang') || !layout.includes('ordonnerAvec
   process.exit(1);
 }
 
+if (!geo.includes('enfantsPedigree') && !geo.includes("mode === 'famille'")) {
+  // Le mode éclaté doit pouvoir utiliser le pedigree (AUDIT M3) — pas d'exclusion hardcodée.
+}
+
+if (/mode !== 'eclate' && rangProche/.test(geo) || /mode !== ['"]eclate['"] &&/.test(geo)) {
+  console.error(
+    "geometrie-liens.ts : le mode éclaté ne doit plus être exclu du pedigree (AUDIT M3)"
+  );
+  process.exit(1);
+}
+
 const test = spawnSync('npx', ['--yes', 'tsx', 'scripts/test-geometrie-laura.ts'], {
   cwd: racine,
   encoding: 'utf8',

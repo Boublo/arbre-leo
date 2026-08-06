@@ -170,8 +170,9 @@ export function EcranArbre({
           role="status"
           className="shrink-0 border-b border-bordure bg-fond-doux px-3 py-2 text-center text-xs text-encre-douce sm:px-4"
         >
-          Mode « {LIBELLE_MODE.eclate.titre} » : les liens sont simplifiés et peuvent se croiser.
-          Préférez « {LIBELLE_MODE.famille.titre} » pour lire parenté et unions.
+          Mode « {LIBELLE_MODE.eclate.titre} » : parentés proches en pedigree, le reste en traits
+          simples. Les liens lointains ou d’implexe peuvent se croiser — préférez «{' '}
+          {LIBELLE_MODE.famille.titre} » pour lire une branche.
         </p>
       )}
 
