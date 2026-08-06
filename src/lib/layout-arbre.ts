@@ -253,7 +253,7 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
         cleUnion !== '_'
       ) {
         // Écart visible entre deux fratries cousines sur la même rangée.
-        curseur += 1.25;
+        curseur += 1.65;
       }
       derniereUnion = cleUnion;
 
@@ -276,7 +276,7 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
     }
 
     /** Marge minimale entre deux fratries cousines après recentrage. */
-    const margeEntreGroupes = 1.15;
+    const margeEntreGroupes = 1.45;
 
     for (const [cle, groupe] of parGroupe) {
       if (cle === '_') continue;

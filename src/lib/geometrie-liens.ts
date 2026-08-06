@@ -5,8 +5,10 @@ import { HAUTEUR_NOEUD, LARGEUR_NOEUD, type LienArbre, type NoeudArbre } from '@
 export const SEUIL_COUPLE_ADJACENT = LARGEUR_NOEUD + 48;
 
 const MARGE_SOUS_PARENTS = 14;
-const MARGE_SUR_ENFANTS = 16;
-const MARGE_ENTRE_RANGS = 12;
+const MARGE_SUR_ENFANTS = 18;
+const MARGE_ENTRE_RANGS = 14;
+/** Espace entre la barre de fratrie et la couche de routage au-dessus. */
+const HAUTEUR_COUCHES_ROUTAGE = 20;
 
 export type SegmentLien = {
   id: string;
@@ -87,39 +89,49 @@ export function segmentsCouple(a: NoeudArbre, b: NoeudArbre, id: string): Segmen
 
 type PedigreeOpts = {
   id: string;
-  a: NoeudArbre;
-  b: NoeudArbre;
+  parents: NoeudArbre[];
   enfants: NoeudArbre[];
   enfantsAuDessus: boolean;
   yBarreFratrie?: number;
 };
 
-/** Descente couple → barre de fratrie → tiges vers chaque enfant. */
+function ajouterSegment(
+  segments: SegmentLien[],
+  segment: Omit<SegmentLien, 'kind'> & { kind?: 'line' | 'path' }
+) {
+  segments.push({ kind: 'line', ...segment });
+}
+
+/** Descente parents → couche de routage → barre de fratrie → tiges vers chaque enfant. */
 export function segmentsPedigree({
   id,
-  a,
-  b,
+  parents,
   enfants,
   enfantsAuDessus,
   yBarreFratrie: yBarreForce,
 }: PedigreeOpts): SegmentLien[] {
-  if (enfants.length === 0) return [];
+  if (enfants.length === 0 || parents.length === 0) return [];
 
   const segments: SegmentLien[] = [];
   const style = { stroke: 'var(--bordure-forte)', opacity: 0.9 } as const;
-  const adjacents = conjointsAdjacents(a, b);
-  const xCentre = (a.x + b.x) / 2;
-  const yBasParents = Math.max(a.y, b.y) + HAUTEUR_NOEUD;
-  const yHautParents = Math.min(a.y, b.y);
-
-  const yCoupleVisuel = adjacents
-    ? (a.y + b.y) / 2 + HAUTEUR_NOEUD / 2
-    : yBasParents + 10;
 
   const xs = enfants.map((e) => e.x).sort((u, v) => u - v);
   const xFratrieGauche = xs[0]!;
   const xFratrieDroite = xs[xs.length - 1]!;
   const xFratrieCentre = (xFratrieGauche + xFratrieDroite) / 2;
+
+  const xCentreParents = parents.reduce((s, p) => s + p.x, 0) / parents.length;
+  const yBasParents = Math.max(...parents.map((p) => p.y + HAUTEUR_NOEUD));
+  const yHautParents = Math.min(...parents.map((p) => p.y));
+
+  const adjacents =
+    parents.length === 2 && conjointsAdjacents(parents[0]!, parents[1]!);
+  const yCoupleVisuel =
+    parents.length === 2 && adjacents
+      ? (parents[0]!.y + parents[1]!.y) / 2 + HAUTEUR_NOEUD / 2
+      : parents.length === 2
+        ? yBasParents + 10
+        : parents[0]!.y + HAUTEUR_NOEUD / 2;
 
   let yBarreFratrie = yBarreForce;
   if (yBarreFratrie === undefined) {
@@ -132,44 +144,53 @@ export function segmentsPedigree({
     }
   }
 
-  const xJonction =
-    xCentre < xFratrieGauche
-      ? xFratrieGauche
-      : xCentre > xFratrieDroite
-        ? xFratrieDroite
-        : xFratrieCentre;
+  const yRoute = enfantsAuDessus
+    ? yBarreFratrie + HAUTEUR_COUCHES_ROUTAGE
+    : yBarreFratrie - HAUTEUR_COUCHES_ROUTAGE;
 
   const yDepart = enfantsAuDessus
     ? Math.min(yCoupleVisuel, yHautParents - MARGE_SOUS_PARENTS)
     : Math.max(yCoupleVisuel, yBasParents + MARGE_SOUS_PARENTS);
 
-  segments.push({
+  // 1. Descente verticale depuis le couple jusqu'à la couche de routage (entre les rangées).
+  ajouterSegment(segments, {
     id: `descente-${id}`,
-    kind: 'line',
-    x1: xCentre,
+    x1: xCentreParents,
     y1: yDepart,
-    x2: xCentre,
-    y2: yBarreFratrie,
+    x2: xCentreParents,
+    y2: yRoute,
     strokeWidth: 2,
     ...style,
   });
 
-  if (Math.abs(xCentre - xJonction) > 2) {
-    segments.push({
+  // 2. Raccord horizontal UNIQUEMENT sur la couche de routage — jamais sur la barre de fratrie
+  //    ni au milieu des cartes, pour ne pas traverser des frères/sœurs.
+  if (Math.abs(xCentreParents - xFratrieCentre) > 2) {
+    ajouterSegment(segments, {
       id: `raccord-${id}`,
-      kind: 'line',
-      x1: xCentre,
-      y1: yBarreFratrie,
-      x2: xJonction,
-      y2: yBarreFratrie,
+      x1: xCentreParents,
+      y1: yRoute,
+      x2: xFratrieCentre,
+      y2: yRoute,
       strokeWidth: 2,
       ...style,
     });
   }
 
-  segments.push({
+  // 3. Descente vers la barre de fratrie, centrée sur le groupe d'enfants.
+  ajouterSegment(segments, {
+    id: `descente-fratrie-${id}`,
+    x1: xFratrieCentre,
+    y1: yRoute,
+    x2: xFratrieCentre,
+    y2: yBarreFratrie,
+    strokeWidth: 2,
+    ...style,
+  });
+
+  // 4. Barre de fratrie : uniquement entre les enfants de CE couple.
+  ajouterSegment(segments, {
     id: `fratrie-${id}`,
-    kind: 'line',
     x1: xFratrieGauche,
     y1: yBarreFratrie,
     x2: xFratrieDroite,
@@ -178,11 +199,11 @@ export function segmentsPedigree({
     ...style,
   });
 
+  // 5. Tiges vers chaque enfant.
   for (const enfant of enfants) {
     const yEnfant = enfantsAuDessus ? enfant.y + HAUTEUR_NOEUD : enfant.y;
-    segments.push({
+    ajouterSegment(segments, {
       id: `enfant-${id}-${enfant.personneId}`,
-      kind: 'line',
       x1: enfant.x,
       y1: yBarreFratrie,
       x2: enfant.x,
@@ -195,22 +216,26 @@ export function segmentsPedigree({
   return segments;
 }
 
-/** Connecteur en escalier pour filiation simple ou lien de reprise. */
+/** Connecteur en escalier : horizontal juste au-dessus (ou dessous) de l'enfant, pas au milieu. */
 export function segmentOrthogonal(
   enfant: NoeudArbre,
   parent: NoeudArbre,
   id: string,
   reprise: boolean
 ): SegmentLien {
-  const [haut, bas] = enfant.y <= parent.y ? [enfant, parent] : [parent, enfant];
-  const y1 = haut.y + HAUTEUR_NOEUD;
-  const y2 = bas.y;
-  const milieu = y1 + (y2 - y1) / 2;
+  const enfantAuDessus = enfant.y < parent.y;
+  const [proche, loin] = enfantAuDessus ? [enfant, parent] : [parent, enfant];
+
+  const ySortieLoin = enfantAuDessus ? loin.y : loin.y + HAUTEUR_NOEUD;
+  const yEntreeProche = enfantAuDessus ? proche.y + HAUTEUR_NOEUD : proche.y;
+  const yHoriz = enfantAuDessus
+    ? yEntreeProche + MARGE_ENTRE_RANGS
+    : yEntreeProche - MARGE_SUR_ENFANTS;
 
   return {
     id,
     kind: 'path',
-    d: `M ${haut.x} ${y1} V ${milieu} H ${bas.x} V ${y2}`,
+    d: `M ${loin.x} ${ySortieLoin} V ${yHoriz} H ${proche.x} V ${yEntreeProche}`,
     stroke: reprise ? 'var(--or)' : 'var(--bordure-forte)',
     strokeWidth: reprise ? 2 : 1.5,
     strokeDasharray: reprise ? '5 4' : undefined,
@@ -225,11 +250,24 @@ export type PlanLiens = {
 
 type UnionPedigree = {
   id: string;
-  a: NoeudArbre;
-  b: NoeudArbre;
+  parents: NoeudArbre[];
   enfants: NoeudArbre[];
   enfantsAuDessus: boolean;
 };
+
+function parentsVisibles(
+  conjointA: string | null,
+  conjointB: string | null,
+  noeudParId: Map<string, NoeudArbre>
+): NoeudArbre[] {
+  const parents: NoeudArbre[] = [];
+  for (const id of [conjointA, conjointB]) {
+    if (!id) continue;
+    const n = noeudParId.get(id);
+    if (n) parents.push(n);
+  }
+  return parents;
+}
 
 /**
  * Calcule tous les segments de liens pour une disposition.
@@ -248,77 +286,82 @@ export function planifierLiens(
 
   for (const union of donnees.unions.values()) {
     const { conjointA, conjointB, enfants, id } = union;
-    if (!conjointA || !conjointB) continue;
-
-    const a = noeudParId.get(conjointA);
-    const b = noeudParId.get(conjointB);
-    if (!a || !b) continue;
+    const parents = parentsVisibles(conjointA, conjointB, noeudParId);
+    if (parents.length === 0) continue;
 
     const enfantsPlaces = enfants
       .map((enfantId) => noeudParId.get(enfantId))
       .filter((n): n is NoeudArbre => n !== undefined);
 
-    const dessinerCouple =
-      mode === 'famille' || (Math.abs(a.y - b.y) < 1 && a.rang === b.rang);
-    if (dessinerCouple) {
-      segments.push(...segmentsCouple(a, b, id));
+    if (
+      parents.length === 2 &&
+      (mode === 'famille' || (Math.abs(parents[0]!.y - parents[1]!.y) < 1 && parents[0]!.rang === parents[1]!.rang))
+    ) {
+      segments.push(...segmentsCouple(parents[0]!, parents[1]!, id));
     }
 
     if (enfantsPlaces.length === 0) continue;
 
     const yMoyenEnfants = enfantsPlaces.reduce((s, e) => s + e.y, 0) / enfantsPlaces.length;
-    const yMoyenParents = (a.y + b.y) / 2;
+    const yMoyenParents = parents.reduce((s, p) => s + p.y, 0) / parents.length;
     const enfantsAuDessus = yMoyenEnfants < yMoyenParents;
 
-    const rangParent = Math.max(a.rang, b.rang);
+    const rangParent = Math.max(...parents.map((p) => p.rang));
     const rangProche = enfantsPlaces.every((e) => Math.abs(e.rang - rangParent) === 1);
 
+    const parentsSurMemeRang =
+      parents.length === 1 || Math.abs(parents[0]!.y - parents[1]!.y) < 1;
+
     const utiliserPedigree =
-      mode === 'famille' || (mode !== 'eclate' && rangProche && Math.abs(a.y - b.y) < 1);
+      mode === 'famille' || (mode !== 'eclate' && rangProche && parentsSurMemeRang);
 
     if (utiliserPedigree) {
-      unionsPedigree.push({ id, a, b, enfants: enfantsPlaces, enfantsAuDessus });
+      unionsPedigree.push({ id, parents, enfants: enfantsPlaces, enfantsAuDessus });
       for (const enfant of enfantsPlaces) {
         enfantsParUnion.add(enfant.personneId);
       }
     }
   }
 
-  // Barres de fratrie alignées par rangée (enfants en dessous).
-  const yBarreParRangEnfant = new Map<number, number>();
+  // Regrouper par rangée d'enfants pour décaler légèrement les barres de fratrie
+  // quand plusieurs couples partagent la même rangée (évite la superposition exacte).
+  const parRangEnfants = new Map<string, UnionPedigree[]>();
   for (const union of unionsPedigree) {
-    if (union.enfantsAuDessus) continue;
-    const yEnfants = Math.min(...union.enfants.map((e) => e.y));
-    const yBarre = yEnfants - MARGE_SUR_ENFANTS;
-    const existant = yBarreParRangEnfant.get(yEnfants);
-    yBarreParRangEnfant.set(yEnfants, existant === undefined ? yBarre : Math.min(existant, yBarre));
+    const yCle = Math.min(...union.enfants.map((e) => e.y));
+    const cle = `${yCle}:${union.enfantsAuDessus ? 'haut' : 'bas'}`;
+    const liste = parRangEnfants.get(cle) ?? [];
+    liste.push(union);
+    parRangEnfants.set(cle, liste);
   }
 
-  // Barres alignées par rangée (enfants au-dessus, ascendance).
-  const yBarreParRangEnfantHaut = new Map<number, number>();
-  for (const union of unionsPedigree) {
-    if (!union.enfantsAuDessus) continue;
-    const yEnfants = Math.min(...union.enfants.map((e) => e.y));
-    const yBarre = Math.max(...union.enfants.map((e) => e.y + HAUTEUR_NOEUD)) + MARGE_ENTRE_RANGS;
-    const existant = yBarreParRangEnfantHaut.get(yEnfants);
-    yBarreParRangEnfantHaut.set(
-      yEnfants,
-      existant === undefined ? yBarre : Math.max(existant, yBarre)
-    );
-  }
+  for (const liste of parRangEnfants.values()) {
+    liste.sort((u, v) => {
+      const xa = u.enfants.reduce((s, e) => s + e.x, 0) / u.enfants.length;
+      const xb = v.enfants.reduce((s, e) => s + e.x, 0) / v.enfants.length;
+      return xa - xb;
+    });
 
-  for (const union of unionsPedigree) {
-    const yEnfants = Math.min(...union.enfants.map((e) => e.y));
-    const yBarre = union.enfantsAuDessus
-      ? yBarreParRangEnfantHaut.get(yEnfants)
-      : yBarreParRangEnfant.get(yEnfants);
+    liste.forEach((union, index) => {
+      const yEnfants = Math.min(...union.enfants.map((e) => e.y));
+      let yBarre = union.enfantsAuDessus
+        ? Math.max(...union.enfants.map((e) => e.y + HAUTEUR_NOEUD)) + MARGE_ENTRE_RANGS
+        : yEnfants - MARGE_SUR_ENFANTS;
 
-    segments.push(
-      ...segmentsPedigree({
-        ...union,
-        yBarreFratrie: yBarre,
-      })
-    );
+      if (liste.length > 1) {
+        const decalage = index * 8;
+        yBarre = union.enfantsAuDessus ? yBarre + decalage : yBarre - decalage;
+      }
+
+      segments.push(
+        ...segmentsPedigree({
+          id: union.id,
+          parents: union.parents,
+          enfants: union.enfants,
+          enfantsAuDessus: union.enfantsAuDessus,
+          yBarreFratrie: yBarre,
+        })
+      );
+    });
   }
 
   for (const lien of liens) {

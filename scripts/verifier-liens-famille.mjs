@@ -11,7 +11,7 @@ const racine = join(dirname(fileURLToPath(import.meta.url)), '..');
 const checks = [
   {
     file: 'src/lib/geometrie-liens.ts',
-    motifs: ['planifierLiens', 'segmentsPedigree', 'segmentsCouple', 'MARGE_SUR_ENFANTS'],
+    motifs: ['planifierLiens', 'segmentsPedigree', 'segmentsCouple', 'HAUTEUR_COUCHES_ROUTAGE'],
   },
   {
     file: 'src/components/arbre/liens-arbre.tsx',
