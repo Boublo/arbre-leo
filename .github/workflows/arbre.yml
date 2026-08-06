@@ -14,6 +14,8 @@ on:
       - 'src/lib/arbre-graphe.ts'
       - 'scripts/verifier-*.mjs'
       - 'scripts/test-geometrie-*.ts'
+      - 'package.json'
+      - 'package-lock.json'
       - '.github/workflows/arbre.yml'
 
 jobs:
