@@ -21,6 +21,7 @@ export function BarreOutilsArbre({
   recherchePersonnes,
   onFocus,
   onChercher,
+  onOuvrirGuide,
 }: {
   focus: PersonneArbre;
   focusId: string;
@@ -30,6 +31,7 @@ export function BarreOutilsArbre({
   recherchePersonnes: PersonneRecherche[];
   onFocus: (id: string) => void;
   onChercher: () => void;
+  onOuvrirGuide: () => void;
 }) {
   const [deployee, setDeployee] = useState(false);
 
@@ -37,7 +39,7 @@ export function BarreOutilsArbre({
     <>
       {/* Mobile : deux lignes compactes */}
       <div className="z-10 flex flex-col gap-2 border-b border-bordure bg-fond-carte px-3 py-2 lg:hidden">
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2" data-guide="partir-de">
           <div className="min-w-0 flex-1">
             <SelecteurPersonne
               personnes={recherchePersonnes}
@@ -49,6 +51,7 @@ export function BarreOutilsArbre({
           <button
             type="button"
             onClick={onChercher}
+            data-guide="chercher"
             aria-label="Chercher une personne"
             className="grid h-11 w-11 shrink-0 place-items-center rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte text-encre-douce"
           >
@@ -63,9 +66,19 @@ export function BarreOutilsArbre({
           >
             {deployee ? '▴' : '▾'}
           </button>
+          <button
+            type="button"
+            onClick={onOuvrirGuide}
+            data-guide="guide-aide"
+            aria-label="Ouvrir le guide de l’arbre"
+            title="Guide de l’arbre"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte text-sm text-encre-douce"
+          >
+            ?
+          </button>
         </div>
 
-        <label className="flex min-w-0 items-center gap-2 text-sm">
+        <label className="flex min-w-0 items-center gap-2 text-sm" data-guide="modes">
           <span className="shrink-0 text-encre-tres-douce">Vue</span>
           <select
             value={mode}
@@ -94,7 +107,7 @@ export function BarreOutilsArbre({
 
       {/* Grand écran : barre complète */}
       <div className="z-10 hidden flex-wrap items-center gap-x-5 gap-y-3 border-b border-bordure bg-fond-carte px-4 py-3 lg:flex">
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2" data-guide="partir-de">
           <span className="shrink-0 text-sm text-encre-tres-douce">Partir de</span>
           <SelecteurPersonne
             personnes={recherchePersonnes}
@@ -104,7 +117,7 @@ export function BarreOutilsArbre({
           />
         </div>
 
-        <div className="flex flex-wrap gap-1" role="tablist" aria-label="Sens de lecture">
+        <div className="flex flex-wrap gap-1" role="tablist" aria-label="Sens de lecture" data-guide="modes">
           {MODES.map((m) => (
             <button
               key={m}
@@ -125,6 +138,25 @@ export function BarreOutilsArbre({
         </div>
 
         <div className="ml-auto flex items-center gap-3 text-xs">
+          <button
+            type="button"
+            onClick={onChercher}
+            data-guide="chercher"
+            className="rounded-[var(--rayon-petit)] border border-bordure px-2.5 py-1.5 text-encre-douce transition hover:bg-fond-doux hover:text-encre"
+            title="Chercher une personne (F)"
+          >
+            Chercher <kbd className="ml-1 rounded border border-bordure bg-fond-doux px-1 text-[10px]">F</kbd>
+          </button>
+          <button
+            type="button"
+            onClick={onOuvrirGuide}
+            data-guide="guide-aide"
+            aria-label="Ouvrir le guide de l’arbre"
+            title="Guide de l’arbre"
+            className="grid h-8 w-8 place-items-center rounded-full border border-bordure text-sm text-encre-douce transition hover:bg-fond-doux hover:text-encre"
+          >
+            ?
+          </button>
           <Link href={`/chronologie?personne=${encodeURIComponent(focusId)}`} className="lien-discret">
             Sa chronologie
           </Link>

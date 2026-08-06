@@ -192,6 +192,23 @@ p {
   }
 }
 
+.invitation-guide-noeud {
+  animation: guide-noeud-pulse 1.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes guide-noeud-pulse {
+  0%,
+  100% {
+    stroke-opacity: 1;
+    stroke-width: 3;
+  }
+  50% {
+    stroke-opacity: 0.55;
+    stroke-width: 6;
+  }
+}
+
 /* Apparition discrète (frise, chapitres) — désactivée par le bloc reduce ci-dessus. */
 @keyframes apparition-douce {
   from {

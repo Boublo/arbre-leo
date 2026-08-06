@@ -68,6 +68,10 @@ export function VueArbre({
   personneSelectionnee,
   onSelection,
   onRecentrer,
+  masquerAide = false,
+  guideTermine = false,
+  etapeGuide = null,
+  noeudSuggestion = null,
 }: {
   donnees: DonneesArbre;
   disposition: Disposition;
@@ -75,6 +79,10 @@ export function VueArbre({
   personneSelectionnee: string | null;
   onSelection: (id: string | null) => void;
   onRecentrer: (id: string) => void;
+  masquerAide?: boolean;
+  guideTermine?: boolean;
+  etapeGuide?: string | null;
+  noeudSuggestion?: string | null;
 }) {
   const [transform, setTransform] = useState({ x: 0, y: 0, k: 1 });
   const [tailleVue, setTailleVue] = useState({ largeur: 0, hauteur: 0 });
@@ -391,6 +399,9 @@ export function VueArbre({
                   estFocus={noeud.personneId === focusId}
                   selectionne={personneSelectionnee === noeud.personneId}
                   detaille={detaille}
+                  invitationGuide={
+                    etapeGuide === 'explorer' && noeud.personneId === noeudSuggestion
+                  }
                   onClick={() => onSelection(noeud.personneId)}
                   onDoubleClick={() => onRecentrer(noeud.personneId)}
                   onMenu={(evenement) => ouvrirMenu(noeud.personneId, evenement)}
@@ -412,7 +423,7 @@ export function VueArbre({
         hauteurVue={tailleVue.hauteur}
       />
 
-      <IndicationsMobile />
+      <IndicationsMobile masquer={masquerAide} />
 
       {/* Menu contextuel */}
       {menu && personneMenu && (
@@ -427,7 +438,11 @@ export function VueArbre({
 
       {/* Bandeau d'aide détaillé — grands écrans ; sur mobile voir IndicationsMobile. */}
       <div className="pointer-events-none absolute inset-x-0 top-3 z-20 hidden justify-center px-3 sm:flex">
-        <BandeauAide signalActivite={signalActivite} />
+        <BandeauAide
+          signalActivite={signalActivite}
+          masquer={masquerAide}
+          guideTermine={guideTermine}
+        />
       </div>
 
       {/* Confirmation discrète après un « Copier le lien ». */}
@@ -442,7 +457,10 @@ export function VueArbre({
 
       {/* Commandes et légende — toujours ancrées en bas du cadre visible. */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex items-end justify-between gap-2 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:p-4">
-        <div className="pointer-events-auto flex max-w-[calc(100%-0.5rem)] flex-col items-start gap-2 sm:max-w-none">
+        <div
+          className="pointer-events-auto flex max-w-[calc(100%-0.5rem)] flex-col items-start gap-2 sm:max-w-none"
+          data-guide="controles"
+        >
           <div className="flex flex-wrap items-end gap-1">
             <div className="carte flex items-center gap-1 p-1 shadow-[var(--ombre-douce)]">
               <BoutonRond titre="Agrandir" onClick={() => zoomer(1.35)}>

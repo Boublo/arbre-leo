@@ -11,11 +11,13 @@ export function PanneauMobile({
   onFermer,
   children,
   etiquette,
+  guideCible,
 }: {
   ouvert: boolean;
   onFermer: () => void;
   children: ReactNode;
   etiquette?: string;
+  guideCible?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -62,6 +64,7 @@ export function PanneauMobile({
         aria-modal="true"
         aria-label={etiquette}
         tabIndex={-1}
+        data-guide={guideCible}
         className="panneau-bas-entree relative flex max-h-[min(85dvh,100%)] min-h-0 flex-col overflow-hidden rounded-t-2xl border-t border-bordure bg-fond-carte shadow-[var(--ombre-forte)] outline-none"
         onClick={(evt) => evt.stopPropagation()}
       >

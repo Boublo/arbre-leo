@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Navigation } from '@/components/navigation';
-import { chargerArbre, formaterDate, type DonneesArbre, type PersonneArbre } from '@/lib/arbre';
+import { chargerArbre, formaterDate, racineParDefaut, type DonneesArbre, type PersonneArbre } from '@/lib/arbre';
 import { creerClientServeur } from '@/lib/supabase/server';
 import { NOM_DU_SITE, SOUS_TITRE_DU_SITE } from '@/lib/site';
 import {
@@ -86,6 +86,9 @@ export default async function PageAccueil() {
       </>
     );
   }
+
+  const racine = racineParDefaut(donnees);
+  const lienArbre = racine ? `/arbre?personne=${racine.id}` : '/arbre';
 
   // --- Chiffres clés ------------------------------------------------------
   const generations = calculerGenerations(donnees);
@@ -186,7 +189,7 @@ export default async function PageAccueil() {
           </p>
           <div className="flex flex-wrap gap-3">
             <Link
-              href="/arbre"
+              href={lienArbre}
               className="rounded-[var(--rayon-petit)] bg-accent px-5 py-3 font-medium text-accent-contraste transition hover:brightness-110"
             >
               Explorer l’arbre
@@ -322,7 +325,7 @@ export default async function PageAccueil() {
           </h2>
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <CarteRoute
-              href="/arbre"
+              href={lienArbre}
               titre="L’arbre"
               accroche="Une même image tenue à hauteur d’œil : les deux branches, et l’enfant où elles se rejoignent."
             />

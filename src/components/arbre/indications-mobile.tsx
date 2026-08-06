@@ -5,7 +5,8 @@
  * (le bandeau complet reste réservé aux grands écrans).
  */
 
-export function IndicationsMobile() {
+export function IndicationsMobile({ masquer = false }: { masquer?: boolean }) {
+  if (masquer) return null;
   return (
     <div
       role="note"
