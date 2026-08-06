@@ -195,6 +195,26 @@ export type Souvenir = {
 export type SouvenirPersonne = { souvenir_id: string; personne_id: string };
 export type SouvenirMedia = { souvenir_id: string; media_id: string; ordre: number };
 
+export type Recit = {
+  id: string;
+  patronyme: string | null;
+  theme: string | null;
+  branche: string | null;
+  titre: string;
+  chapeau: string | null;
+  /** Corps du récit, rédigé en Markdown. */
+  corps: string;
+  annee_debut: number | null;
+  annee_fin: number | null;
+  auteur_id: string;
+  statut: StatutModeration;
+  epingle: boolean;
+  cree_le: string;
+  modifie_le: string;
+};
+
+export type RecitPersonne = { recit_id: string; personne_id: string };
+
 export type FaitHistorique = {
   id: string;
   titre: string;
@@ -277,6 +297,8 @@ export type BaseDeDonnees = {
       souvenirs: Table<Souvenir, 'auteur_id' | 'titre' | 'recit'>;
       souvenirs_personnes: Table<SouvenirPersonne, 'souvenir_id' | 'personne_id'>;
       souvenirs_medias: Table<SouvenirMedia, 'souvenir_id' | 'media_id'>;
+      recits: Table<Recit, 'auteur_id' | 'titre' | 'corps'>;
+      recits_personnes: Table<RecitPersonne, 'recit_id' | 'personne_id'>;
       faits_historiques: Table<FaitHistorique, 'titre' | 'annee_debut'>;
       faits_personnes: Table<FaitPersonne, 'fait_id' | 'personne_id'>;
       chantiers_recherche: Table<ChantierRecherche, 'titre'>;

@@ -13,6 +13,7 @@ import { NotesPersonne } from '@/components/personne/notes';
 import { SourcesPersonne } from '@/components/personne/sources';
 import { MediasPersonne } from '@/components/personne/medias';
 import { SouvenirsPersonne } from '@/components/personne/souvenirs';
+import { RecitsQuiLaMentionnent } from '@/components/personne/recits';
 import { FaitsPersonne } from '@/components/personne/faits';
 import { CommentairesPersonne } from '@/components/personne/commentaires';
 import { BarreDeSaisie } from '@/components/saisie/lien-ajout';
@@ -21,6 +22,7 @@ import { NavigationContextuelle } from '@/components/decouverte/navigation-conte
 import { BarreScroll } from '@/components/interactions/barre-scroll';
 import { RaccourciAccueil } from '@/components/interactions/raccourci-accueil';
 import { chargerArbre } from '@/lib/arbre';
+import { chargerRecitsPourPersonne } from '@/lib/recits';
 
 /**
  * La fiche complète d'une personne.
@@ -47,9 +49,10 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
   // La fiche vient de plusieurs tables ; l'arbre entier sert au contexte
   // (parenté immédiate, tirage d'un membre au hasard). Les deux appels sont
   // indépendants, on les mène en parallèle.
-  const [fiche, donneesArbre] = await Promise.all([
+  const [fiche, donneesArbre, recits] = await Promise.all([
     chargerFiche(id),
     chargerArbre(),
+    chargerRecitsPourPersonne(id),
   ]);
 
   if (!fiche) notFound();
@@ -60,7 +63,7 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
       fiche.parents.length +
       fiche.fratrie.length +
       fiche.foyers.reduce((n, f) => n + (f.conjoint ? 1 : 0) + f.enfants.length, 0),
-    souvenirs: fiche.souvenirs.length,
+    souvenirs: fiche.souvenirs.length + recits.length,
     photos: fiche.medias.length,
     conversation: compterCommentaires(fiche.commentaires),
   };
@@ -108,6 +111,7 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
             }
             parente={<ParentePersonne fiche={fiche} />}
             souvenirs={<SouvenirsPersonne souvenirs={fiche.souvenirs} />}
+            recits={<RecitsQuiLaMentionnent recits={recits} />}
             photos={<MediasPersonne medias={fiche.medias} />}
             conversation={
               <CommentairesPersonne

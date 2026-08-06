@@ -11,6 +11,7 @@ const LIENS = [
   { href: '/chronologie', libelle: 'Chronologie' },
   { href: '/carte', libelle: 'Carte' },
   { href: '/souvenirs', libelle: 'Souvenirs' },
+  { href: '/recits', libelle: 'Récits' },
   { href: '/histoire', libelle: 'La grande Histoire' },
   { href: '/recherches', libelle: 'Recherches' },
   { href: '/nouveautes', libelle: 'Quoi de neuf' },

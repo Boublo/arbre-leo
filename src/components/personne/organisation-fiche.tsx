@@ -32,6 +32,7 @@ export function OrganisationFiche({
   vue,
   parente,
   souvenirs,
+  recits,
   photos,
   conversation,
   compteurs,
@@ -39,6 +40,13 @@ export function OrganisationFiche({
   vue: ReactNode;
   parente: ReactNode;
   souvenirs: ReactNode;
+  /**
+   * Section « Récits qui la mentionnent » : rendue à la suite des souvenirs,
+   * qui partagent la même matière — ce que la famille écrit d'elle. Facultative
+   * pour que la fiche reste compatible avec les appelants qui ne la fournissent
+   * pas encore.
+   */
+  recits?: ReactNode;
   photos: ReactNode;
   conversation: ReactNode;
   compteurs: Compteurs;
@@ -74,7 +82,15 @@ export function OrganisationFiche({
   const panneaux: { id: IdOnglet; contenu: ReactNode }[] = [
     { id: 'vue', contenu: vue },
     { id: 'parente', contenu: parente },
-    { id: 'souvenirs', contenu: souvenirs },
+    {
+      id: 'souvenirs',
+      contenu: (
+        <>
+          {souvenirs}
+          {recits}
+        </>
+      ),
+    },
     { id: 'photos', contenu: photos },
     { id: 'conversation', contenu: conversation },
   ];
