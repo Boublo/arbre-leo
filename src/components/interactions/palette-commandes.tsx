@@ -327,9 +327,18 @@ function PaletteInterne({
                         </span>
                         <span className="truncate text-encre">{el.personne.nomComplet}</span>
                       </span>
-                      <span className="shrink-0 text-xs text-encre-douce">
-                        {anneesDeVie(el.personne)}
-                      </span>
+                      {/* Repère discret pour les fiches encore vides : sans
+                          date, on affiche « dates inconnues » en gris — utile
+                          pour repérer d'un coup d'œil ce qui reste à saisir. */}
+                      {anneesDeVie(el.personne) ? (
+                        <span className="shrink-0 text-xs text-encre-douce">
+                          {anneesDeVie(el.personne)}
+                        </span>
+                      ) : (
+                        <span className="shrink-0 text-xs italic text-encre-tres-douce">
+                          dates inconnues
+                        </span>
+                      )}
                     </>
                   ) : (
                     <>

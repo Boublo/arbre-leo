@@ -499,7 +499,7 @@ function Noeud({
 
       <text
         x={personne.photoUrl && detaille ? 46 : LARGEUR_NOEUD / 2}
-        y={detaille ? 24 : 38}
+        y={detaille ? (personne.surnom ? 22 : 24) : 38}
         textAnchor={personne.photoUrl && detaille ? 'start' : 'middle'}
         className={estFocus ? 'fill-[var(--accent-contraste)]' : 'fill-[var(--encre)]'}
         style={{ fontFamily: 'var(--font-titre)', fontSize: 14, fontWeight: 600 }}
@@ -509,10 +509,25 @@ function Noeud({
 
       {detaille && (
         <>
+          {/* Le surnom, quand il y en a un : discret, en italique, juste sous
+              le nom. « dit Papou », « dite Mémé » — selon le sexe. */}
+          {personne.surnom && (
+            <text
+              x={personne.photoUrl ? 46 : LARGEUR_NOEUD / 2}
+              y={34}
+              textAnchor={personne.photoUrl ? 'start' : 'middle'}
+              className={estFocus ? 'fill-[var(--accent-contraste)]' : 'fill-[var(--encre-douce)]'}
+              style={{ fontSize: 10.5, fontStyle: 'italic' }}
+              opacity={0.9}
+            >
+              {personne.sexe === 'F' ? 'dite' : 'dit'}{' '}
+              {tronquer(personne.surnom, personne.photoUrl ? 18 : 24)}
+            </text>
+          )}
           {vie && (
             <text
               x={personne.photoUrl ? 46 : LARGEUR_NOEUD / 2}
-              y={41}
+              y={personne.surnom ? 48 : 41}
               textAnchor={personne.photoUrl ? 'start' : 'middle'}
               className={estFocus ? 'fill-[var(--accent-contraste)]' : 'fill-[var(--encre-douce)]'}
               style={{ fontSize: 11.5 }}
@@ -524,7 +539,7 @@ function Noeud({
           {personne.naissance?.lieuCourt && (
             <text
               x={personne.photoUrl ? 46 : LARGEUR_NOEUD / 2}
-              y={55}
+              y={personne.surnom ? 60 : 55}
               textAnchor={personne.photoUrl ? 'start' : 'middle'}
               className={
                 estFocus ? 'fill-[var(--accent-contraste)]' : 'fill-[var(--encre-tres-douce)]'

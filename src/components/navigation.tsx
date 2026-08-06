@@ -13,6 +13,7 @@ const LIENS = [
   { href: '/souvenirs', libelle: 'Souvenirs' },
   { href: '/histoire', libelle: 'La grande Histoire' },
   { href: '/recherches', libelle: 'Recherches' },
+  { href: '/nouveautes', libelle: 'Quoi de neuf' },
 ];
 
 export async function Navigation() {

@@ -144,6 +144,27 @@ Le script se connecte comme un membre ordinaire, ne corrige rien, et
 sort avec le code `1` si des anomalies ont été détectées, ce qui le rend
 branchable sur un crochet git `pre-commit`.
 
+### Voir ce qui a bougé depuis le dernier passage
+
+Là où le diagnostic dit *ce qui ne va pas*, la veille dit *ce qui est
+neuf* : quelles personnes ont été ajoutées ou corrigées, quelles unions
+sont apparues, quels événements et sources sont venus enrichir des
+fiches existantes. C'est le geste utile au retour d'une campagne de
+saisie faite par quelqu'un d'autre, ou après une session d'un agent qui
+a travaillé en parallèle.
+
+```bash
+ARBRE_EMAIL=vous@exemple.fr ARBRE_MOTDEPASSE=… npm run arbre:veille
+```
+
+Le premier passage crée simplement un instantané dans
+`data/veille.json` (dossier exclu du dépôt) ; les passages suivants
+comparent l'état courant à cet instantané, listent les nouveautés
+regroupées par personne et par niveau de preuve, puis mettent
+l'instantané à jour pour le prochain passage. Le script sort avec le
+code `1` si une anomalie apparaît — personne disparue, doublon de code
+GEDCOM — et `0` sinon.
+
 ## 10. Passer le flambeau
 
 Quand un autre chercheur — humain ou agent — reprendra l'enquête,

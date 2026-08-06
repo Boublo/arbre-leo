@@ -36,7 +36,7 @@ export function Vignette({ personne }: { personne: Portrait }) {
         </span>
         {personne.surnom && (
           <span className="truncate text-xs italic text-encre-douce">
-            « {personne.surnom} »
+            {personne.sexe === 'F' ? 'dite' : 'dit'} {personne.surnom}
           </span>
         )}
         <span className="truncate text-xs text-encre-tres-douce">
@@ -99,7 +99,7 @@ export function VignetteRiche({ personne }: { personne: PortraitEnrichi }) {
         </span>
         {personne.surnom && (
           <span className="text-xs italic text-encre-douce">
-            « {personne.surnom} »
+            {personne.sexe === 'F' ? 'dite' : 'dit'} {personne.surnom}
           </span>
         )}
         {legende && (

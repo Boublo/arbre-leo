@@ -11,6 +11,7 @@
     "arbre:sql": "node scripts/generate-import-sql.mjs",
     "arbre:maj": "node scripts/maj.mjs",
     "arbre:diag": "node scripts/diagnostic.mjs",
+    "arbre:veille": "node scripts/veille.mjs",
     "arbre:acte": "node scripts/nouvel-acte.mjs",
     "arbre:verif": "node scripts/verifier-avant-commit.mjs",
     "typecheck": "tsc --noEmit"

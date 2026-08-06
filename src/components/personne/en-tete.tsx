@@ -62,9 +62,15 @@ export function EnTetePersonne({ fiche }: { fiche: Fiche }) {
         </div>
       )}
 
-      {/* Version imprimable : un lien discret plutôt qu’un gros bouton — on ne
-          l’active qu’à l’occasion, pour un cousin sans écran ou un classeur. */}
-      <div className="mt-4 border-t border-bordure pt-3 text-right">
+      {/* Repères de navigation : rejoindre l’arbre à cet endroit précis, ou
+          sortir la fiche imprimable pour un cousin sans écran ou un classeur. */}
+      <div className="mt-4 flex flex-wrap items-center justify-end gap-x-4 gap-y-1 border-t border-bordure pt-3">
+        <Link
+          href={`/arbre?personne=${encodeURIComponent(personne.id)}`}
+          className="lien-discret text-sm"
+        >
+          Ouvrir sur l’arbre
+        </Link>
         <Link
           href={`/personne/${personne.id}/imprimer`}
           className="lien-discret text-sm"
