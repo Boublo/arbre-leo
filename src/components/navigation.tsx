@@ -20,7 +20,7 @@ const LIENS = [
   { href: '/nouveautes', libelle: 'Quoi de neuf' },
 ];
 
-export async function Navigation() {
+export async function Navigation({ compact = false }: { compact?: boolean }) {
   const supabase = await creerClientServeur();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -47,7 +47,10 @@ export async function Navigation() {
         }
       />
 
-      <Link href="/" className="flex min-w-0 flex-1 items-baseline gap-2 truncate lg:flex-none">
+      <Link
+        href="/"
+        className={`min-w-0 items-baseline gap-2 truncate ${compact ? 'hidden flex-1 lg:flex lg:flex-none' : 'flex flex-1 lg:flex-none'}`}
+      >
         <span className="truncate font-titre text-lg">{NOM_DU_SITE}</span>
       </Link>
 

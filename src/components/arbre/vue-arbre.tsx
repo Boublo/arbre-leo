@@ -48,6 +48,7 @@ export function VueArbre({
   const [menu, setMenu] = useState<EtatMenu>(null);
   const [signalActivite, setSignalActivite] = useState(0);
   const [conseilCopie, setConseilCopie] = useState<string | null>(null);
+  const [legendeOuverte, setLegendeOuverte] = useState(false);
 
   const svgRef = useRef<SVGSVGElement>(null);
   const groupeRef = useRef<SVGGElement>(null);
@@ -112,7 +113,26 @@ export function VueArbre({
     const { width, height } = svg.getBoundingClientRect();
     if (width === 0) return;
 
-    const marge = 90;
+    const mobile = width < 1024;
+    const noeudFocus = noeudParId.get(focusId);
+
+    // Sur mobile, centrer sur la personne choisie à une échelle lisible plutôt
+    // que de tenter d'afficher les 80 ascendants en points minuscules.
+    if (mobile && noeudFocus) {
+      const k = 0.9;
+      const cx = noeudFocus.x;
+      const cy = noeudFocus.y + HAUTEUR_NOEUD / 2;
+      select(svg)
+        .transition()
+        .duration(500)
+        .call(
+          comportement.transform,
+          zoomIdentity.translate(width / 2 - cx * k, height / 2 - cy * k).scale(k)
+        );
+      return;
+    }
+
+    const marge = mobile ? 32 : 90;
     const k = Math.min(
       (width - marge * 2) / Math.max(disposition.largeur, 1),
       (height - marge * 2) / Math.max(disposition.hauteur + HAUTEUR_NOEUD, 1),
@@ -128,7 +148,7 @@ export function VueArbre({
           .translate((width - disposition.largeur * k) / 2, (height - disposition.hauteur * k) / 2)
           .scale(k)
       );
-  }, [disposition.largeur, disposition.hauteur]);
+  }, [disposition.largeur, disposition.hauteur, focusId, noeudParId]);
 
   // Chaque changement de personne ou de mode recadre sur l'ensemble : sans
   // cela, la nouvelle disposition apparaîtrait hors de l'écran.
@@ -354,8 +374,8 @@ export function VueArbre({
         />
       )}
 
-      {/* Bandeau d'aide clavier — en haut, il ne cache pas la vue de l'arbre. */}
-      <div className="pointer-events-none absolute inset-x-0 top-3 flex justify-center px-3">
+      {/* Bandeau d'aide — masqué sur mobile pour laisser place à l'arbre. */}
+      <div className="pointer-events-none absolute inset-x-0 top-3 hidden justify-center px-3 sm:flex">
         <BandeauAide signalActivite={signalActivite} />
       </div>
 
@@ -369,18 +389,36 @@ export function VueArbre({
         </div>
       )}
 
-      {/* Légende à gauche, mini-carte à droite (masquée sur très petit écran). */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-2 p-3 sm:gap-3 sm:p-4">
-        <div className="flex max-w-[calc(100%-1rem)] flex-col gap-2 sm:max-w-none sm:gap-3">
-          <Legende />
-          <div className="pointer-events-auto carte flex w-fit items-center gap-1 p-1">
-            <BoutonRond titre="Voir tout l’arbre" onClick={toutVoir}>
-              ⤢
-            </BoutonRond>
+      {/* Commandes en bas : légende repliée sur mobile. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-2 sm:p-4">
+        <div className="pointer-events-auto flex flex-col items-start gap-2">
+          <div className="flex items-center gap-1">
+            <div className="carte flex items-center gap-1 p-1">
+              <BoutonRond titre="Voir tout l’arbre" onClick={toutVoir}>
+                ⤢
+              </BoutonRond>
+            </div>
+            <button
+              type="button"
+              onClick={() => setLegendeOuverte((v) => !v)}
+              aria-expanded={legendeOuverte}
+              aria-label={legendeOuverte ? 'Masquer la légende' : 'Afficher la légende'}
+              className="grid h-11 w-11 place-items-center rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte text-sm text-encre-douce shadow-[var(--ombre-douce)] lg:hidden"
+            >
+              ?
+            </button>
           </div>
+          <div className="hidden lg:block">
+            <Legende />
+          </div>
+          {legendeOuverte && (
+            <div className="max-w-[calc(100vw-1rem)] lg:hidden">
+              <Legende />
+            </div>
+          )}
         </div>
 
-        <div className="hidden sm:block">
+        <div className="hidden lg:block">
           <MiniMap
             disposition={disposition}
             transform={transform}

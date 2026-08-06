@@ -39,12 +39,14 @@ export default async function PageArbre({ searchParams }: PageProps<'/arbre'>) {
 
   return (
     <>
-      <Navigation />
-      <EcranArbre
-        graphe={graphe}
-        focusInitial={focus?.id ?? graphe.personnes[0]!.id}
-        derniersEnfants={derniersEnfants(donnees).map((p) => p.id)}
-      />
+      <Navigation compact />
+      <div className="flex h-[calc(100dvh-3.25rem)] flex-col overflow-hidden lg:h-auto lg:max-h-none lg:min-h-0 lg:flex-1">
+        <EcranArbre
+          graphe={graphe}
+          focusInitial={focus?.id ?? graphe.personnes[0]!.id}
+          derniersEnfants={derniersEnfants(donnees).map((p) => p.id)}
+        />
+      </div>
     </>
   );
 }
