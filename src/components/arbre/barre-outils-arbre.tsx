@@ -102,7 +102,7 @@ export function BarreOutilsArbre({
               Sa fiche
             </Link>
             <Link
-              href={`/arbre/imprimer?personne=${encodeURIComponent(focusId)}&mode=${mode}`}
+              href={`/arbre/imprimer?personne=${encodeURIComponent(focusId)}&mode=${mode}&profondeur=5&photos=1&format=paysage`}
               className="lien-discret"
             >
               Version imprimable
@@ -170,7 +170,7 @@ export function BarreOutilsArbre({
             Sa fiche
           </Link>
           <Link
-            href={`/arbre/imprimer?personne=${encodeURIComponent(focusId)}&mode=${mode}`}
+            href={`/arbre/imprimer?personne=${encodeURIComponent(focusId)}&mode=${mode}&profondeur=5&photos=1&format=paysage`}
             className="lien-discret"
           >
             Imprimer

@@ -1,6 +1,12 @@
 import type { DonneesArbre, PersonneArbre } from '@/lib/arbre';
 import { anneesDeVie } from '@/lib/arbre-graphe';
 import { TON_COTE } from '@/lib/branches';
+import {
+  compterPersonnes,
+  filtrerDisposition,
+  listePersonnesOrdonnee,
+  type OptionsImpressionArbre,
+} from '@/lib/arbre-impression';
 import { planifierLiens, type SegmentLien } from '@/lib/geometrie-liens';
 import {
   disposerArbre,
@@ -26,7 +32,6 @@ const IMP = {
   fond: '#ffffff',
   fondFocus: '#f0f0f0',
   bordureFocus: '#000000',
-  bordure: '#888888',
   paternelle: '#2c5f8a',
   maternelle: '#7a3d6b',
   commune: '#555555',
@@ -42,17 +47,17 @@ type Props = {
   donnees: DonneesArbre;
   racineId: string;
   mode: ModeArbre;
+  options: OptionsImpressionArbre;
 };
 
 /**
  * Arbre généalogique statique pour l'impression.
- *
- * Réutilise le même layout et la même géométrie de liens que la vue interactive,
- * mais en SVG serveur, noir sur blanc, sans zoom ni interactions.
  */
-export function ArbreImprimable({ donnees, racineId, mode }: Props) {
-  const disposition = disposerArbre(donnees, racineId, mode);
+export function ArbreImprimable({ donnees, racineId, mode, options }: Props) {
+  const brute = disposerArbre(donnees, racineId, mode);
+  const disposition = filtrerDisposition(brute, options.profondeur, racineId);
   const focus = donnees.personnes.get(racineId);
+
   if (!focus || disposition.noeuds.length === 0) {
     return <p className="arbre-impr-rien">Aucune personne à afficher pour cette vue.</p>;
   }
@@ -77,66 +82,104 @@ export function ArbreImprimable({ donnees, racineId, mode }: Props) {
   const viewH = maxY - minY;
 
   const repères = repèresRang(disposition, focus.prenoms ?? focus.nomComplet.split(' ')[0] ?? '');
+  const nbPersonnes = compterPersonnes(disposition);
+  const noms = new Map(
+    disposition.noeuds.map((n) => {
+      const p = donnees.personnes.get(n.personneId);
+      return [n.personneId, p?.nomComplet ?? 'Sans nom'] as const;
+    })
+  );
+  const liste = listePersonnesOrdonnee(disposition.noeuds, noms);
 
   return (
-    <figure className="arbre-impr-figure">
-      <svg
-        viewBox={`${minX} ${minY} ${viewW} ${viewH}`}
-        className="arbre-impr-svg"
-        role="img"
-        aria-label={`Arbre généalogique — ${LIBELLE_MODE[mode].titre} — ${focus.nomComplet}`}
-      >
-        <defs>
-          <filter id="ombre-impr" x="-10%" y="-10%" width="120%" height="120%">
-            <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodOpacity="0.12" />
-          </filter>
-        </defs>
+    <>
+      <p className="arbre-impr-stats">
+        {nbPersonnes} personne{nbPersonnes > 1 ? 's' : ''} · {disposition.rangMax + 1} rang
+        {disposition.rangMax > 0 ? 's' : ''} · {LIBELLE_MODE[mode].titre}
+        {options.profondeur !== 'tout' ? ` · ${options.profondeur} générations max` : ''}
+      </p>
 
-        {/* Repères de génération */}
-        <g className="arbre-impr-reperes" aria-hidden>
-          {repères.map((r) => (
-            <text
-              key={r.rang}
-              x={minX + 12}
-              y={r.y}
-              textAnchor="start"
-              dominantBaseline="middle"
-              fill={IMP.texteDoux}
-              fontSize={11}
-              fontFamily="Georgia, 'Times New Roman', serif"
-            >
-              {r.libelle}
-            </text>
-          ))}
-        </g>
+      <figure className="arbre-impr-figure">
+        <svg
+          viewBox={`${minX} ${minY} ${viewW} ${viewH}`}
+          className="arbre-impr-svg"
+          preserveAspectRatio="xMidYMid meet"
+          role="img"
+          aria-label={`Arbre généalogique — ${LIBELLE_MODE[mode].titre} — ${focus.nomComplet}`}
+        >
+          <defs>
+            <filter id="ombre-impr" x="-10%" y="-10%" width="120%" height="120%">
+              <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodOpacity="0.12" />
+            </filter>
+            {disposition.noeuds.map((n) => (
+              <clipPath key={n.personneId} id={`clip-impr-${n.personneId}`}>
+                <rect width={LARGEUR_PHOTO_NOEUD} height={HAUTEUR_NOEUD} rx={RAYON_NOEUD} />
+              </clipPath>
+            ))}
+          </defs>
 
-        {/* Liens familiaux */}
-        <g fill="none">
-          {segments.map((s) => (
-            <SegmentImprimable key={s.id} segment={s} />
-          ))}
-        </g>
+          <g className="arbre-impr-reperes" aria-hidden>
+            {repères.map((r) => (
+              <text
+                key={r.rang}
+                x={minX + 12}
+                y={r.y}
+                textAnchor="start"
+                dominantBaseline="middle"
+                fill={IMP.texteDoux}
+                fontSize={11}
+                fontFamily="Georgia, 'Times New Roman', serif"
+              >
+                {r.libelle}
+              </text>
+            ))}
+          </g>
 
-        {/* Cartes */}
-        {disposition.noeuds.map((noeud) => {
-          const personne = donnees.personnes.get(noeud.personneId);
-          if (!personne) return null;
-          return (
-            <CarteImprimable
-              key={noeud.personneId}
-              noeud={noeud}
-              personne={personne}
-              estFocus={noeud.personneId === racineId}
-            />
-          );
-        })}
-      </svg>
-      <figcaption className="arbre-impr-legende">
-        <span>Ligne paternelle</span>
-        <span>Ligne maternelle</span>
-        <span>Union (barre dorée)</span>
-      </figcaption>
-    </figure>
+          <g fill="none">
+            {segments.map((s) => (
+              <SegmentImprimable key={s.id} segment={s} />
+            ))}
+          </g>
+
+          {disposition.noeuds.map((noeud) => {
+            const personne = donnees.personnes.get(noeud.personneId);
+            if (!personne) return null;
+            return (
+              <CarteImprimable
+                key={noeud.personneId}
+                noeud={noeud}
+                personne={personne}
+                estFocus={noeud.personneId === racineId}
+                avecPhotos={options.avecPhotos}
+              />
+            );
+          })}
+        </svg>
+        <figcaption className="arbre-impr-legende">
+          <span>Ligne paternelle</span>
+          <span>Ligne maternelle</span>
+          <span>Union (barre dorée)</span>
+          <span className="arbre-impr-legende-focus">Personne choisie (cadre épais)</span>
+        </figcaption>
+      </figure>
+
+      {liste.length > 12 && (
+        <section className="arbre-impr-liste">
+          <h2 className="arbre-impr-liste-titre">Liste des personnes ({liste.length})</h2>
+          <p className="arbre-impr-liste-aide">
+            Index alphabétique pour retrouver un nom lorsque le schéma est imprimé en petit.
+          </p>
+          <ol className="arbre-impr-liste-colonnes">
+            {liste.map((p) => (
+              <li key={p.id}>
+                <span className="arbre-impr-liste-nom">{p.nom}</span>
+                {p.id === racineId && <span className="arbre-impr-liste-focus"> (choisie)</span>}
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+    </>
   );
 }
 
@@ -170,15 +213,17 @@ function CarteImprimable({
   noeud,
   personne,
   estFocus,
+  avecPhotos,
 }: {
   noeud: NoeudArbre;
   personne: PersonneArbre;
   estFocus: boolean;
+  avecPhotos: boolean;
 }) {
   const couleurs = COULEUR_COTE_IMP[noeud.cote];
   const vie = anneesDeVie(personne);
   const initiale = (personne.nomComplet.trim().charAt(0) || '?').toUpperCase();
-  const texteX = LARGEUR_PHOTO_NOEUD + 10;
+  const texteX = avecPhotos ? LARGEUR_PHOTO_NOEUD + 10 : 10;
   const x = noeud.x - LARGEUR_NOEUD / 2;
   const y = noeud.y;
 
@@ -194,49 +239,50 @@ function CarteImprimable({
         filter="url(#ombre-impr)"
       />
 
-      {/* Bandeau photo ou initiale */}
-      <g clipPath={`url(#clip-impr-${personne.id})`}>
-        <defs>
-          <clipPath id={`clip-impr-${personne.id}`}>
-            <rect width={LARGEUR_PHOTO_NOEUD} height={HAUTEUR_NOEUD} rx={RAYON_NOEUD} />
-          </clipPath>
-        </defs>
-        <rect width={LARGEUR_PHOTO_NOEUD} height={HAUTEUR_NOEUD} fill={couleurs.fond} />
-        {personne.photoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- SVG image pour impression
-          <image
-            href={personne.photoUrl}
-            x={0}
-            y={0}
-            width={LARGEUR_PHOTO_NOEUD}
-            height={HAUTEUR_NOEUD}
-            preserveAspectRatio="xMidYMid slice"
-          />
-        ) : (
-          <text
-            x={LARGEUR_PHOTO_NOEUD / 2}
-            y={HAUTEUR_NOEUD / 2 + 6}
-            textAnchor="middle"
-            fill={IMP.texteDoux}
-            fontSize={22}
-            fontWeight={600}
-            fontFamily="Georgia, 'Times New Roman', serif"
-          >
-            {initiale}
-          </text>
-        )}
-        <rect x={0} y={0} width={3} height={HAUTEUR_NOEUD} fill={TON_COTE[noeud.cote]} />
-      </g>
+      {avecPhotos && (
+        <g clipPath={`url(#clip-impr-${personne.id})`}>
+          <rect width={LARGEUR_PHOTO_NOEUD} height={HAUTEUR_NOEUD} fill={couleurs.fond} />
+          {personne.photoUrl ? (
+            <image
+              href={personne.photoUrl}
+              x={0}
+              y={0}
+              width={LARGEUR_PHOTO_NOEUD}
+              height={HAUTEUR_NOEUD}
+              preserveAspectRatio="xMidYMid slice"
+            />
+          ) : (
+            <text
+              x={LARGEUR_PHOTO_NOEUD / 2}
+              y={HAUTEUR_NOEUD / 2 + 6}
+              textAnchor="middle"
+              fill={IMP.texteDoux}
+              fontSize={22}
+              fontWeight={600}
+              fontFamily="Georgia, 'Times New Roman', serif"
+            >
+              {initiale}
+            </text>
+          )}
+          <rect x={0} y={0} width={3} height={HAUTEUR_NOEUD} fill={TON_COTE[noeud.cote]} />
+        </g>
+      )}
 
-      <line
-        x1={LARGEUR_PHOTO_NOEUD}
-        y1={8}
-        x2={LARGEUR_PHOTO_NOEUD}
-        y2={HAUTEUR_NOEUD - 8}
-        stroke={couleurs.trait}
-        strokeWidth={0.75}
-        opacity={0.4}
-      />
+      {!avecPhotos && (
+        <rect x={0} y={0} width={4} height={HAUTEUR_NOEUD} fill={TON_COTE[noeud.cote]} rx={2} />
+      )}
+
+      {avecPhotos && (
+        <line
+          x1={LARGEUR_PHOTO_NOEUD}
+          y1={8}
+          x2={LARGEUR_PHOTO_NOEUD}
+          y2={HAUTEUR_NOEUD - 8}
+          stroke={couleurs.trait}
+          strokeWidth={0.75}
+          opacity={0.4}
+        />
+      )}
 
       <text
         x={texteX}
@@ -256,12 +302,7 @@ function CarteImprimable({
       )}
 
       {vie && (
-        <text
-          x={texteX}
-          y={personne.surnom ? 52 : 44}
-          fill={IMP.texteDoux}
-          fontSize={11}
-        >
+        <text x={texteX} y={personne.surnom ? 52 : 44} fill={IMP.texteDoux} fontSize={11}>
           {vie}
         </text>
       )}
