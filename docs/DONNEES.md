@@ -36,6 +36,8 @@ Ce que contient chaque table, en une ligne. Source : `supabase/migrations/`.
 | `arbre.chantiers_recherche` | Une piste ouverte : acte demandé, branche bloquée, hypothèse à vérifier. |
 | `arbre.commentaires` | Une conversation sur une personne, un souvenir ou un média. |
 | `arbre.journal` | Trace automatique des insertions, modifications et suppressions sur les tables sensibles. |
+| `arbre.recits` | Un article narratif long (famille ou thème), distinct des souvenirs ponctuels. |
+| `arbre.recits_personnes` | Personnes citées dans un récit (maillage fiche ↔ récit). |
 
 ---
 

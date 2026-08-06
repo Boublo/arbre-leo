@@ -8,15 +8,13 @@
  * est choisie par CSS selon ce même attribut — ce qui évite à la fois un effet
  * au montage et le clignotement d'une icône fausse pendant l'hydratation.
  *
- * Le choix est retenu dans le navigateur ; sans choix explicite, c'est la
- * préférence du système qui s'applique.
+ * Le choix est retenu dans le navigateur. Sans choix explicite, le thème clair
+ * (parchemin) s'applique — le sombre ne s'active que via cette bascule.
  */
 export function BasculeTheme() {
   function basculer() {
     const racine = document.documentElement;
-    const actuel =
-      racine.dataset.theme ??
-      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const actuel = racine.dataset.theme === 'dark' ? 'dark' : 'light';
 
     const suivant = actuel === 'dark' ? 'light' : 'dark';
     racine.dataset.theme = suivant;

@@ -1,8 +1,23 @@
 # Audit complet — L'arbre de Léo
 
-Dernière mise à jour : 6 août 2026 — mode éclaté lisible (M3) + couples atomiques.
+Dernière mise à jour : 6 août 2026 — **v1 fondations** (sécurité RPC + perf + a11y contraste).
 
-Ce document recense **où ça coince**, **pourquoi**, et **dans quel ordre corriger**.
+> Revue senior du 6 août 2026 : voir le rapport d'audit cloud agent.
+> Correctifs v1 déjà appliqués ci-dessous ; le reste du plan reste ouvert.
+
+---
+
+## Correctifs v1 (août 2026)
+
+```
+✓ S1  fusionner_personnes / fusionner_unions : est_admin() + revoke anon (0015 + prod)
+✓ D1  Migrations 0009–0015 versionnées dans le dépôt (récits, fusion, unaccent)
+✓ AX1 Contraste --encre-tres-douce porté à WCAG AA
+✓ U5  Thème clair par défaut (plus de suivi OS automatique)
+✓ P2  React.cache sur chargerArbre + option signerPhotosPour: 'aucun'
+✓ S4  Headers sécurité (CSP, frame-ancestors, nosniff…) dans next.config.ts
+✓     .env.example versionné (!.env.example dans .gitignore)
+```
 
 ---
 

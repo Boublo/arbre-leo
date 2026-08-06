@@ -4,8 +4,12 @@ import { chargerArbre } from '@/lib/arbre';
 import { serialiserGraphe, type GrapheSerialise } from '@/lib/arbre-graphe';
 
 /**
- * Charge le sous-graphe autour d'une personne pour l'écran /arbre.
- * Appelé quand le focus change vers quelqu'un hors du graphe déjà en mémoire.
+ * Recharge le graphe complet pour l'écran /arbre.
+ *
+ * Historiquement nommé « sous-graphe » : un BFS tronquait l'ascendance.
+ * On charge désormais tout l'arbre (mis en cache requête via `chargerArbre`)
+ * puis on le sérialise. `focusId` sert uniquement à valider que la personne
+ * existe encore.
  */
 export async function chargerGrapheArbre(focusId: string): Promise<GrapheSerialise> {
   const donnees = await chargerArbre();

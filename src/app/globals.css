@@ -16,7 +16,8 @@
   --fond-doux: #f3eee5;
   --encre: #211c17;
   --encre-douce: #5d5348;
-  --encre-tres-douce: #8a7f72;
+  /* Ancien #8a7f72 ≈ 3,7:1 sur parchemin — sous le seuil WCAG AA (4,5:1). */
+  --encre-tres-douce: #6f6559;
   /* Bordures : sur parchemin, #e4dbcc se lisait à peine et les cartes
      flottaient sans se poser. On les fonce d'un cran (contour perceptible sans
      durcir), et --bordure-forte suit du même écart pour rester distincte. */
@@ -81,7 +82,8 @@
   --fond-doux: #2b241d;
   --encre: #f2ece3;
   --encre-douce: #c0b5a6;
-  --encre-tres-douce: #8e8375;
+  /* Sur fond sombre #17130f, #a89c8c dépasse 4,5:1 pour le texte secondaire. */
+  --encre-tres-douce: #a89c8c;
   --bordure: #362e26;
   --bordure-forte: #4a4036;
   --accent: #6aa892;

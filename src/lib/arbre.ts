@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { creerClientServeur } from '@/lib/supabase/server';
 import type { Evenement, NiveauPreuve, Sexe, TypeEvenement } from '@/lib/types-base';
 
@@ -141,9 +142,14 @@ function resumer(e: LigneEvenement | undefined): EvenementResume | null {
 /** Événements retenus pour l'affichage de l'arbre : le reste est chargé à la fiche. */
 const TYPES_RESUME: TypeEvenement[] = ['naissance', 'deces', 'profession', 'mariage'];
 
-type OptionsChargementArbre = {
-  /** Identifiants des personnes dont la photo doit être signée. Par défaut : toutes. */
-  signerPhotosPour?: Set<string> | 'tous';
+export type OptionsChargementArbre = {
+  /**
+   * Identifiants des personnes dont la photo doit être signée.
+   * - `'tous'` (défaut) : signe tous les portraits — coût Storage élevé.
+   * - `'aucun'` : aucune signature (stats, parenté, calculs purs).
+   * - `Set<id>` : uniquement ces personnes.
+   */
+  signerPhotosPour?: Set<string> | 'tous' | 'aucun';
 };
 
 /** Signe les portraits du bucket privé pour les personnes demandées. */
@@ -195,7 +201,39 @@ export async function signerPhotosPersonnes(
   }
 }
 
-export async function chargerArbre(options: OptionsChargementArbre = {}): Promise<DonneesArbre> {
+/**
+ * Charge le graphe familial.
+ *
+ * Mise en cache au sein d'une même requête React (`cache`) : si l'accueil et
+ * une section fille appellent `chargerArbre()` avec la même clé de signature,
+ * une seule aller-retour base a lieu.
+ */
+export async function chargerArbre(
+  options: OptionsChargementArbre = {}
+): Promise<DonneesArbre> {
+  const cle = cleSignaturePhotos(options.signerPhotosPour ?? 'tous');
+  return chargerArbreEnCache(cle);
+}
+
+function cleSignaturePhotos(
+  signer: NonNullable<OptionsChargementArbre['signerPhotosPour']>
+): string {
+  if (signer === 'tous' || signer === 'aucun') return signer;
+  return [...signer].sort().join(',') || 'aucun';
+}
+
+function optionsDepuisCle(cle: string): OptionsChargementArbre {
+  if (cle === 'tous' || cle === 'aucun') return { signerPhotosPour: cle };
+  return { signerPhotosPour: new Set(cle.split(',').filter(Boolean)) };
+}
+
+const chargerArbreEnCache = cache(async (cleSignature: string): Promise<DonneesArbre> => {
+  return chargerArbreInterne(optionsDepuisCle(cleSignature));
+});
+
+async function chargerArbreInterne(
+  options: OptionsChargementArbre = {}
+): Promise<DonneesArbre> {
   const signerPhotosPour = options.signerPhotosPour ?? 'tous';
   const supabase = await creerClientServeur();
 
@@ -220,7 +258,7 @@ export async function chargerArbre(options: OptionsChargementArbre = {}): Promis
   ];
 
   const mediasRes =
-    photoIds.length > 0
+    photoIds.length > 0 && signerPhotosPour !== 'aucun'
       ? await supabase.from('medias').select('id, chemin').eq('type', 'photo').in('id', photoIds)
       : { data: [] as { id: string; chemin: string }[], error: null };
 
@@ -236,7 +274,9 @@ export async function chargerArbre(options: OptionsChargementArbre = {}): Promis
   const idsASigner =
     signerPhotosPour === 'tous'
       ? new Set((personnesRes.data ?? []).map((p) => p.id))
-      : signerPhotosPour;
+      : signerPhotosPour === 'aucun'
+        ? new Set<string>()
+        : signerPhotosPour;
 
   const cheminsAsigner = [
     ...new Set(

@@ -49,7 +49,9 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
         {/* Thème : choix enregistré, sinon préférence système — avant le premier rendu. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('arbre-theme');if(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)t='dark';if(t)document.documentElement.dataset.theme=t}catch(e){}`,
+            // Clair par défaut (parchemin) : le sombre ne s'applique que si
+            // l'utilisateur l'a choisi explicitement via la bascule.
+            __html: `try{var t=localStorage.getItem('arbre-theme');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t}catch(e){}`,
           }}
         />
       </head>

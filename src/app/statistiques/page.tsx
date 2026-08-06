@@ -39,7 +39,7 @@ export const metadata = { title: 'Statistiques' };
 export const dynamic = 'force-dynamic';
 
 export default async function PageStatistiques() {
-  const donnees = await chargerArbre();
+  const donnees = await chargerArbre({ signerPhotosPour: 'aucun' });
   const total = donnees.personnes.size;
 
   // Base entièrement vide : on annonce ce qu'il faut faire, plutôt qu'un mur de zéros.

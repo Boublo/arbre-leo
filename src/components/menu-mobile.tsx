@@ -69,7 +69,7 @@ export function MenuMobile({
             >
               Administration
               {admin.enAttente > 0 && (
-                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-alerte px-1.5 text-xs font-medium text-fond">
+                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-alerte px-1.5 text-xs font-medium text-accent-contraste">
                   {admin.enAttente}
                 </span>
               )}
