@@ -11,12 +11,9 @@
     "arbre:sql": "node scripts/generate-import-sql.mjs",
     "arbre:maj": "node scripts/maj.mjs",
     "arbre:veille": "node scripts/veille.mjs",
-<<<<<<< HEAD
     "arbre:verifier-panneau": "node scripts/verifier-panneau-arbre.mjs",
-=======
     "arbre:verifier-liens": "node scripts/verifier-liens-famille.mjs",
     "arbre:verifier-navigation": "node scripts/verifier-navigation-arbre.mjs",
->>>>>>> origin/cursor/fix-liens-famille-7416
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
