@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { hoteCanonique } from '@/lib/url-site';
 
 /**
  * Rafraîchit la session à chaque requête et barre l'accès aux pages privées.
@@ -16,16 +15,6 @@ import { hoteCanonique } from '@/lib/url-site';
 const PUBLIQUES = ['/connexion', '/inscription', '/auth', '/erreur'];
 
 export async function proxy(request: NextRequest) {
-  // Les liens de confirmation e-mail peuvent encore viser *.vercel.app si
-  // NEXT_PUBLIC_SITE_URL n'était pas à jour : on ramène tout sur le domaine définitif.
-  const canonique = hoteCanonique();
-  if (canonique && request.nextUrl.host !== canonique && request.nextUrl.host.endsWith('.vercel.app')) {
-    const url = request.nextUrl.clone();
-    url.host = canonique;
-    url.protocol = 'https:';
-    return NextResponse.redirect(url);
-  }
-
   let reponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
