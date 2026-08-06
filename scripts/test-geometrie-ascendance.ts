@@ -90,8 +90,8 @@ if (!ancetre || ancetre.rang !== GENERATIONS) {
   erreurs.push(`L'ancêtre g${GENERATIONS} doit être au rang ${GENERATIONS}`);
 }
 
-// Simulation recadrer : k fixe 0.88 (comme vue-arbre.tsx)
-const kRecadrer = 0.88;
+// Simulation recadrer : k fixe 1.0 (comme vue-arbre.tsx desktop)
+const kRecadrer = 1.0;
 if (kRecadrer < SEUIL_K_LISIBLE) {
   erreurs.push(`k recadrer ${kRecadrer} < seuil lisible ${SEUIL_K_LISIBLE}`);
 }

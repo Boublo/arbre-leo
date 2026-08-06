@@ -8,7 +8,7 @@
 
 import { useCallback, useMemo, useRef } from 'react';
 import type { Disposition } from '@/lib/layout-arbre';
-import { HAUTEUR_NOEUD, LARGEUR_NOEUD } from '@/lib/layout-arbre';
+import { HAUTEUR_NOEUD } from '@/lib/layout-arbre';
 
 const TAILLES = {
   normal: { largeur: 200, hauteur: 150, marge: 6, rayon: 1.6, rayonFocus: 2.5 },
@@ -128,7 +128,7 @@ export function MiniMap({
 
         <g>
           {disposition.noeuds.map((noeud) => {
-            const cx = decalageX + (noeud.x + LARGEUR_NOEUD / 2) * echelle;
+            const cx = decalageX + noeud.x * echelle;
             const cy = decalageY + (noeud.y + HAUTEUR_NOEUD / 2) * echelle;
             const estFocus = noeud.personneId === focusId;
             return (

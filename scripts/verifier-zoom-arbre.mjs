@@ -30,8 +30,8 @@ const CONTRATS = [
     message: 'ancreVerticale() — position verticale du focus selon le mode',
   },
   {
-    motif: /const k = width < 1024 \? 0\.9 : 0\.88/,
-    message: 'recadrer doit utiliser k ≈ 0.88–0.9 (échelle lisible), pas fit-all',
+    motif: /const k = width < 1024 \? 1\.05 : 1\.0/,
+    message: 'recadrer doit utiliser k ≈ 1.0–1.05 (échelle lisible), pas fit-all',
   },
   {
     motif: /setTimeout\(recadrer,\s*60\)/,

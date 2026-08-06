@@ -179,7 +179,7 @@ export function VueArbre({
 
     if (!noeudFocus) return;
 
-    const k = width < 1024 ? 0.9 : 0.88;
+    const k = width < 1024 ? 1.05 : 1.0;
     const cx = noeudFocus.x;
     const cy = noeudFocus.y + HAUTEUR_NOEUD / 2;
     const anchorY = ancreVerticale(mode);

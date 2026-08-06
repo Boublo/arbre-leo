@@ -215,7 +215,7 @@ export function CarteNoeud({
         y={detaille ? (personne.surnom ? 20 : 22) : HAUTEUR_NOEUD / 2 + 5}
         textAnchor="start"
         className={estFocus ? 'fill-[var(--accent-contraste)]' : 'fill-[var(--encre)]'}
-        style={{ fontFamily: 'var(--font-titre)', fontSize: detaille ? 13.5 : 12, fontWeight: 600 }}
+        style={{ fontFamily: 'var(--font-titre)', fontSize: detaille ? 15 : 13, fontWeight: 600 }}
       >
         {tronquer(personne.nomComplet, detaille ? 22 : 18, largeurTexte)}
       </text>
@@ -242,7 +242,7 @@ export function CarteNoeud({
               y={personne.surnom ? 48 : 40}
               textAnchor="start"
               className={estFocus ? 'fill-[var(--accent-contraste)]' : 'fill-[var(--encre-douce)]'}
-              style={{ fontSize: 11 }}
+              style={{ fontSize: 11.5 }}
               opacity={0.92}
             >
               {vie}

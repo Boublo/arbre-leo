@@ -10,11 +10,10 @@ export const SEUIL_PONT_COUPLE = 320;
 /** Barre de fratrie minimale quand un seul enfant (sinon invisible). */
 const LARGEUR_BARRE_FRATRIE_MIN = 20;
 
-const MARGE_SOUS_PARENTS = 14;
-const MARGE_SUR_ENFANTS = 18;
-const MARGE_ENTRE_RANGS = 14;
+const MARGE_SUR_ENFANTS = 10;
+const MARGE_ENTRE_RANGS = 10;
 /** Espace entre la barre de fratrie et la couche de routage au-dessus. */
-const HAUTEUR_COUCHES_ROUTAGE = 20;
+const HAUTEUR_COUCHES_ROUTAGE = 14;
 
 export type SegmentLien = {
   id: string;
@@ -64,7 +63,7 @@ export function segmentsCouple(a: NoeudArbre, b: NoeudArbre, id: string): Segmen
         y1: yBasA,
         x2: a.x,
         y2: yCouple,
-        strokeWidth: 2,
+        strokeWidth: 2.5,
         ...style,
       },
       {
@@ -74,7 +73,7 @@ export function segmentsCouple(a: NoeudArbre, b: NoeudArbre, id: string): Segmen
         y1: yBasB,
         x2: b.x,
         y2: yCouple,
-        strokeWidth: 2,
+        strokeWidth: 2.5,
         ...style,
       }
     );
@@ -121,7 +120,8 @@ export function segmentsPedigree({
   if (enfants.length === 0 || parents.length === 0) return [];
 
   const segments: SegmentLien[] = [];
-  const style = { stroke: 'var(--bordure-forte)', opacity: 0.9 } as const;
+  // Encre douce : lisible sur le parchemin, sans concurrence avec la barre d'or.
+  const style = { stroke: 'var(--encre-douce)', opacity: 1 } as const;
 
   const xs = enfants.map((e) => e.x).sort((u, v) => u - v);
   const xFratrieGauche = xs[0]!;
@@ -157,10 +157,13 @@ export function segmentsPedigree({
     : yBarreFratrie - HAUTEUR_COUCHES_ROUTAGE;
 
   const yDepart = enfantsAuDessus
-    ? // Ascendance : les enfants sont au-dessus — partir du HAUT des cartes parents
-      // (pas au-dessus, sinon le trait flotte et ne touche jamais le parent).
+    ? // Ascendance : coller au HAUT des cartes parents.
       yHautParents
-    : Math.max(yCoupleVisuel, yBasParents + MARGE_SOUS_PARENTS);
+    : // Descendance / famille : partir de la barre de couple (adjacents) ou
+      // du bas des cartes — plus de trou de 14 px sous les parents.
+      adjacents
+        ? yCoupleVisuel
+        : yBasParents;
 
   // 1. Descente verticale depuis le couple jusqu'à la couche de routage (entre les rangées).
   ajouterSegment(segments, {
@@ -169,7 +172,7 @@ export function segmentsPedigree({
     y1: yDepart,
     x2: xCentreParents,
     y2: yRoute,
-    strokeWidth: 2,
+    strokeWidth: 2.5,
     ...style,
   });
 
@@ -182,7 +185,7 @@ export function segmentsPedigree({
       y1: yRoute,
       x2: xFratrieCentre,
       y2: yRoute,
-      strokeWidth: 2,
+      strokeWidth: 2.5,
       ...style,
     });
   }
@@ -194,7 +197,7 @@ export function segmentsPedigree({
     y1: yRoute,
     x2: xFratrieCentre,
     y2: yBarreFratrie,
-    strokeWidth: 2,
+    strokeWidth: 2.5,
     ...style,
   });
 
@@ -206,7 +209,7 @@ export function segmentsPedigree({
     y1: yBarreFratrie,
     x2: xFratrieCentre + demiBarre,
     y2: yBarreFratrie,
-    strokeWidth: 2,
+    strokeWidth: 2.5,
     ...style,
   });
 
@@ -219,7 +222,7 @@ export function segmentsPedigree({
       y1: yBarreFratrie,
       x2: enfant.x,
       y2: yEnfant,
-      strokeWidth: 2,
+      strokeWidth: 2.5,
       ...style,
     });
   }
@@ -247,10 +250,10 @@ export function segmentOrthogonal(
     id,
     kind: 'path',
     d: `M ${loin.x} ${ySortieLoin} V ${yHoriz} H ${proche.x} V ${yEntreeProche}`,
-    stroke: reprise ? 'var(--or)' : 'var(--bordure-forte)',
-    strokeWidth: reprise ? 2 : 1.5,
+    stroke: reprise ? 'var(--or)' : 'var(--encre-douce)',
+    strokeWidth: reprise ? 2.5 : 2,
     strokeDasharray: reprise ? '5 4' : undefined,
-    opacity: 0.85,
+    opacity: 0.9,
   };
 }
 

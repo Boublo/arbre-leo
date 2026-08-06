@@ -85,8 +85,8 @@ export type Disposition = {
   rangRacine: number;
 };
 
-export const ESPACEMENT_X = 240;
-export const ESPACEMENT_Y = 175;
+export const ESPACEMENT_X = 216;
+export const ESPACEMENT_Y = 148;
 export const LARGEUR_NOEUD = 200;
 export const HAUTEUR_NOEUD = 90;
 /** Bandeau photo à gauche de chaque carte dans l'arbre SVG. */
@@ -429,7 +429,7 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
         derniereUnion !== '_' &&
         cleUnion !== '_'
       ) {
-        curseur += 1.65;
+        curseur += 1.25;
       }
       derniereUnion = cleUnion;
 
@@ -452,7 +452,7 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
     }
 
     /** Marge minimale entre deux fratries cousines après recentrage. */
-    const margeEntreGroupes = 1.45;
+    const margeEntreGroupes = 1.2;
 
     for (const [cle, groupe] of parGroupe) {
       if (cle === '_') continue;
@@ -740,7 +740,7 @@ function disposerHierarchie(
 // ---------------------------------------------------------------------------
 
 /** Distance minimale entre centres de cartes sur une même rangée (px). */
-const ECART_MINIMUM_CENTRES = LARGEUR_NOEUD + 28;
+const ECART_MINIMUM_CENTRES = LARGEUR_NOEUD + 16;
 
 /**
  * Ordonne une couche BFS : racine d'abord, conjoints côte à côte, fratries
@@ -1099,13 +1099,19 @@ function finaliser(
     rapprocherConjointsNoeuds(noeuds, pairesConj);
     recentererFratriesSousCouples(noeuds, donnees.unions);
     ecarterCollisions(noeuds, pairesConj);
+    // Recentrer les enfants (Sandrine sous ses parents), puis recoller les
+    // couples : le recentrage d'une fratrie d'aînés peut écarter un époux.
+    recentererFratriesSousCouples(noeuds, donnees.unions);
+    rapprocherConjointsNoeuds(noeuds, pairesConj);
   }
 
-  // Après empilement des unités, recentrer l'origine (x ≥ 0).
+  // Après empilement des unités, recentrer l'origine (bord gauche des cartes ≥ 0).
   const xMinPixels = Math.min(...noeuds.map((n) => n.x));
   if (Number.isFinite(xMinPixels) && xMinPixels !== 0) {
     for (const noeud of noeuds) noeud.x -= xMinPixels;
   }
+  // x = centre de carte : décaler d'une demi-largeur pour que le bbox parte à 0.
+  for (const noeud of noeuds) noeud.x += LARGEUR_NOEUD / 2;
 
   const unionsAffichees: LienUnion[] = [];
   for (const union of donnees.unions.values()) {
@@ -1119,7 +1125,7 @@ function finaliser(
     noeuds,
     liens,
     unions: unionsAffichees,
-    largeur: Math.max(...noeuds.map((n) => n.x)) + LARGEUR_NOEUD,
+    largeur: Math.max(...noeuds.map((n) => n.x)) + LARGEUR_NOEUD / 2,
     hauteur: (rangMax + 1) * ESPACEMENT_Y,
     mode,
     racineId,
