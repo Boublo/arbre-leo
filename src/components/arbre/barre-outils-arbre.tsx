@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { SelecteurPersonne } from '@/components/arbre/selecteur-personne';
 import { LIBELLE_MODE, type ModeArbre } from '@/lib/layout-arbre';
-import type { GrapheSerialise } from '@/lib/arbre-graphe';
+import type { PersonneRecherche } from '@/lib/arbre-graphe';
 import type { PersonneArbre } from '@/lib/arbre';
 
 const MODES: ModeArbre[] = ['ascendance', 'famille', 'descendance', 'eclate'];
@@ -13,21 +13,21 @@ const MODES: ModeArbre[] = ['ascendance', 'famille', 'descendance', 'eclate'];
  * Barre d'outils repliée sur mobile : le plus d'espace possible pour l'arbre.
  */
 export function BarreOutilsArbre({
-  graphe,
   focus,
   focusId,
   mode,
   onMode,
   suggestions,
+  recherchePersonnes,
   onFocus,
   onChercher,
 }: {
-  graphe: GrapheSerialise;
   focus: PersonneArbre;
   focusId: string;
   mode: ModeArbre;
   onMode: (mode: ModeArbre) => void;
-  suggestions: PersonneArbre[];
+  suggestions: PersonneRecherche[];
+  recherchePersonnes: PersonneRecherche[];
   onFocus: (id: string) => void;
   onChercher: () => void;
 }) {
@@ -40,7 +40,7 @@ export function BarreOutilsArbre({
         <div className="flex min-w-0 items-center gap-2">
           <div className="min-w-0 flex-1">
             <SelecteurPersonne
-              personnes={graphe.personnes}
+              personnes={recherchePersonnes}
               suggestions={suggestions}
               choisie={focus}
               onChoix={onFocus}
@@ -97,7 +97,7 @@ export function BarreOutilsArbre({
         <div className="flex min-w-0 items-center gap-2">
           <span className="shrink-0 text-sm text-encre-tres-douce">Partir de</span>
           <SelecteurPersonne
-            personnes={graphe.personnes}
+            personnes={recherchePersonnes}
             suggestions={suggestions}
             choisie={focus}
             onChoix={onFocus}

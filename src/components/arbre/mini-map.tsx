@@ -3,22 +3,17 @@
 /**
  * Mini-carte de repérage, posée en bas à droite de l'arbre.
  *
- * Elle rappelle en miniature la forme de la disposition entière — un point par
- * personne, tracé dans sa couleur de côté — et fait figurer par-dessus le
- * rectangle de la portion réellement visible à l'écran. Le rectangle bouge en
- * temps réel quand on zoome ou qu'on fait glisser l'arbre.
- *
- * Un clic ou un glissé dans la mini-carte recentre la vue sur le point pointé.
- * Aucun bouton, aucune barre de zoom : la mini-carte se pilote au geste seul.
+ * Version compacte sur mobile pour se repérer sans masquer les cartes.
  */
 
 import { useCallback, useMemo, useRef } from 'react';
 import type { Disposition } from '@/lib/layout-arbre';
 import { HAUTEUR_NOEUD, LARGEUR_NOEUD } from '@/lib/layout-arbre';
 
-const LARGEUR_MINIATURE = 200;
-const HAUTEUR_MINIATURE = 150;
-const MARGE = 6;
+const TAILLES = {
+  normal: { largeur: 200, hauteur: 150, marge: 6, rayon: 1.6, rayonFocus: 2.5 },
+  compact: { largeur: 120, hauteur: 88, marge: 4, rayon: 1.2, rayonFocus: 2 },
+} as const;
 
 const COULEUR_COTE = {
   paternelle: 'var(--paternelle)',
@@ -34,17 +29,19 @@ export function MiniMap({
   tailleVue,
   onDeplacer,
   focusId,
+  variante = 'normal',
 }: {
   disposition: Disposition;
   transform: Transform;
   tailleVue: { largeur: number; hauteur: number };
   onDeplacer: (mondeX: number, mondeY: number) => void;
   focusId: string | null;
+  variante?: keyof typeof TAILLES;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const { largeur: LARGEUR_MINIATURE, hauteur: HAUTEUR_MINIATURE, marge: MARGE, rayon, rayonFocus } =
+    TAILLES[variante];
 
-  // Échelle de la miniature : on garde le rapport de la disposition et l'on
-  // s'ajuste à la plus contraignante des deux dimensions disponibles.
   const echelle = useMemo(() => {
     const largeurDisponible = LARGEUR_MINIATURE - MARGE * 2;
     const hauteurDisponible = HAUTEUR_MINIATURE - MARGE * 2;
@@ -52,14 +49,11 @@ export function MiniMap({
       largeurDisponible / Math.max(disposition.largeur, 1),
       hauteurDisponible / Math.max(disposition.hauteur + HAUTEUR_NOEUD, 1)
     );
-  }, [disposition.largeur, disposition.hauteur]);
+  }, [disposition.largeur, disposition.hauteur, LARGEUR_MINIATURE, HAUTEUR_MINIATURE, MARGE]);
 
-  // Décalage pour centrer la miniature dans son cadre.
   const decalageX = (LARGEUR_MINIATURE - disposition.largeur * echelle) / 2;
   const decalageY = (HAUTEUR_MINIATURE - (disposition.hauteur + HAUTEUR_NOEUD) * echelle) / 2;
 
-  // Cadre de la portion visible : on inverse la transformation d'écran vers
-  // le monde pour connaître les coordonnées des coins de la fenêtre.
   const cadre = useMemo(() => {
     if (transform.k === 0) return null;
     const mondeX = -transform.x / transform.k;
@@ -74,18 +68,25 @@ export function MiniMap({
     };
   }, [transform, tailleVue, echelle, decalageX, decalageY]);
 
-  const deplacerDepuisMiniature = useCallback(
-    (evenement: React.MouseEvent<SVGSVGElement>) => {
+  const deplacerDepuisCoordonnees = useCallback(
+    (clientX: number, clientY: number) => {
       const svg = svgRef.current;
       if (!svg) return;
       const rect = svg.getBoundingClientRect();
-      const miniX = evenement.clientX - rect.left;
-      const miniY = evenement.clientY - rect.top;
+      const miniX = clientX - rect.left;
+      const miniY = clientY - rect.top;
       const mondeX = (miniX - decalageX) / echelle;
       const mondeY = (miniY - decalageY) / echelle;
       onDeplacer(mondeX, mondeY);
     },
     [decalageX, decalageY, echelle, onDeplacer]
+  );
+
+  const deplacerDepuisMiniature = useCallback(
+    (evenement: React.MouseEvent<SVGSVGElement>) => {
+      deplacerDepuisCoordonnees(evenement.clientX, evenement.clientY);
+    },
+    [deplacerDepuisCoordonnees]
   );
 
   const surGlisse = useCallback(
@@ -96,11 +97,22 @@ export function MiniMap({
     [deplacerDepuisMiniature]
   );
 
+  const surTouch = useCallback(
+    (evenement: React.TouchEvent<SVGSVGElement>) => {
+      const touch = evenement.touches[0];
+      if (!touch) return;
+      evenement.preventDefault();
+      deplacerDepuisCoordonnees(touch.clientX, touch.clientY);
+    },
+    [deplacerDepuisCoordonnees]
+  );
+
   return (
     <div
       className="carte pointer-events-auto overflow-hidden"
       style={{ width: LARGEUR_MINIATURE, height: HAUTEUR_MINIATURE }}
-      aria-hidden
+      aria-label="Mini-carte de l'arbre"
+      role="img"
     >
       <svg
         ref={svgRef}
@@ -108,11 +120,12 @@ export function MiniMap({
         height={HAUTEUR_MINIATURE}
         onMouseDown={deplacerDepuisMiniature}
         onMouseMove={surGlisse}
-        className="cursor-crosshair"
+        onTouchStart={surTouch}
+        onTouchMove={surTouch}
+        className="cursor-crosshair touch-none"
       >
         <rect width={LARGEUR_MINIATURE} height={HAUTEUR_MINIATURE} fill="var(--fond-doux)" />
 
-        {/* Un point par personne, dans sa couleur de côté. */}
         <g>
           {disposition.noeuds.map((noeud) => {
             const cx = decalageX + (noeud.x + LARGEUR_NOEUD / 2) * echelle;
@@ -123,7 +136,7 @@ export function MiniMap({
                 key={noeud.personneId}
                 cx={cx}
                 cy={cy}
-                r={estFocus ? 2.5 : 1.6}
+                r={estFocus ? rayonFocus : rayon}
                 fill={estFocus ? 'var(--accent)' : COULEUR_COTE[noeud.cote]}
                 opacity={estFocus ? 1 : 0.75}
               />
@@ -131,7 +144,6 @@ export function MiniMap({
           })}
         </g>
 
-        {/* Cadre de la portion visible. */}
         {cadre && (
           <rect
             x={cadre.x}

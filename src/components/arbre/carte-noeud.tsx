@@ -21,6 +21,7 @@ const COULEUR_COTE = {
 
 const LIBELLE_LIEN: Partial<Record<LienRacine, string>> = {
   collateral: 'Frère ou sœur',
+  cousin: 'Cousin ou cousine',
   conjoint: 'Conjoint',
   ancetre: 'Ancêtre',
   descendant: 'Descendant',
@@ -106,8 +107,8 @@ export function CarteNoeud({
         rx={RAYON_NOEUD}
         fill={estFocus ? 'var(--accent)' : 'var(--fond-carte)'}
         stroke={selectionne ? 'var(--accent)' : estFocus ? 'var(--accent)' : couleurs.trait}
-        strokeWidth={selectionne ? 3 : estFocus ? 2.5 : noeud.lien === 'collateral' ? 1 : 1.5}
-        strokeDasharray={noeud.lien === 'collateral' || noeud.lien === 'conjoint' ? '5 4' : undefined}
+        strokeWidth={selectionne ? 3 : estFocus ? 2.5 : noeud.lien === 'conjoint' ? 1.5 : 1}
+        strokeDasharray={noeud.lien === 'conjoint' ? '5 4' : undefined}
       />
 
       {/* Teinte de branche en fond doux (sauf focus) */}
@@ -200,6 +201,14 @@ export function CarteNoeud({
         />
       )}
 
+      {/* Fratrie / cousin : pastille pour ne pas confondre avec un conjoint (pointillé). */}
+      {detaille && (noeud.lien === 'collateral' || noeud.lien === 'cousin') && !estFocus && (
+        <PastilleLien
+          libelle={noeud.lien === 'collateral' ? 'FRATRIE' : 'COUSIN'}
+          couleurTrait={couleurs.trait}
+        />
+      )}
+
       {/* Nom — toujours visible */}
       <text
         x={texteX}
@@ -278,6 +287,34 @@ export function CarteNoeud({
           )}
         </>
       )}
+    </g>
+  );
+}
+
+function PastilleLien({ libelle, couleurTrait }: { libelle: string; couleurTrait: string }) {
+  const largeur = libelle.length > 6 ? 52 : 46;
+  return (
+    <g aria-hidden>
+      <rect
+        x={LARGEUR_NOEUD - largeur - 6}
+        y={6}
+        width={largeur}
+        height={14}
+        rx={7}
+        fill="var(--fond-carte)"
+        stroke={couleurTrait}
+        strokeWidth={0.75}
+        opacity={0.95}
+      />
+      <text
+        x={LARGEUR_NOEUD - largeur / 2 - 6}
+        y={16}
+        textAnchor="middle"
+        className="fill-[var(--encre-douce)]"
+        style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.02em' }}
+      >
+        {libelle}
+      </text>
     </g>
   );
 }

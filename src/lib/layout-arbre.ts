@@ -38,7 +38,13 @@ import { coteDesBranches, type Cote } from '@/lib/branches';
 export type ModeArbre = 'ascendance' | 'descendance' | 'famille' | 'eclate';
 
 /** Ce qui rattache un nœud à la personne choisie. */
-export type LienRacine = 'racine' | 'ancetre' | 'descendant' | 'collateral' | 'conjoint';
+export type LienRacine =
+  | 'racine'
+  | 'ancetre'
+  | 'descendant'
+  | 'collateral'
+  | 'cousin'
+  | 'conjoint';
 
 export type NoeudArbre = {
   personneId: string;
@@ -112,6 +118,101 @@ export function disposerArbre(
 
 const GENERATIONS_ANCETRES = 3;
 const GENERATIONS_DESCENDANTS = 2;
+
+/** Écart entre centres de conjoints sur une rangée (unités layout, ~ une carte). */
+const ECART_CONJOINTS_LAYOUT = 1.05;
+
+/** Écart minimal entre frères/sœurs ou cousins sur la même rangée. */
+const ECART_FRATRIE_LAYOUT = 1;
+
+function sontConjoints(
+  a: string,
+  b: string,
+  paires: Map<string, string>
+): boolean {
+  return paires.get(a) === b;
+}
+
+function pairesConjoints(unions: Map<string, UnionArbre>): Map<string, string> {
+  const paires = new Map<string, string>();
+  for (const union of unions.values()) {
+    const { conjointA, conjointB } = union;
+    if (!conjointA || !conjointB) continue;
+    paires.set(conjointA, conjointB);
+    paires.set(conjointB, conjointA);
+  }
+  return paires;
+}
+
+/**
+ * Rapproche les époux posés sur la même rangée — sans quoi la barre dorée
+ * traverse les cousins intermédiaires (voir AUDIT C2).
+ */
+function rapprocherConjointsSurRang(
+  ids: string[],
+  positions: Map<string, number>,
+  paires: Map<string, string>
+): void {
+  const surRang = new Set(ids);
+  const traites = new Set<string>();
+
+  for (const [a, b] of paires) {
+    if (!surRang.has(a) || !surRang.has(b)) continue;
+    const cle = a < b ? `${a}|${b}` : `${b}|${a}`;
+    if (traites.has(cle)) continue;
+    traites.add(cle);
+
+    const xA = positions.get(a) ?? 0;
+    const xB = positions.get(b) ?? 0;
+    const centre = (xA + xB) / 2;
+    positions.set(a, centre - ECART_CONJOINTS_LAYOUT / 2);
+    positions.set(b, centre + ECART_CONJOINTS_LAYOUT / 2);
+  }
+
+  const tries = [...ids].sort(
+    (a, b) => (positions.get(a) ?? 0) - (positions.get(b) ?? 0)
+  );
+  for (let i = 1; i < tries.length; i++) {
+    const prevId = tries[i - 1]!;
+    const currId = tries[i]!;
+    const prevX = positions.get(prevId) ?? 0;
+    const currX = positions.get(currId) ?? 0;
+    const minEcart = sontConjoints(prevId, currId, paires)
+      ? ECART_CONJOINTS_LAYOUT
+      : ECART_FRATRIE_LAYOUT;
+    if (currX - prevX < minEcart) {
+      positions.set(currId, prevX + minEcart);
+    }
+  }
+}
+
+/** Type de lien visuel : conjoint distinct de la fratrie (AUDIT C1). */
+function lienVisuelFamille(
+  id: string,
+  racineId: string,
+  rang: number,
+  paires: Map<string, string>,
+  rangs: Map<string, number>,
+  personnes: DonneesArbre['personnes'],
+  unions: DonneesArbre['unions']
+): LienRacine {
+  if (id === racineId) return 'racine';
+  if (rang < 0) return 'ancetre';
+
+  const partenaire = paires.get(id);
+  if (partenaire !== undefined && rangs.get(partenaire) === rang) return 'conjoint';
+
+  const issuDe = personnes.get(id)?.issuDe;
+  if (issuDe) {
+    const fratrie = unions.get(issuDe)?.enfants ?? [];
+    if (fratrie.some((f) => f !== id && rangs.get(f) === rang)) return 'collateral';
+  }
+
+  const rangFocus = rangs.get(racineId) ?? 0;
+  if (rang === rangFocus && id !== racineId) return 'cousin';
+
+  return 'descendant';
+}
 
 function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
   const { parents, enfants, unions, personnes } = donnees;
@@ -187,6 +288,7 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
 
   const positions = new Map<string, number>();
   const rangsTries = [...parRang.keys()].sort((a, b) => a - b);
+  const pairesConj = pairesConjoints(unions);
 
   /** Union à laquelle cette personne est rattachée dans le graphe placé. */
   const unionParentaleDe = (id: string): UnionArbre | null => {
@@ -322,6 +424,8 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
         positions.set(id, courante + decalageEffectif);
       }
     }
+
+    rapprocherConjointsSurRang(liste, positions, pairesConj);
   }
 
   const noeuds: NoeudArbre[] = [];
@@ -338,14 +442,7 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
       rang: rang - rangMin,
       x: positions.get(id) ?? 0,
       y: rang - rangMin,
-      lien:
-        id === racineId
-          ? 'racine'
-          : rang < 0
-            ? 'ancetre'
-            : rang > 0
-              ? 'descendant'
-              : 'collateral',
+      lien: lienVisuelFamille(id, racineId, rang, pairesConj, rangs, personnes, unions),
       cote,
     };
     place.set(id, noeud);
@@ -365,7 +462,7 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
     }
   }
 
-  return finaliser(noeuds, liens, place, donnees, 'famille', racineId);
+  return finaliser(noeuds, liens, place, donnees, 'famille', racineId, pairesConj);
 }
 
 /**
@@ -650,14 +747,37 @@ function ordonnerCoucheEclate(
 
 /**
  * Écarte les cartes qui se chevauchent sur une même rangée.
+ * Les conjoints restent côte à côte (déplacés ensemble si besoin).
  */
-function ecarterCollisions(noeuds: NoeudArbre[]): void {
+function ecarterCollisions(
+  noeuds: NoeudArbre[],
+  pairesConj: Map<string, string> = new Map()
+): void {
   const parRang = new Map<number, NoeudArbre[]>();
   for (const noeud of noeuds) {
     const liste = parRang.get(noeud.rang) ?? [];
     liste.push(noeud);
     parRang.set(noeud.rang, liste);
   }
+
+  const deplacerGroupe = (tetes: NoeudArbre[], delta: number) => {
+    const aDeplacer = new Set<string>();
+    const file = [...tetes];
+    while (file.length > 0) {
+      const n = file.pop()!;
+      if (aDeplacer.has(n.personneId)) continue;
+      aDeplacer.add(n.personneId);
+      const conjoint = pairesConj.get(n.personneId);
+      if (conjoint) {
+        const noeudConjoint = noeuds.find((no) => no.personneId === conjoint);
+        if (noeudConjoint && noeudConjoint.rang === n.rang) file.push(noeudConjoint);
+      }
+    }
+    for (const id of aDeplacer) {
+      const n = noeuds.find((no) => no.personneId === id);
+      if (n) n.x += delta;
+    }
+  };
 
   for (const liste of parRang.values()) {
     liste.sort((a, b) => a.x - b.x);
@@ -666,9 +786,59 @@ function ecarterCollisions(noeuds: NoeudArbre[]): void {
       const courant = liste[i]!;
       const ecart = courant.x - prev.x;
       if (ecart < ECART_MINIMUM_CENTRES) {
-        courant.x = prev.x + ECART_MINIMUM_CENTRES;
+        deplacerGroupe([courant], ECART_MINIMUM_CENTRES - ecart);
       }
     }
+  }
+}
+
+/** Après collision en pixels : recolle les conjoints sur une rangée. */
+function rapprocherConjointsNoeuds(
+  noeuds: NoeudArbre[],
+  pairesConj: Map<string, string>
+): void {
+  const parId = new Map(noeuds.map((n) => [n.personneId, n]));
+  const traites = new Set<string>();
+
+  for (const [a, b] of pairesConj) {
+    const cle = a < b ? `${a}|${b}` : `${b}|${a}`;
+    if (traites.has(cle)) continue;
+    traites.add(cle);
+
+    const na = parId.get(a);
+    const nb = parId.get(b);
+    if (!na || !nb || na.rang !== nb.rang) continue;
+
+    const centre = (na.x + nb.x) / 2;
+    const demi = ECART_MINIMUM_CENTRES / 2;
+    na.x = centre - demi;
+    nb.x = centre + demi;
+  }
+}
+
+/** Aligne le centre d'une fratrie sur le centre de ses parents visibles. */
+function recentererFratriesSousCouples(
+  noeuds: NoeudArbre[],
+  unions: Map<string, UnionArbre>
+): void {
+  const parId = new Map(noeuds.map((n) => [n.personneId, n]));
+
+  for (const union of unions.values()) {
+    const parents = [union.conjointA, union.conjointB]
+      .map((id) => (id ? parId.get(id) : undefined))
+      .filter((n): n is NoeudArbre => n !== undefined);
+    const enfants = union.enfants
+      .map((id) => parId.get(id))
+      .filter((n): n is NoeudArbre => n !== undefined);
+
+    if (parents.length === 0 || enfants.length === 0) continue;
+
+    const cxParents = parents.reduce((s, p) => s + p.x, 0) / parents.length;
+    const cxEnfants = enfants.reduce((s, e) => s + e.x, 0) / enfants.length;
+    const delta = cxParents - cxEnfants;
+    if (Math.abs(delta) < 4) continue;
+
+    for (const enfant of enfants) enfant.x += delta;
   }
 }
 
@@ -767,7 +937,8 @@ function finaliser(
   place: Map<string, NoeudArbre>,
   donnees: DonneesArbre,
   mode: ModeArbre,
-  racineId: string
+  racineId: string,
+  pairesConj?: Map<string, string>
 ): Disposition {
   if (noeuds.length === 0) {
     return {
@@ -796,7 +967,12 @@ function finaliser(
     noeud.y = noeud.rang * ESPACEMENT_Y;
   }
 
-  ecarterCollisions(noeuds);
+  ecarterCollisions(noeuds, pairesConj);
+  if (mode === 'famille' && pairesConj) {
+    rapprocherConjointsNoeuds(noeuds, pairesConj);
+    recentererFratriesSousCouples(noeuds, donnees.unions);
+    ecarterCollisions(noeuds, pairesConj);
+  }
 
   const unionsAffichees: LienUnion[] = [];
   for (const union of donnees.unions.values()) {

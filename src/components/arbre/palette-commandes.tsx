@@ -13,7 +13,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { PersonneArbre } from '@/lib/arbre';
+import type { PersonneRecherche } from '@/lib/arbre-graphe';
 import { anneesDeVie, chercherPersonnes } from '@/lib/arbre-graphe';
 
 export function PaletteCommandes({
@@ -22,7 +22,7 @@ export function PaletteCommandes({
   onFermer,
   onChoix,
 }: {
-  personnes: PersonneArbre[];
+  personnes: PersonneRecherche[];
   ouverte: boolean;
   onFermer: () => void;
   onChoix: (id: string) => void;
@@ -38,7 +38,7 @@ function ContenuPalette({
   onFermer,
   onChoix,
 }: {
-  personnes: PersonneArbre[];
+  personnes: PersonneRecherche[];
   onFermer: () => void;
   onChoix: (id: string) => void;
 }) {

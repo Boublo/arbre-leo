@@ -1,6 +1,6 @@
 # Audit complet — L'arbre de Léo
 
-Dernière mise à jour : 6 août 2026 — commit `124324d` (main).
+Dernière mise à jour : 6 août 2026 — correctifs audit (C1–C3, H1, H4, M4).
 
 Ce document recense **où ça coince**, **pourquoi**, et **dans quel ordre corriger**.
 
@@ -10,26 +10,28 @@ Ce document recense **où ça coince**, **pourquoi**, et **dans quel ordre corri
 
 | Zone | Verdict | Problème principal |
 | --- | --- | --- |
-| **Liens de l'arbre** | Insuffisant | Le **placement** et le **tracé** ne sont pas synchronisés |
-| **Cartes personnes** | Bon | Portraits OK ; frère ≠ conjoint **pas visible** |
+| **Liens de l'arbre** | Amélioré | Conjoints rapprochés, fratrie ≠ conjoint, ponts longs supprimés |
+| **Cartes personnes** | Bon | Portraits OK ; badge « Fratrie » + contour plein |
 | **Site global** | Bon | 32 routes, auth, navigation améliorées |
-| **Performance `/arbre`** | À surveiller | Tout le graphe + toutes les photos signées au chargement |
-| **Tests auto** | Faible | Scripts = grep de symboles, pas de tests géométriques |
+| **Performance `/arbre`** | Amélioré | Sous-graphe + photos signées ciblées + refresh 45 min |
+| **Tests auto** | Moyen | Scripts grep + seuils géométriques documentés |
 
-### Les 3 causes du « bordel sur les liens »
+### Correctifs appliqués (audit)
 
 ```
-1. PLACEMENT   Les conjoints sont posés loin l'un de l'autre (ancrage par filiation,
-               pas par union). Ex. : Pierre @ x=0, Sophie @ x=600 sur la même rangée.
-
-2. TRACÉ       Le code dessine quand même une barre dorée sur toute la distance
-               Pierre–Sophie, qui passe SOUS les oncles/cousins entre les deux.
-
-3. STYLE       Frères/sœurs et conjoints ont le même contour pointillé sur les cartes
-               → on lit « Laura + son frère = couple ».
+✓ C1  Fratrie : contour plein + pastille « FRATRIE » ; conjoint : pointillé
+✓ C2  Layout famille : rapprocherConjointsSurRang après chaque rangée
+✓ C3  (suit C2) + pas de barre dorée horizontale si distance > 320 px
+✓ H1  Mode par défaut « La famille autour », mémorisé dans localStorage
+✓ H2  Sous-graphe autour du focus (±4 sauts) + refresh photos /api/arbre/photos
+✓ H4  URL ?suite= conservée vers /attente pour les membres en attente
+✓ M4  Barre de fratrie minimale (20 px) pour enfant unique
+✓ M5  Médias filtrés par photo_id référencés (plus de scan de tout le bucket)
+✓ M2  Badge COUSIN distinct de FRATRIE (lien + cartes + légende)
+✓ M6  Repères repliables + mini-carte compacte sur mobile
+✓ H3  Test géométrie Laura via layout TS réel (scripts/test-geometrie-laura.ts)
+✓ C3  Recentrage fratries sous couples après collision (recentererFratriesSousCouples)
 ```
-
-Ce n'est **pas** un bug de données généalogiques : c'est un décalage **layout ↔ géométrie ↔ légende visuelle**.
 
 ---
 

@@ -14,6 +14,8 @@
     "arbre:verifier-panneau": "node scripts/verifier-panneau-arbre.mjs",
     "arbre:verifier-liens": "node scripts/verifier-liens-famille.mjs",
     "arbre:verifier-navigation": "node scripts/verifier-navigation-arbre.mjs",
+    "arbre:test-geometrie": "npx tsx scripts/test-geometrie-laura.ts",
+    "arbre:verifier-geometrie": "node scripts/verifier-geometrie-arbre.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
