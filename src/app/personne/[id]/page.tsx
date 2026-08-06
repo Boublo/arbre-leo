@@ -130,6 +130,8 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
             photos={
               <MediasPersonne
                 medias={fiche.medias}
+                evenements={fiche.evenements}
+                faits={fiche.faits}
                 personneId={fiche.personne.id}
                 peutDeposer={droits.peutContribuer}
                 photoCarteId={fiche.personne.photo_id}

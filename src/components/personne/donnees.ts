@@ -108,6 +108,9 @@ export type MediaFiche = {
   titre: string | null;
   description: string | null;
   date: string;
+  annee: number | null;
+  mois: number | null;
+  jour: number | null;
   lieu: string | null;
   transcription: string | null;
   cote: string | null;
@@ -197,6 +200,12 @@ function formaterHorodatage(iso: string | null | undefined): string {
 
 function formaterPeriode(debut: number, fin: number | null): string {
   return fin && fin !== debut ? `${debut} – ${fin}` : String(debut);
+}
+
+/** Clé de tri chronologique pour un média (sans date → fin de liste). */
+function cleTriMedia(m: { annee: number | null; mois: number | null; jour: number | null }): number {
+  if (m.annee === null) return 9_999_999;
+  return m.annee * 10_000 + (m.mois ?? 0) * 100 + (m.jour ?? 0);
 }
 
 type PersonneCitee = Pick<
@@ -584,6 +593,9 @@ export async function chargerFiche(id: string): Promise<Fiche | null> {
         titre: m.titre,
         description: m.description,
         date: formaterDate(m),
+        annee: m.annee,
+        mois: m.mois,
+        jour: m.jour,
         lieu: (m.lieu_id ? libelleLieu.get(m.lieu_id) : null) ?? null,
         transcription: m.transcription,
         cote: m.cote,
@@ -595,7 +607,12 @@ export async function chargerFiche(id: string): Promise<Fiche | null> {
         largeur: m.largeur ?? null,
         hauteur: m.hauteur ?? null,
       }))
-      .sort((a, b) => Number(b.estImage) - Number(a.estImage)),
+      .sort((a, b) => {
+        const triA = cleTriMedia(a);
+        const triB = cleTriMedia(b);
+        if (triA !== triB) return triA - triB;
+        return Number(b.estImage) - Number(a.estImage);
+      }),
     faits: faits
       .map((f) => ({
         id: f.id,
