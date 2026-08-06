@@ -17,6 +17,7 @@ import {
   type PersonneRecherche,
 } from '@/lib/arbre-graphe';
 import { disposerArbre, LIBELLE_MODE, type ModeArbre } from '@/lib/layout-arbre';
+import { urlImpressionArbre } from '@/lib/arbre-impression';
 
 const CLE_MODE_ARBRE = 'arbre-mode';
 const MODES_ARBRE: ModeArbre[] = ['ascendance', 'famille', 'descendance', 'eclate'];
@@ -151,7 +152,6 @@ export function EcranArbre({
     function surTouche(evenement: KeyboardEvent) {
       if (guideOuvert) return;
       if (evenement.defaultPrevented) return;
-      if (evenement.key !== 'f' && evenement.key !== 'F') return;
       if (evenement.ctrlKey || evenement.metaKey || evenement.altKey) return;
 
       const cible = evenement.target as HTMLElement | null;
@@ -165,12 +165,20 @@ export function EcranArbre({
         return;
       }
 
-      evenement.preventDefault();
-      setPaletteOuverte(true);
+      if (evenement.key === 'f' || evenement.key === 'F') {
+        evenement.preventDefault();
+        setPaletteOuverte(true);
+        return;
+      }
+
+      if (evenement.key === 'p' || evenement.key === 'P') {
+        evenement.preventDefault();
+        router.push(urlImpressionArbre(focusId, mode));
+      }
     }
     window.addEventListener('keydown', surTouche);
     return () => window.removeEventListener('keydown', surTouche);
-  }, [guideOuvert]);
+  }, [guideOuvert, focusId, mode, router]);
 
   if (!focus && chargementFocus) {
     return (

@@ -105,6 +105,7 @@ export function BarreOutilsArbre({
             <Link
               href={urlImpressionArbre(focusId, mode)}
               className="lien-discret"
+              data-guide="imprimer"
             >
               Version imprimable
             </Link>
@@ -170,8 +171,9 @@ export function BarreOutilsArbre({
           <Link href={`/personne/${focusId}`} className="lien-discret">
             Sa fiche
           </Link>
-          <Link href={urlImpressionArbre(focusId, mode)} className="lien-discret">
-            Imprimer
+          <Link href={urlImpressionArbre(focusId, mode)} className="lien-discret" data-guide="imprimer">
+            Imprimer{' '}
+            <kbd className="ml-0.5 rounded border border-bordure bg-fond-doux px-1 text-[10px]">P</kbd>
           </Link>
         </div>
       </div>

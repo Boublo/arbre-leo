@@ -3,10 +3,13 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { ActionsImpressionArbre } from '@/components/arbre/actions-impression-arbre';
 import { ArbreImprimable } from '@/components/arbre/arbre-imprimable';
+import { ConseilsImpressionArbre } from '@/components/arbre/conseils-impression-arbre';
 import { OptionsImpressionArbre } from '@/components/arbre/options-impression-arbre';
+import { SelecteurPersonneImpression } from '@/components/arbre/selecteur-personne-impression';
 import { chargerArbre, personneOuDefaut } from '@/lib/arbre';
-import { parserOptionsImpression, urlOptionsImpression } from '@/lib/arbre-impression';
-import { LIBELLE_MODE, type ModeArbre } from '@/lib/layout-arbre';
+import { conseilsImpression } from '@/lib/arbre-impression-conseils';
+import { filtrerDisposition, parserOptionsImpression, urlOptionsImpression } from '@/lib/arbre-impression';
+import { disposerArbre, LIBELLE_MODE, type ModeArbre } from '@/lib/layout-arbre';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,6 +72,16 @@ export default async function PageArbreImprimer({
 
   const formatPage = options.format === 'portrait' ? 'portrait' : 'landscape';
 
+  const disposition = filtrerDisposition(
+    disposerArbre(donnees, focus.id, mode),
+    options.profondeur,
+    focus.id
+  );
+  const conseils = conseilsImpression(disposition, options, focus.id, mode);
+  const personnesListe = [...donnees.personnes.values()]
+    .map((p) => ({ id: p.id, nom: p.nomComplet }))
+    .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
+
   return (
     <div className="imprimer-racine" data-format={formatPage}>
       <style>{stylesImprimables(formatPage)}</style>
@@ -80,7 +93,17 @@ export default async function PageArbreImprimer({
         <ActionsImpressionArbre />
       </div>
 
-      <OptionsImpressionArbre personneId={focus.id} mode={mode} options={options} />
+      <div className="arbre-impr-barre-reglages no-imprimer">
+        <SelecteurPersonneImpression
+          personnes={personnesListe}
+          focusId={focus.id}
+          mode={mode}
+          options={options}
+        />
+        <OptionsImpressionArbre personneId={focus.id} mode={mode} options={options} />
+      </div>
+
+      <ConseilsImpressionArbre conseils={conseils} />
 
       <article className="imprimer-page arbre-impr-page">
         <header className="imprimer-entete arbre-impr-entete">
@@ -189,14 +212,69 @@ function stylesImprimables(format: 'landscape' | 'portrait'): string {
   }
   .imprimer-bouton-secondaire:hover { background: #f5f5f5; }
 
-  .arbre-impr-options {
-    padding: 0.75rem 1.25rem;
+  .arbre-impr-barre-reglages {
     background: #fafafa;
     border-bottom: 1px solid #dddddd;
+  }
+  .arbre-impr-selecteur {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    padding: 0.75rem 1.25rem 0;
+  }
+  .arbre-impr-selecteur-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #888888;
+  }
+  .arbre-impr-selecteur-choix {
+    min-width: min(100%, 280px);
+    max-width: 100%;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+    font-family: inherit;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    background: #ffffff;
+    color: #333333;
+  }
+  .arbre-impr-options {
+    padding: 0.75rem 1.25rem;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
   }
+  .arbre-impr-conseils {
+    margin: 0 1.25rem 0;
+    padding: 0.65rem 0.85rem;
+    background: #fff8e6;
+    border: 1px solid #e8d9a8;
+    border-radius: 4px;
+    font-size: 0.82rem;
+    color: #5c4a1a;
+  }
+  .arbre-impr-conseils-titre {
+    margin: 0 0 0.35rem;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .arbre-impr-conseils-liste {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .arbre-impr-conseils-lien {
+    color: #3d5a80;
+    text-decoration: underline;
+    white-space: nowrap;
+  }
+  .arbre-impr-conseils-lien:hover { color: #1a365d; }
   .arbre-impr-modes {
     display: flex;
     flex-wrap: wrap;
