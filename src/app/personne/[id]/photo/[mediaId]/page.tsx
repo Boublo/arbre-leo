@@ -61,6 +61,14 @@ export default async function PagePhoto({ params }: ParamsPhoto) {
               height={media.hauteur ?? undefined}
               className="mx-auto max-h-[min(75vh,720px)] w-auto max-w-full object-contain"
             />
+          ) : media.type === 'audio' && media.url ? (
+            <audio controls className="w-full p-6" src={media.url}>
+              Votre navigateur ne lit pas l’audio.
+            </audio>
+          ) : media.type === 'video' && media.url ? (
+            <video controls className="mx-auto max-h-[min(75vh,720px)] w-full" src={media.url}>
+              Votre navigateur ne lit pas la vidéo.
+            </video>
           ) : media.url ? (
             <p className="p-8 text-center text-sm">
               <a href={media.url} target="_blank" rel="noopener noreferrer" className="lien-discret">
