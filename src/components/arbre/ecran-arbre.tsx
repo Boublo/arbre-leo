@@ -1,18 +1,21 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { VueArbre } from '@/components/arbre/vue-arbre';
 import { BarreOutilsArbre } from '@/components/arbre/barre-outils-arbre';
 import { FichePersonne } from '@/components/arbre/fiche-personne';
 import { PanneauMobile } from '@/components/interactions/panneau-mobile';
 import { PaletteCommandes } from '@/components/arbre/palette-commandes';
+import { useRafraichirPhotosArbre } from '@/components/arbre/use-rafraichir-photos-arbre';
+import { chargerGrapheArbre } from '@/app/actions/arbre';
 import {
   anneesDeVie,
   reconstruireGraphe,
   type GrapheSerialise,
+  type PersonneRecherche,
 } from '@/lib/arbre-graphe';
-import { disposerArbre, type ModeArbre } from '@/lib/layout-arbre';
+import { disposerArbre, LIBELLE_MODE, type ModeArbre } from '@/lib/layout-arbre';
 
 const CLE_MODE_ARBRE = 'arbre-mode';
 const MODES_ARBRE: ModeArbre[] = ['ascendance', 'famille', 'descendance', 'eclate'];
@@ -29,12 +32,14 @@ function lireModeInitial(): ModeArbre {
 }
 
 export function EcranArbre({
-  graphe,
+  graphe: grapheInitial,
+  recherchePersonnes,
   focusInitial,
   derniersEnfants,
   peutDeposerPhoto = false,
 }: {
   graphe: GrapheSerialise;
+  recherchePersonnes: PersonneRecherche[];
   focusInitial: string;
   derniersEnfants: string[];
   peutDeposerPhoto?: boolean;
@@ -42,10 +47,16 @@ export function EcranArbre({
   const router = useRouter();
   const chemin = usePathname();
 
+  const [graphe, setGraphe] = useState(grapheInitial);
   const [focusId, setFocusId] = useState(focusInitial);
   const [mode, setMode] = useState<ModeArbre>('famille');
   const [selectionId, setSelectionId] = useState<string | null>(null);
   const [paletteOuverte, setPaletteOuverte] = useState(false);
+  const [chargementFocus, startTransition] = useTransition();
+
+  useEffect(() => {
+    setGraphe(grapheInitial);
+  }, [grapheInitial]);
 
   useEffect(() => {
     setMode(lireModeInitial());
@@ -59,10 +70,10 @@ export function EcranArbre({
     }
   }, [mode]);
 
+  useRafraichirPhotosArbre(graphe, setGraphe);
+
   const donnees = useMemo(() => reconstruireGraphe(graphe), [graphe]);
 
-  // Recalculée à chaque changement de personne ou de mode : cent vingt-cinq
-  // nœuds se placent en quelques millisecondes.
   const disposition = useMemo(
     () => disposerArbre(donnees, focusId, mode),
     [donnees, focusId, mode]
@@ -70,31 +81,37 @@ export function EcranArbre({
 
   const focus = donnees.personnes.get(focusId) ?? null;
 
-  /**
-   * L'adresse suit la personne regardée, sans recharger la page : un membre
-   * peut ainsi envoyer à la famille le lien de la branche qu'il consulte.
-   */
+  const chargerFocus = useCallback(
+    (id: string) => {
+      if (donnees.personnes.has(id)) return;
+      startTransition(async () => {
+        const nouveau = await chargerGrapheArbre(id);
+        setGraphe(nouveau);
+      });
+    },
+    [donnees.personnes]
+  );
+
   const changerFocus = useCallback(
     (id: string) => {
       setFocusId(id);
       setSelectionId(null);
       router.replace(`${chemin}?personne=${encodeURIComponent(id)}`, { scroll: false });
+      chargerFocus(id);
     },
-    [chemin, router]
+    [chemin, router, chargerFocus]
   );
 
   const suggestions = useMemo(
-    () => derniersEnfants.map((id) => donnees.personnes.get(id)).filter((p) => p !== undefined),
-    [derniersEnfants, donnees.personnes]
+    () =>
+      derniersEnfants
+        .map((id) => recherchePersonnes.find((p) => p.id === id))
+        .filter((p): p is PersonneRecherche => p !== undefined),
+    [derniersEnfants, recherchePersonnes]
   );
 
   const personneSelectionnee = selectionId ? donnees.personnes.get(selectionId) ?? null : null;
 
-  /**
-   * Raccourci F : ouvre la palette de recherche. On ignore les frappes
-   * quand un champ est déjà en train de recevoir du texte, faute de quoi
-   * on empêcherait de taper la lettre f dans le sélecteur d'ascendance.
-   */
   useEffect(() => {
     function surTouche(evenement: KeyboardEvent) {
       if (evenement.defaultPrevented) return;
@@ -119,6 +136,14 @@ export function EcranArbre({
     return () => window.removeEventListener('keydown', surTouche);
   }, []);
 
+  if (!focus && chargementFocus) {
+    return (
+      <main className="flex flex-1 items-center justify-center p-8 text-encre-douce">
+        Chargement de cette branche…
+      </main>
+    );
+  }
+
   if (!focus) {
     return (
       <main className="flex flex-1 items-center justify-center p-8 text-encre-douce">
@@ -130,24 +155,37 @@ export function EcranArbre({
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <BarreOutilsArbre
-        graphe={graphe}
         focus={focus}
         focusId={focusId}
         mode={mode}
         onMode={setMode}
         suggestions={suggestions}
+        recherchePersonnes={recherchePersonnes}
         onFocus={changerFocus}
         onChercher={() => setPaletteOuverte(true)}
       />
 
-      {/* --- Arbre et panneau ---------------------------------------------- */}
-      {/*
-        min-h-0 sur la rangée flex : sans lui, le panneau latéral s'étire avec
-        son contenu et overflow-y-auto ne défile jamais — régression visible
-        dès que la fiche dépasse la hauteur de l'écran (portrait + notes).
-      */}
-      <div className="relative flex min-h-0 flex-1 overflow-hidden">
-        <div className="min-h-0 min-w-0 flex-1">
+      {mode === 'eclate' && (
+        <p
+          role="status"
+          className="shrink-0 border-b border-bordure bg-fond-doux px-3 py-2 text-center text-xs text-encre-douce sm:px-4"
+        >
+          Mode « {LIBELLE_MODE.eclate.titre} » : les liens sont simplifiés et peuvent se croiser.
+          Préférez « {LIBELLE_MODE.famille.titre} » pour lire parenté et unions.
+        </p>
+      )}
+
+      {chargementFocus && (
+        <p
+          role="status"
+          className="shrink-0 border-b border-bordure bg-fond-carte px-3 py-1.5 text-center text-xs text-encre-douce"
+        >
+          Chargement de l’entourage de cette personne…
+        </p>
+      )}
+
+      <div className="relative min-h-0 flex-1 overflow-hidden">
+        <div className="absolute inset-0 min-h-0 min-w-0">
           <VueArbre
             donnees={donnees}
             disposition={disposition}
@@ -159,7 +197,7 @@ export function EcranArbre({
         </div>
 
         {personneSelectionnee && (
-          <aside className="hidden h-full min-h-0 w-full max-w-sm shrink-0 overflow-y-auto overscroll-y-contain border-l border-bordure bg-fond-carte lg:block">
+          <aside className="absolute inset-y-0 right-0 z-10 hidden w-full max-w-sm overflow-y-auto overscroll-y-contain border-l border-bordure bg-fond-carte [-webkit-overflow-scrolling:touch] lg:block">
             <FichePersonne
               personne={personneSelectionnee}
               annees={anneesDeVie(personneSelectionnee)}
@@ -190,7 +228,7 @@ export function EcranArbre({
       </PanneauMobile>
 
       <PaletteCommandes
-        personnes={graphe.personnes}
+        personnes={recherchePersonnes}
         ouverte={paletteOuverte}
         onFermer={() => setPaletteOuverte(false)}
         onChoix={changerFocus}

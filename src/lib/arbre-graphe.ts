@@ -15,6 +15,118 @@ import type { DonneesArbre, PersonneArbre, UnionArbre } from '@/lib/arbre';
  * aussi bien par un composant serveur que par un composant client.
  */
 
+/** Profondeur BFS autour du focus pour le graphe envoyé au navigateur (/arbre). */
+export const PROFONDEUR_SOUS_GRAPHE_ARBRE = 4;
+
+/** Champs minimaux pour la recherche (palette F, sélecteur) — toute la base. */
+export type PersonneRecherche = Pick<
+  PersonneArbre,
+  'id' | 'nomComplet' | 'surnom' | 'sexe' | 'naissance' | 'deces' | 'presumeVivant'
+>;
+
+export function versPersonneRecherche(personne: PersonneArbre): PersonneRecherche {
+  return {
+    id: personne.id,
+    nomComplet: personne.nomComplet,
+    surnom: personne.surnom,
+    sexe: personne.sexe,
+    naissance: personne.naissance,
+    deces: personne.deces,
+    presumeVivant: personne.presumeVivant,
+  };
+}
+
+function voisinsSousGraphe(donnees: DonneesArbre, id: string): string[] {
+  const personne = donnees.personnes.get(id);
+  const voisins: string[] = [];
+
+  for (const parentId of donnees.parents.get(id) ?? []) voisins.push(parentId);
+  for (const enfantId of donnees.enfants.get(id) ?? []) voisins.push(enfantId);
+
+  if (personne?.issuDe) {
+    for (const frere of donnees.unions.get(personne.issuDe)?.enfants ?? []) {
+      if (frere !== id) voisins.push(frere);
+    }
+  }
+
+  for (const unionId of personne?.unions ?? []) {
+    const union = donnees.unions.get(unionId);
+    if (!union) continue;
+    for (const conjoint of [union.conjointA, union.conjointB]) {
+      if (conjoint && conjoint !== id) voisins.push(conjoint);
+    }
+    for (const enfantId of union.enfants) voisins.push(enfantId);
+  }
+
+  return [...new Set(voisins)].filter((voisinId) => donnees.personnes.has(voisinId));
+}
+
+/**
+ * Extrait un sous-graphe autour d'une personne (parents, enfants, conjoints,
+ * fratrie) pour limiter le payload client sans bloquer la recherche globale.
+ */
+export function extraireSousGraphe(
+  donnees: DonneesArbre,
+  racineId: string,
+  profondeurMax = PROFONDEUR_SOUS_GRAPHE_ARBRE
+): DonneesArbre {
+  if (!donnees.personnes.has(racineId)) {
+    return {
+      personnes: new Map(),
+      unions: new Map(),
+      parents: new Map(),
+      enfants: new Map(),
+    };
+  }
+
+  const ids = new Set<string>([racineId]);
+  let frontiere = [racineId];
+
+  for (let profondeur = 0; profondeur < profondeurMax; profondeur++) {
+    const suivante: string[] = [];
+    for (const id of frontiere) {
+      for (const voisinId of voisinsSousGraphe(donnees, id)) {
+        if (ids.has(voisinId)) continue;
+        ids.add(voisinId);
+        suivante.push(voisinId);
+      }
+    }
+    if (suivante.length === 0) break;
+    frontiere = suivante;
+  }
+
+  const personnes = new Map<string, PersonneArbre>();
+  for (const id of ids) {
+    const personne = donnees.personnes.get(id);
+    if (personne) personnes.set(id, personne);
+  }
+
+  const unions = new Map<string, UnionArbre>();
+  for (const union of donnees.unions.values()) {
+    const aVisible = union.conjointA ? ids.has(union.conjointA) : false;
+    const bVisible = union.conjointB ? ids.has(union.conjointB) : false;
+    const enfantsVisibles = union.enfants.filter((enfantId) => ids.has(enfantId));
+    if (!aVisible && !bVisible && enfantsVisibles.length === 0) continue;
+    unions.set(union.id, {
+      ...union,
+      conjointA: aVisible ? union.conjointA : null,
+      conjointB: bVisible ? union.conjointB : null,
+      enfants: enfantsVisibles,
+    });
+  }
+
+  const parents = new Map<string, string[]>();
+  const enfants = new Map<string, string[]>();
+  for (const id of ids) {
+    const listeParents = (donnees.parents.get(id) ?? []).filter((parentId) => ids.has(parentId));
+    if (listeParents.length > 0) parents.set(id, listeParents);
+    const listeEnfants = (donnees.enfants.get(id) ?? []).filter((enfantId) => ids.has(enfantId));
+    if (listeEnfants.length > 0) enfants.set(id, listeEnfants);
+  }
+
+  return { personnes, unions, parents, enfants };
+}
+
 export type GrapheSerialise = {
   personnes: PersonneArbre[];
   unions: UnionArbre[];
@@ -55,11 +167,11 @@ export function normaliser(texte: string): string {
  * Les années de vie accompagnent toujours le résultat : la base compte
  * plusieurs homonymes exacts, et un nom seul ne permet pas de les distinguer.
  */
-export function chercherPersonnes(
-  personnes: PersonneArbre[],
+export function chercherPersonnes<T extends PersonneRecherche>(
+  personnes: T[],
   requete: string,
   combien = 10
-): PersonneArbre[] {
+): T[] {
   const q = normaliser(requete);
   if (q.length < 2) return [];
 
@@ -75,12 +187,10 @@ export function chercherPersonnes(
 
       if (!mots.every((m) => complet.includes(m))) return null;
 
-      // Un nom qui commence par ce qu'on tape passe devant un nom qui le
-      // contient au milieu : on cherche presque toujours par le début.
       const note = nom.startsWith(q) ? 0 : nom.includes(q) ? 1 : 2;
       return { personne: p, note };
     })
-    .filter((r): r is { personne: PersonneArbre; note: number } => r !== null);
+    .filter((r): r is { personne: T; note: number } => r !== null);
 
   return notes
     .sort(
@@ -93,7 +203,7 @@ export function chercherPersonnes(
 }
 
 /** « 1886 – 1954 », « née en 1993 », « † 1954 », ou rien si l'on ne sait pas. */
-export function anneesDeVie(personne: PersonneArbre): string | null {
+export function anneesDeVie(personne: PersonneRecherche): string | null {
   const naissance = personne.naissance?.annee;
   const deces = personne.deces?.annee;
 

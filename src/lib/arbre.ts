@@ -141,10 +141,65 @@ function resumer(e: LigneEvenement | undefined): EvenementResume | null {
 /** Événements retenus pour l'affichage de l'arbre : le reste est chargé à la fiche. */
 const TYPES_RESUME: TypeEvenement[] = ['naissance', 'deces', 'profession', 'mariage'];
 
-export async function chargerArbre(): Promise<DonneesArbre> {
+type OptionsChargementArbre = {
+  /** Identifiants des personnes dont la photo doit être signée. Par défaut : toutes. */
+  signerPhotosPour?: Set<string> | 'tous';
+};
+
+/** Signe les portraits du bucket privé pour les personnes demandées. */
+export async function signerPhotosPersonnes(
+  personnes: Map<string, PersonneArbre>,
+  ids: Set<string>
+): Promise<void> {
+  if (ids.size === 0) return;
+
+  const supabase = await creerClientServeur();
+  const photoIds = [...ids]
+    .map((id) => personnes.get(id)?.photoId)
+    .filter((id): id is string => typeof id === 'string');
+
+  if (photoIds.length === 0) return;
+
+  const { data: medias } = await supabase
+    .from('medias')
+    .select('id, chemin')
+    .in('id', photoIds);
+
+  const cheminParPhotoId = new Map((medias ?? []).map((m) => [m.id, m.chemin]));
+  const chemins = new Set<string>();
+  const cheminParPersonne = new Map<string, string>();
+
+  for (const id of ids) {
+    const personne = personnes.get(id);
+    if (!personne?.photoId) continue;
+    const chemin = cheminParPhotoId.get(personne.photoId);
+    if (!chemin) continue;
+    chemins.add(chemin);
+    cheminParPersonne.set(id, chemin);
+  }
+
+  if (chemins.size === 0) return;
+
+  const { data: urlsSignees } = await supabase.storage
+    .from('arbre-medias')
+    .createSignedUrls([...chemins], 3600);
+
+  const urlParChemin = new Map<string, string>();
+  for (const entree of urlsSignees ?? []) {
+    if (entree.path && entree.signedUrl) urlParChemin.set(entree.path, entree.signedUrl);
+  }
+
+  for (const [id, chemin] of cheminParPersonne) {
+    const personne = personnes.get(id);
+    if (personne) personne.photoUrl = urlParChemin.get(chemin) ?? null;
+  }
+}
+
+export async function chargerArbre(options: OptionsChargementArbre = {}): Promise<DonneesArbre> {
+  const signerPhotosPour = options.signerPhotosPour ?? 'tous';
   const supabase = await creerClientServeur();
 
-  const [personnesRes, unionsRes, filiationsRes, evenementsRes, mediasRes] = await Promise.all([
+  const [personnesRes, unionsRes, filiationsRes, evenementsRes] = await Promise.all([
     supabase
       .from('personnes')
       .select('id, code_gedcom, prenoms, nom, nom_complet, surnom, sexe, branches, niveaux_preuve, presume_vivant, notes, photo_id'),
@@ -154,20 +209,39 @@ export async function chargerArbre(): Promise<DonneesArbre> {
       .from('evenements')
       .select('personne_id, union_id, type, annee, mois, jour, annee_fin, qualificatif, date_texte, detail, lieux(libelle)')
       .in('type', TYPES_RESUME),
-    // Chemins des photos de profil : on ne les charge que pour celles qui
-    // sont vraiment utilisées, en filtrant sur les photo_id référencés.
-    supabase.from('medias').select('id, chemin').eq('type', 'photo'),
   ]);
 
-  const erreur = personnesRes.error ?? unionsRes.error ?? filiationsRes.error ?? evenementsRes.error ?? mediasRes.error;
+  const photoIds = [
+    ...new Set(
+      (personnesRes.data ?? [])
+        .map((p) => p.photo_id)
+        .filter((id): id is string => typeof id === 'string')
+    ),
+  ];
+
+  const mediasRes =
+    photoIds.length > 0
+      ? await supabase.from('medias').select('id, chemin').eq('type', 'photo').in('id', photoIds)
+      : { data: [] as { id: string; chemin: string }[], error: null };
+
+  const erreur =
+    personnesRes.error ??
+    unionsRes.error ??
+    filiationsRes.error ??
+    evenementsRes.error ??
+    mediasRes.error;
   if (erreur) throw new Error(`Chargement de l'arbre impossible : ${erreur.message}`);
 
-  // Signature des URL du bucket privé, en un seul appel groupé : moins d'aller-
-  // retours HTTP qu'une signature par personne, et le bucket connaît la limite.
   const cheminParMedia = new Map((mediasRes.data ?? []).map((m) => [m.id, m.chemin]));
+  const idsASigner =
+    signerPhotosPour === 'tous'
+      ? new Set((personnesRes.data ?? []).map((p) => p.id))
+      : signerPhotosPour;
+
   const cheminsAsigner = [
     ...new Set(
       (personnesRes.data ?? [])
+        .filter((p) => idsASigner.has(p.id))
         .map((p) => (p.photo_id ? cheminParMedia.get(p.photo_id) : null))
         .filter((c): c is string => typeof c === 'string')
     ),

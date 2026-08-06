@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { PersonneArbre } from '@/lib/arbre';
+import type { PersonneRecherche } from '@/lib/arbre-graphe';
 import { anneesDeVie, chercherPersonnes } from '@/lib/arbre-graphe';
 
 /**
@@ -21,8 +22,8 @@ export function SelecteurPersonne({
   choisie,
   onChoix,
 }: {
-  personnes: PersonneArbre[];
-  suggestions: PersonneArbre[];
+  personnes: PersonneRecherche[];
+  suggestions: PersonneRecherche[];
   choisie: PersonneArbre;
   onChoix: (id: string) => void;
 }) {

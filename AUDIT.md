@@ -13,7 +13,7 @@ Ce document recense **où ça coince**, **pourquoi**, et **dans quel ordre corri
 | **Liens de l'arbre** | Amélioré | Conjoints rapprochés, fratrie ≠ conjoint, ponts longs supprimés |
 | **Cartes personnes** | Bon | Portraits OK ; badge « Fratrie » + contour plein |
 | **Site global** | Bon | 32 routes, auth, navigation améliorées |
-| **Performance `/arbre`** | À surveiller | Tout le graphe + toutes les photos signées au chargement |
+| **Performance `/arbre`** | Amélioré | Sous-graphe + photos signées ciblées + refresh 45 min |
 | **Tests auto** | Moyen | Scripts grep + seuils géométriques documentés |
 
 ### Correctifs appliqués (audit)
@@ -23,8 +23,12 @@ Ce document recense **où ça coince**, **pourquoi**, et **dans quel ordre corri
 ✓ C2  Layout famille : rapprocherConjointsSurRang après chaque rangée
 ✓ C3  (suit C2) + pas de barre dorée horizontale si distance > 320 px
 ✓ H1  Mode par défaut « La famille autour », mémorisé dans localStorage
+✓ H2  Sous-graphe autour du focus (±4 sauts) + refresh photos /api/arbre/photos
 ✓ H4  URL ?suite= conservée vers /attente pour les membres en attente
 ✓ M4  Barre de fratrie minimale (20 px) pour enfant unique
+✓ M5  Médias filtrés par photo_id référencés (plus de scan de tout le bucket)
+✓ M6  Repères de génération repliables sur mobile
+✓ M3  Bandeau d'avertissement en mode « Tout (éclaté) »
 ```
 
 ---
