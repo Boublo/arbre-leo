@@ -101,6 +101,8 @@ type PedigreeOpts = {
   enfants: NoeudArbre[];
   enfantsAuDessus: boolean;
   yBarreFratrie?: number;
+  /** Couche de routage au-dessus de la barre — décalée si plusieurs unions sur la rangée. */
+  yRoute?: number;
 };
 
 function ajouterSegment(
@@ -117,6 +119,7 @@ export function segmentsPedigree({
   enfants,
   enfantsAuDessus,
   yBarreFratrie: yBarreForce,
+  yRoute: yRouteForce,
 }: PedigreeOpts): SegmentLien[] {
   if (enfants.length === 0 || parents.length === 0) return [];
 
@@ -153,18 +156,17 @@ export function segmentsPedigree({
     }
   }
 
-  const yRoute = enfantsAuDessus
-    ? yBarreFratrie + HAUTEUR_COUCHES_ROUTAGE
-    : yBarreFratrie - HAUTEUR_COUCHES_ROUTAGE;
+  const yRoute =
+    yRouteForce ??
+    (enfantsAuDessus
+      ? yBarreFratrie + HAUTEUR_COUCHES_ROUTAGE
+      : yBarreFratrie - HAUTEUR_COUCHES_ROUTAGE);
 
   const yDepart = enfantsAuDessus
-    ? // Ascendance : coller au HAUT des cartes parents.
-      yHautParents
-    : // Descendance / famille : partir de la barre de couple (adjacents) ou
-      // du bas des cartes — plus de trou de 14 px sous les parents.
-      adjacents
-        ? yCoupleVisuel
-        : yBasParents + MARGE_SOUS_PARENTS;
+    ? yHautParents
+    : parents.length === 2
+      ? yCoupleVisuel
+      : yBasParents + MARGE_SOUS_PARENTS;
 
   // 1. Descente verticale depuis le couple jusqu'à la couche de routage (entre les rangées).
   ajouterSegment(segments, {
@@ -421,18 +423,19 @@ export function planifierLiens(
       return xa - xb;
     });
 
+    const yEnfants = Math.min(...liste[0]!.enfants.map((e) => e.y));
+    const enfantsAuDessus = liste[0]!.enfantsAuDessus;
+    const yBarreCommun = enfantsAuDessus
+      ? Math.max(...liste.flatMap((u) => u.enfants.map((e) => e.y + HAUTEUR_NOEUD))) + MARGE_ENTRE_RANGS
+      : yEnfants - MARGE_SUR_ENFANTS;
+
     const couloirs = liste.length > 1 ? allouerCouloirsPedigree(liste) : new Map<UnionPedigree, number>();
 
     for (const union of liste) {
-      const yEnfants = Math.min(...union.enfants.map((e) => e.y));
-      let yBarre = union.enfantsAuDessus
-        ? Math.max(...union.enfants.map((e) => e.y + HAUTEUR_NOEUD)) + MARGE_ENTRE_RANGS
-        : yEnfants - MARGE_SUR_ENFANTS;
-
       const decalage = (couloirs.get(union) ?? 0) * PAS_COULOIR_PEDIGREE;
-      if (decalage > 0) {
-        yBarre = union.enfantsAuDessus ? yBarre + decalage : yBarre - decalage;
-      }
+      const yRoute = enfantsAuDessus
+        ? yBarreCommun + HAUTEUR_COUCHES_ROUTAGE + decalage
+        : yBarreCommun - HAUTEUR_COUCHES_ROUTAGE - decalage;
 
       segments.push(
         ...segmentsPedigree({
@@ -440,7 +443,8 @@ export function planifierLiens(
           parents: union.parents,
           enfants: union.enfants,
           enfantsAuDessus: union.enfantsAuDessus,
-          yBarreFratrie: yBarre,
+          yBarreFratrie: yBarreCommun,
+          yRoute,
         })
       );
     }
