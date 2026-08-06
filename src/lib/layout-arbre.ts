@@ -238,7 +238,21 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
     // `curseur` démarre à un vrai nombre : sans ça, une rangée entière sans
     // ancrage parental produirait des positions à -Infinity et des NaN en aval.
     let curseur = Number.NEGATIVE_INFINITY;
+    let derniereUnion: string | null = null;
     for (const [index, id] of liste.entries()) {
+      const u = unionParentaleDe(id);
+      const cleUnion = u?.id ?? '_';
+      // Un peu d'air entre deux fratries cousines sur la même rangée.
+      if (
+        derniereUnion &&
+        cleUnion !== derniereUnion &&
+        derniereUnion !== '_' &&
+        cleUnion !== '_'
+      ) {
+        curseur += 0.85;
+      }
+      derniereUnion = cleUnion;
+
       const ideal = ancrageDe(id);
       const suivant = Number.isFinite(curseur) ? curseur + 1 : index;
       const x = Math.max(ideal ?? suivant, suivant);

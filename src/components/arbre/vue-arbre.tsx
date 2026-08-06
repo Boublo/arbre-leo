@@ -18,6 +18,7 @@ import { MiniMap } from '@/components/arbre/mini-map';
 import { MenuContextuel, type ActionContexte } from '@/components/arbre/menu-contextuel';
 import { BandeauAide } from '@/components/arbre/bandeau-aide';
 import { Legende } from '@/components/arbre/legende';
+import { LiensFamille } from '@/components/arbre/liens-famille';
 import { iconesPour, IconeSvg } from '@/components/arbre/icones-richesse';
 
 const COULEUR_COTE = {
@@ -157,6 +158,13 @@ export function VueArbre({
     return () => clearTimeout(minuteur);
   }, [toutVoir, disposition.racineId, disposition.mode]);
 
+  const zoomer = useCallback((facteur: number) => {
+    const svg = svgRef.current;
+    const comportement = comportementRef.current;
+    if (!svg || !comportement) return;
+    select(svg).transition().duration(200).call(comportement.scaleBy, facteur);
+  }, []);
+
   // --- Mini-carte : cliquer pour recentrer la vue ---------------------------
 
   const deplacerVersPointMonde = useCallback(
@@ -289,53 +297,57 @@ export function VueArbre({
           ))}
 
           {/* Filiations */}
-          <g fill="none">
-            {disposition.liens.map((lien) => {
-              const enfant = noeudParId.get(lien.enfantId);
-              const parent = noeudParId.get(lien.parentId);
-              if (!enfant || !parent) return null;
+          {disposition.mode === 'famille' ? (
+            <LiensFamille disposition={disposition} donnees={donnees} noeudParId={noeudParId} />
+          ) : (
+            <g fill="none">
+              {disposition.liens.map((lien) => {
+                const enfant = noeudParId.get(lien.enfantId);
+                const parent = noeudParId.get(lien.parentId);
+                if (!enfant || !parent) return null;
 
-              // Le trait part du bas du nœud du haut vers le haut du nœud du bas,
-              // quel que soit lequel est l'enfant : le sens de lecture prime.
-              const [haut, bas] = enfant.y <= parent.y ? [enfant, parent] : [parent, enfant];
-              const y1 = haut.y + HAUTEUR_NOEUD;
-              const y2 = bas.y;
-              const milieu = y1 + (y2 - y1) / 2;
+                const [haut, bas] = enfant.y <= parent.y ? [enfant, parent] : [parent, enfant];
+                const y1 = haut.y + HAUTEUR_NOEUD;
+                const y2 = bas.y;
+                const milieu = y1 + (y2 - y1) / 2;
 
-              return (
-                <path
-                  key={lien.id}
-                  d={`M ${haut.x} ${y1} V ${milieu} H ${bas.x} V ${y2}`}
-                  stroke={lien.reprise ? 'var(--or)' : 'var(--bordure-forte)'}
-                  strokeWidth={lien.reprise ? 2 : 1.5}
-                  strokeDasharray={lien.reprise ? '5 4' : undefined}
-                  opacity={0.85}
-                />
-              );
-            })}
-          </g>
+                return (
+                  <path
+                    key={lien.id}
+                    d={`M ${haut.x} ${y1} V ${milieu} H ${bas.x} V ${y2}`}
+                    stroke={lien.reprise ? 'var(--or)' : 'var(--bordure-forte)'}
+                    strokeWidth={lien.reprise ? 2 : 1.5}
+                    strokeDasharray={lien.reprise ? '5 4' : undefined}
+                    opacity={0.85}
+                  />
+                );
+              })}
+            </g>
+          )}
 
-          {/* Traits d'union entre conjoints de même rangée */}
-          <g fill="none">
-            {disposition.unions.map((union) => {
-              const a = noeudParId.get(union.aId);
-              const b = noeudParId.get(union.bId);
-              if (!a || !b || a.rang !== b.rang) return null;
-              const y = a.y + HAUTEUR_NOEUD / 2;
-              return (
-                <line
-                  key={union.id}
-                  x1={Math.min(a.x, b.x) + LARGEUR_NOEUD / 2}
-                  y1={y}
-                  x2={Math.max(a.x, b.x) - LARGEUR_NOEUD / 2}
-                  y2={y}
-                  stroke="var(--or)"
-                  strokeWidth={2}
-                  opacity={0.5}
-                />
-              );
-            })}
-          </g>
+          {/* Traits d'union entre conjoints (hors mode famille, déjà tracés là-bas) */}
+          {disposition.mode !== 'famille' && (
+            <g fill="none">
+              {disposition.unions.map((union) => {
+                const a = noeudParId.get(union.aId);
+                const b = noeudParId.get(union.bId);
+                if (!a || !b || a.rang !== b.rang) return null;
+                const y = a.y + HAUTEUR_NOEUD / 2;
+                return (
+                  <line
+                    key={union.id}
+                    x1={Math.min(a.x, b.x) + LARGEUR_NOEUD / 2}
+                    y1={y}
+                    x2={Math.max(a.x, b.x) - LARGEUR_NOEUD / 2}
+                    y2={y}
+                    stroke="var(--or)"
+                    strokeWidth={2}
+                    opacity={0.5}
+                  />
+                );
+              })}
+            </g>
+          )}
 
           {/* Personnes */}
           <g>
@@ -394,6 +406,12 @@ export function VueArbre({
         <div className="pointer-events-auto flex flex-col items-start gap-2">
           <div className="flex items-center gap-1">
             <div className="carte flex items-center gap-1 p-1">
+              <BoutonRond titre="Agrandir" onClick={() => zoomer(1.35)}>
+                +
+              </BoutonRond>
+              <BoutonRond titre="Réduire" onClick={() => zoomer(1 / 1.35)}>
+                −
+              </BoutonRond>
               <BoutonRond titre="Voir tout l’arbre" onClick={toutVoir}>
                 ⤢
               </BoutonRond>
