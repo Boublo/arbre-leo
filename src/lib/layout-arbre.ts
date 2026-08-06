@@ -125,15 +125,21 @@ const ECART_CONJOINTS_LAYOUT = 1.05;
 /** Écart minimal entre frères/sœurs ou cousins sur la même rangée. */
 const ECART_FRATRIE_LAYOUT = 1;
 
-function pairesConjoints(unions: Map<string, UnionArbre>): Map<string, string> {
-  const paires = new Map<string, string>();
+type GroupesConjoints = Map<string, Set<string>>;
+
+function groupesConjoints(unions: Map<string, UnionArbre>): GroupesConjoints {
+  const groupes: GroupesConjoints = new Map();
   for (const union of unions.values()) {
     const { conjointA, conjointB } = union;
     if (!conjointA || !conjointB) continue;
-    paires.set(conjointA, conjointB);
-    paires.set(conjointB, conjointA);
+    const deA = groupes.get(conjointA) ?? new Set<string>();
+    const deB = groupes.get(conjointB) ?? new Set<string>();
+    deA.add(conjointB);
+    deB.add(conjointA);
+    groupes.set(conjointA, deA);
+    groupes.set(conjointB, deB);
   }
-  return paires;
+  return groupes;
 }
 
 /**
@@ -142,7 +148,7 @@ function pairesConjoints(unions: Map<string, UnionArbre>): Map<string, string> {
  */
 function ordonnerAvecCouplesAtomiques(
   ids: string[],
-  paires: Map<string, string>
+  groupesConj: GroupesConjoints
 ): string[] {
   const surRang = new Set(ids);
   const vus = new Set<string>();
@@ -150,13 +156,18 @@ function ordonnerAvecCouplesAtomiques(
 
   for (const id of ids) {
     if (vus.has(id)) continue;
-    resultat.push(id);
-    vus.add(id);
-    const conjoint = paires.get(id);
-    if (conjoint && surRang.has(conjoint) && !vus.has(conjoint)) {
-      resultat.push(conjoint);
-      vus.add(conjoint);
+    const composante: string[] = [];
+    const aVisiter = [id];
+    while (aVisiter.length > 0) {
+      const courant = aVisiter.shift()!;
+      if (vus.has(courant) || !surRang.has(courant)) continue;
+      vus.add(courant);
+      composante.push(courant);
+      for (const conjoint of groupesConj.get(courant) ?? []) {
+        if (!vus.has(conjoint) && surRang.has(conjoint)) aVisiter.push(conjoint);
+      }
     }
+    resultat.push(...composante);
   }
   return resultat;
 }
@@ -174,7 +185,7 @@ type UniteRang = {
 function unitesAtomiquesSurRang(
   ids: string[],
   positions: Map<string, number>,
-  paires: Map<string, string>
+  groupesConj: GroupesConjoints
 ): UniteRang[] {
   const surRang = new Set(ids);
   const vus = new Set<string>();
@@ -186,22 +197,22 @@ function unitesAtomiquesSurRang(
 
   for (const id of tries) {
     if (vus.has(id)) continue;
-    const conjoint = paires.get(id);
-    if (conjoint && surRang.has(conjoint) && !vus.has(conjoint)) {
-      const xA = positions.get(id) ?? 0;
-      const xB = positions.get(conjoint) ?? 0;
-      const gauche = xA <= xB ? id : conjoint;
-      const droite = xA <= xB ? conjoint : id;
-      unites.push({
-        ids: [gauche, droite],
-        centre: (xA + xB) / 2,
-      });
-      vus.add(id);
-      vus.add(conjoint);
-    } else {
-      unites.push({ ids: [id], centre: positions.get(id) ?? 0 });
-      vus.add(id);
+    const composante: string[] = [];
+    const aVisiter = [id];
+    while (aVisiter.length > 0) {
+      const courant = aVisiter.shift()!;
+      if (vus.has(courant) || !surRang.has(courant)) continue;
+      vus.add(courant);
+      composante.push(courant);
+      for (const conjoint of groupesConj.get(courant) ?? []) {
+        if (!vus.has(conjoint) && surRang.has(conjoint)) aVisiter.push(conjoint);
+      }
     }
+    composante.sort((a, b) => (positions.get(a) ?? 0) - (positions.get(b) ?? 0));
+    const centre =
+      composante.reduce((somme, membre) => somme + (positions.get(membre) ?? 0), 0) /
+      composante.length;
+    unites.push({ ids: composante, centre });
   }
 
   unites.sort((a, b) => a.centre - b.centre);
@@ -215,21 +226,24 @@ function unitesAtomiquesSurRang(
 function rapprocherConjointsSurRang(
   ids: string[],
   positions: Map<string, number>,
-  paires: Map<string, string>
+  groupesConj: GroupesConjoints
 ): void {
-  const unites = unitesAtomiquesSurRang(ids, positions, paires);
+  const unites = unitesAtomiquesSurRang(ids, positions, groupesConj);
 
   let bordDroit = Number.NEGATIVE_INFINITY;
   for (const unite of unites) {
-    if (unite.ids.length === 2) {
-      const demi = ECART_CONJOINTS_LAYOUT / 2;
+    if (unite.ids.length > 1) {
+      const demi = ((unite.ids.length - 1) * ECART_CONJOINTS_LAYOUT) / 2;
       const centreMin = Number.isFinite(bordDroit)
         ? bordDroit + ECART_FRATRIE_LAYOUT + demi
         : unite.centre;
       const centre = Math.max(unite.centre, centreMin);
-      const [gauche, droite] = unite.ids;
-      positions.set(gauche!, centre - demi);
-      positions.set(droite!, centre + demi);
+      unite.ids.forEach((membre, index) => {
+        positions.set(
+          membre,
+          centre + (index - (unite.ids.length - 1) / 2) * ECART_CONJOINTS_LAYOUT
+        );
+      });
       bordDroit = centre + demi;
     } else {
       const id = unite.ids[0]!;
@@ -248,7 +262,7 @@ function lienVisuelFamille(
   id: string,
   racineId: string,
   rang: number,
-  paires: Map<string, string>,
+  groupesConj: GroupesConjoints,
   rangs: Map<string, number>,
   personnes: DonneesArbre['personnes'],
   unions: DonneesArbre['unions']
@@ -256,8 +270,8 @@ function lienVisuelFamille(
   if (id === racineId) return 'racine';
   if (rang < 0) return 'ancetre';
 
-  const partenaire = paires.get(id);
-  if (partenaire !== undefined && rangs.get(partenaire) === rang) return 'conjoint';
+  const partenaires = groupesConj.get(id) ?? [];
+  if ([...partenaires].some((partenaire) => rangs.get(partenaire) === rang)) return 'conjoint';
 
   const issuDe = personnes.get(id)?.issuDe;
   if (issuDe) {
@@ -293,20 +307,30 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
     }
   }
 
-  // Pour chaque couple ancestral déjà placé, on ajoute tous les enfants dont
-  // on ne connaît pas encore le rang. Ils vivent juste sous leur couple —
-  // c'est ainsi que les frères et sœurs, oncles et tantes se rangent
-  // naturellement au bon niveau.
-  for (const union of unions.values()) {
-    const { conjointA, conjointB, enfants: enfantsUnion } = union;
-    const rangA = conjointA ? rangs.get(conjointA) : undefined;
-    const rangB = conjointB ? rangs.get(conjointB) : undefined;
-    const rangCouple = rangA ?? rangB;
-    if (rangCouple === undefined || rangCouple > 0) continue;
+  // Pour chaque union rattachée à une branche placée, on ajoute le conjoint
+  // manquant puis les enfants. On répète jusqu'au point fixe : l'ordre des
+  // unions en base ne doit pas décider si la tante et les cousins apparaissent.
+  let complete = true;
+  while (complete) {
+    complete = false;
+    for (const union of unions.values()) {
+      const { conjointA, conjointB, enfants: enfantsUnion } = union;
+      const rangA = conjointA ? rangs.get(conjointA) : undefined;
+      const rangB = conjointB ? rangs.get(conjointB) : undefined;
+      const rangCouple = rangA ?? rangB;
+      if (rangCouple === undefined || rangCouple > 0) continue;
 
-    for (const enfantId of enfantsUnion) {
-      if (!personnes.has(enfantId) || rangs.has(enfantId)) continue;
-      rangs.set(enfantId, rangCouple + 1);
+      for (const conjointId of [conjointA, conjointB]) {
+        if (!conjointId || !personnes.has(conjointId) || rangs.has(conjointId)) continue;
+        rangs.set(conjointId, rangCouple);
+        complete = true;
+      }
+
+      for (const enfantId of enfantsUnion) {
+        if (!personnes.has(enfantId) || rangs.has(enfantId)) continue;
+        rangs.set(enfantId, rangCouple + 1);
+        complete = true;
+      }
     }
   }
 
@@ -345,7 +369,7 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
 
   const positions = new Map<string, number>();
   const rangsTries = [...parRang.keys()].sort((a, b) => a - b);
-  const pairesConj = pairesConjoints(unions);
+  const groupesConj = groupesConjoints(unions);
 
   /** Union à laquelle cette personne est rattachée dans le graphe placé. */
   const unionParentaleDe = (id: string): UnionArbre | null => {
@@ -393,7 +417,7 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
     });
 
     // Couples adjacents dans l'ordre avant placement (AUDIT M1).
-    const listeOrdonnee = ordonnerAvecCouplesAtomiques(liste, pairesConj);
+    const listeOrdonnee = ordonnerAvecCouplesAtomiques(liste, groupesConj);
     liste.length = 0;
     liste.push(...listeOrdonnee);
 
@@ -407,11 +431,16 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
     let curseur = Number.NEGATIVE_INFINITY;
     let derniereUnion: string | null = null;
     for (const [index, id] of liste.entries()) {
-      const conjoint = pairesConj.get(id);
-      // Conjoint déjà posé sur cette rangée : coller immédiatement à sa droite.
-      if (conjoint !== undefined && positions.has(conjoint)) {
+      const conjointsPlaces = [...(groupesConj.get(id) ?? [])].filter((conjoint) =>
+        positions.has(conjoint)
+      );
+      // Conjoint déjà posé sur cette rangée : coller au bord droit du groupe.
+      if (conjointsPlaces.length > 0) {
+        const xConjointDroit = Math.max(
+          ...conjointsPlaces.map((conjoint) => positions.get(conjoint)!)
+        );
         const x = Math.max(
-          positions.get(conjoint)! + ECART_CONJOINTS_LAYOUT,
+          xConjointDroit + ECART_CONJOINTS_LAYOUT,
           Number.isFinite(curseur) ? curseur + ECART_CONJOINTS_LAYOUT : 0
         );
         positions.set(id, x);
@@ -499,7 +528,7 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
       }
     }
 
-    rapprocherConjointsSurRang(liste, positions, pairesConj);
+    rapprocherConjointsSurRang(liste, positions, groupesConj);
   }
 
   const noeuds: NoeudArbre[] = [];
@@ -516,7 +545,7 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
       rang: rang - rangMin,
       x: positions.get(id) ?? 0,
       y: rang - rangMin,
-      lien: lienVisuelFamille(id, racineId, rang, pairesConj, rangs, personnes, unions),
+      lien: lienVisuelFamille(id, racineId, rang, groupesConj, rangs, personnes, unions),
       cote,
     };
     place.set(id, noeud);
@@ -536,7 +565,7 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
     }
   }
 
-  return finaliser(noeuds, liens, place, donnees, 'famille', racineId, pairesConj);
+  return finaliser(noeuds, liens, place, donnees, 'famille', racineId, groupesConj);
 }
 
 /**
@@ -844,7 +873,7 @@ function ordonnerCoucheEclate(
  */
 function ecarterCollisions(
   noeuds: NoeudArbre[],
-  pairesConj: Map<string, string> = new Map()
+  groupesConj: GroupesConjoints = new Map()
 ): void {
   const parRang = new Map<number, NoeudArbre[]>();
   for (const noeud of noeuds) {
@@ -857,39 +886,36 @@ function ecarterCollisions(
     const parId = new Map(liste.map((n) => [n.personneId, n]));
     const ids = liste.map((n) => n.personneId);
     const positions = new Map(liste.map((n) => [n.personneId, n.x]));
-    const unites = unitesAtomiquesSurRang(ids, positions, pairesConj);
+    const unites = unitesAtomiquesSurRang(ids, positions, groupesConj);
 
-    // Coller chaque couple autour de son centre avant d'empiler.
+    // Coller chaque groupe d'unions autour de son centre avant d'empiler.
     for (const unite of unites) {
-      if (unite.ids.length !== 2) continue;
-      const demi = ECART_MINIMUM_CENTRES / 2;
-      const [gauche, droite] = unite.ids;
-      const na = parId.get(gauche!);
-      const nb = parId.get(droite!);
-      if (!na || !nb) continue;
-      na.x = unite.centre - demi;
-      nb.x = unite.centre + demi;
-      unite.centre = (na.x + nb.x) / 2;
+      if (unite.ids.length <= 1) continue;
+      unite.ids.forEach((membre, index) => {
+        const noeud = parId.get(membre);
+        if (!noeud) return;
+        noeud.x =
+          unite.centre + (index - (unite.ids.length - 1) / 2) * ECART_MINIMUM_CENTRES;
+      });
     }
 
     unites.sort((a, b) => a.centre - b.centre);
 
     let bordDroit = Number.NEGATIVE_INFINITY;
     for (const unite of unites) {
-      if (unite.ids.length === 2) {
-        const demi = ECART_MINIMUM_CENTRES / 2;
-        // bordDroit = centre du dernier singleton OU bord droit du dernier couple.
-        // Le bord gauche du couple = centre - demi ; on veut ≥ bordDroit + ECART.
+      if (unite.ids.length > 1) {
+        const demi = ((unite.ids.length - 1) * ECART_MINIMUM_CENTRES) / 2;
+        // Le bord gauche du groupe doit rester après le bloc précédent.
         const centreMin = Number.isFinite(bordDroit)
           ? bordDroit + ECART_MINIMUM_CENTRES + demi
           : unite.centre;
         const centre = Math.max(unite.centre, centreMin);
-        const [gauche, droite] = unite.ids;
-        const na = parId.get(gauche!);
-        const nb = parId.get(droite!);
-        if (!na || !nb) continue;
-        na.x = centre - demi;
-        nb.x = centre + demi;
+        unite.ids.forEach((membre, index) => {
+          const noeud = parId.get(membre);
+          if (!noeud) return;
+          noeud.x =
+            centre + (index - (unite.ids.length - 1) / 2) * ECART_MINIMUM_CENTRES;
+        });
         bordDroit = centre + demi;
       } else {
         const n = parId.get(unite.ids[0]!);
@@ -907,7 +933,7 @@ function ecarterCollisions(
 /** Après collision en pixels : recolle les conjoints (sécurité). */
 function rapprocherConjointsNoeuds(
   noeuds: NoeudArbre[],
-  pairesConj: Map<string, string>
+  groupesConj: GroupesConjoints
 ): void {
   const parRang = new Map<number, NoeudArbre[]>();
   for (const noeud of noeuds) {
@@ -919,18 +945,17 @@ function rapprocherConjointsNoeuds(
   for (const liste of parRang.values()) {
     const positions = new Map(liste.map((n) => [n.personneId, n.x]));
     const ids = liste.map((n) => n.personneId);
-    const unites = unitesAtomiquesSurRang(ids, positions, pairesConj);
+    const unites = unitesAtomiquesSurRang(ids, positions, groupesConj);
     const parId = new Map(liste.map((n) => [n.personneId, n]));
 
     for (const unite of unites) {
-      if (unite.ids.length !== 2) continue;
-      const demi = ECART_MINIMUM_CENTRES / 2;
-      const [gauche, droite] = unite.ids;
-      const na = parId.get(gauche!);
-      const nb = parId.get(droite!);
-      if (!na || !nb) continue;
-      na.x = unite.centre - demi;
-      nb.x = unite.centre + demi;
+      if (unite.ids.length <= 1) continue;
+      unite.ids.forEach((membre, index) => {
+        const noeud = parId.get(membre);
+        if (!noeud) return;
+        noeud.x =
+          unite.centre + (index - (unite.ids.length - 1) / 2) * ECART_MINIMUM_CENTRES;
+      });
     }
   }
 }
@@ -1050,7 +1075,7 @@ function disposerEclate(donnees: DonneesArbre, racineId: string): Disposition {
     donnees,
     'eclate',
     racineId,
-    pairesConjoints(unions)
+    groupesConjoints(unions)
   );
 }
 
@@ -1065,7 +1090,7 @@ function finaliser(
   donnees: DonneesArbre,
   mode: ModeArbre,
   racineId: string,
-  pairesConj?: Map<string, string>
+  groupesConj?: GroupesConjoints
 ): Disposition {
   if (noeuds.length === 0) {
     return {
@@ -1094,15 +1119,15 @@ function finaliser(
     noeud.y = noeud.rang * ESPACEMENT_Y;
   }
 
-  ecarterCollisions(noeuds, pairesConj);
-  if ((mode === 'famille' || mode === 'eclate') && pairesConj) {
-    rapprocherConjointsNoeuds(noeuds, pairesConj);
+  ecarterCollisions(noeuds, groupesConj);
+  if ((mode === 'famille' || mode === 'eclate') && groupesConj) {
+    rapprocherConjointsNoeuds(noeuds, groupesConj);
     recentererFratriesSousCouples(noeuds, donnees.unions);
-    ecarterCollisions(noeuds, pairesConj);
+    ecarterCollisions(noeuds, groupesConj);
     // Recentrer les enfants (Sandrine sous ses parents), puis recoller les
     // couples : le recentrage d'une fratrie d'aînés peut écarter un époux.
     recentererFratriesSousCouples(noeuds, donnees.unions);
-    rapprocherConjointsNoeuds(noeuds, pairesConj);
+    rapprocherConjointsNoeuds(noeuds, groupesConj);
   }
 
   // Après empilement des unités, recentrer l'origine (bord gauche des cartes ≥ 0).
