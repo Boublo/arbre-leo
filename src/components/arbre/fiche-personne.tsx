@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import type { PersonneArbre } from '@/lib/arbre';
 import { coteDesBranches, LIBELLE_COTE, TON_COTE } from '@/lib/branches';
 import { PREUVES, trierParFiabilite } from '@/lib/preuves';
+import { VisionneusePhoto } from '@/components/photos/visionneuse-photo';
 
 /**
  * Le panneau qui s'ouvre au clic sur quelqu'un.
@@ -29,18 +31,42 @@ export function FichePersonne({
 }) {
   const cote = coteDesBranches(personne.branches);
   const initiale = (personne.nomComplet.trim().charAt(0) || '?').toUpperCase();
+  const [photoAgrandie, setPhotoAgrandie] = useState(false);
 
   return (
     <div className="flex flex-col">
       {/* Portrait en en-tête — même logique que les cartes de l'arbre */}
       <div className="relative aspect-[5/3] w-full overflow-hidden bg-fond-doux">
         {personne.photoUrl ? (
-          /* eslint-disable-next-line @next/next/no-img-element -- URL signée temporaire */
-          <img
-            src={personne.photoUrl}
-            alt={`Portrait de ${personne.nomComplet}`}
-            className="h-full w-full object-cover"
-          />
+          <>
+            <button
+              type="button"
+              onClick={() => setPhotoAgrandie(true)}
+              className="group relative h-full w-full cursor-zoom-in"
+              aria-label={`Agrandir le portrait de ${personne.nomComplet}`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element -- URL signée temporaire */}
+              <img
+                src={personne.photoUrl}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+              <span
+                aria-hidden
+                className="absolute inset-0 flex items-center justify-center bg-encre/0 transition group-hover:bg-encre/10 group-focus-visible:bg-encre/10"
+              >
+                <span className="grid h-10 w-10 place-items-center rounded-full border border-bordure bg-fond-carte/90 text-base text-encre-douce opacity-0 shadow-[var(--ombre-douce)] backdrop-blur-sm transition group-hover:opacity-100 group-focus-visible:opacity-100">
+                  ⤢
+                </span>
+              </span>
+            </button>
+            <VisionneusePhoto
+              src={personne.photoUrl}
+              alt={`Portrait de ${personne.nomComplet}`}
+              ouverte={photoAgrandie}
+              onFermer={() => setPhotoAgrandie(false)}
+            />
+          </>
         ) : (
           <div
             aria-hidden

@@ -19,6 +19,7 @@ import { CommentairesPersonne } from '@/components/personne/commentaires';
 import { BarreDeSaisie } from '@/components/saisie/lien-ajout';
 import { lireDroitsSaisie } from '@/components/saisie/donnees';
 import { BarreParente } from '@/components/portrait/barre-parente';
+import { SectionMiniArbre } from '@/components/portrait/section-mini-arbre';
 import { NavigationContextuelle } from '@/components/decouverte/navigation-contextuelle';
 import { BarreScroll } from '@/components/interactions/barre-scroll';
 import { RaccourciAccueil } from '@/components/interactions/raccourci-accueil';
@@ -98,6 +99,12 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
 
           <BarreParente focusId={fiche.personne.id} donnees={donneesArbre} />
 
+          <SectionMiniArbre
+            focusId={fiche.personne.id}
+            donnees={donneesArbre}
+            nomComplet={fiche.nomComplet}
+          />
+
           <EnTetePersonne fiche={fiche} />
 
           <FriseFiche fiche={fiche} />
@@ -130,6 +137,8 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
             photos={
               <MediasPersonne
                 medias={fiche.medias}
+                evenements={fiche.evenements}
+                faits={fiche.faits}
                 personneId={fiche.personne.id}
                 peutDeposer={droits.peutContribuer}
                 photoCarteId={fiche.personne.photo_id}

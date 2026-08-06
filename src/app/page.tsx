@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Navigation } from '@/components/navigation';
-import { chargerArbre, formaterDate, type DonneesArbre, type PersonneArbre } from '@/lib/arbre';
+import { chargerArbre, formaterDate, racineParDefaut, type DonneesArbre, type PersonneArbre } from '@/lib/arbre';
 import { creerClientServeur } from '@/lib/supabase/server';
 import { NOM_DU_SITE, SOUS_TITRE_DU_SITE } from '@/lib/site';
 import {
@@ -12,9 +12,11 @@ import {
   type BandeGeneration,
 } from '@/components/decouverte/silhouette-genealogique';
 import { CartePortrait } from '@/components/decouverte/carte-portrait';
+import { AccueilPersonnel } from '@/components/decouverte/accueil-personnel';
 import { Vignette } from '@/components/portrait/vignette';
 import { portraitDePersonne } from '@/components/portrait/types';
 import {
+  ephemeridesDeCeJour,
   prochainesEphemerides,
   type Ephemeride,
 } from '@/lib/ephemerides';
@@ -47,8 +49,11 @@ type SouvenirRecent = {
 
 export default async function PageAccueil() {
   const supabase = await creerClientServeur();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const [donnees, lieuxRes, actesRes, evtLieuxRes, souvenirRes, chapitre, recitVedette] =
+  const [donnees, lieuxRes, actesRes, evtLieuxRes, souvenirRes, chapitre, recitVedette, membreRes] =
     await Promise.all([
       chargerArbre(),
       supabase.from('lieux').select('pays_actuel, pays'),
@@ -68,6 +73,13 @@ export default async function PageAccueil() {
         .limit(1),
       chargerChapitreAccueil(2),
       chargerRecitVedette(),
+      user
+        ? supabase
+            .from('membres')
+            .select('personne_id, nom_affiche, statut')
+            .eq('id', user.id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
     ]);
 
   // Base entièrement vide : on annonce ce qu'il faut faire, plutôt qu'un tableau désolé.
@@ -86,6 +98,22 @@ export default async function PageAccueil() {
       </>
     );
   }
+
+  const racine = racineParDefaut(donnees);
+  const lienArbre = racine ? `/arbre?personne=${racine.id}` : '/arbre';
+
+  const maintenant = new Date();
+  const membre = membreRes.data;
+  const personneMembre =
+    membre?.statut === 'valide' && membre.personne_id
+      ? donnees.personnes.get(membre.personne_id) ?? null
+      : null;
+  const anniversaireMembre =
+    personneMembre &&
+    ephemeridesDeCeJour(donnees, maintenant).find(
+      (e): e is Extract<Ephemeride, { type: 'naissance' }> =>
+        e.type === 'naissance' && e.personne.id === personneMembre.id,
+    );
 
   // --- Chiffres clés ------------------------------------------------------
   const generations = calculerGenerations(donnees);
@@ -186,7 +214,7 @@ export default async function PageAccueil() {
           </p>
           <div className="flex flex-wrap gap-3">
             <Link
-              href="/arbre"
+              href={lienArbre}
               className="rounded-[var(--rayon-petit)] bg-accent px-5 py-3 font-medium text-accent-contraste transition hover:brightness-110"
             >
               Explorer l’arbre
@@ -212,6 +240,14 @@ export default async function PageAccueil() {
             </p>
           )}
         </section>
+
+        {personneMembre && (
+          <AccueilPersonnel
+            prenom={personneMembre.prenoms?.split(/\s+/)[0] ?? membre!.nom_affiche.split(/\s+/)[0] ?? membre!.nom_affiche}
+            personneId={personneMembre.id}
+            anniversaire={anniversaireMembre ?? null}
+          />
+        )}
 
         {/* a bis) Voyage dans le temps — faits nationaux + récit, sans PII en dur */}
         {(chapitre.length > 0 || recitVedette) && (
@@ -322,7 +358,7 @@ export default async function PageAccueil() {
           </h2>
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <CarteRoute
-              href="/arbre"
+              href={lienArbre}
               titre="L’arbre"
               accroche="Une même image tenue à hauteur d’œil : les deux branches, et l’enfant où elles se rejoignent."
             />

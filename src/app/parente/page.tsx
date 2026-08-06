@@ -3,6 +3,7 @@ import { Navigation } from '@/components/navigation';
 import { BarreScroll } from '@/components/interactions/barre-scroll';
 import { RaccourciAccueil } from '@/components/interactions/raccourci-accueil';
 import { SelecteurCouple } from '@/components/parente/selecteur-couple';
+import { BoutonCopierLienParente } from '@/components/parente/bouton-copier-lien';
 import { FriseChemin } from '@/components/parente/frise-chemin';
 import { Vignette } from '@/components/portrait/vignette';
 import { portraitDePersonne } from '@/components/portrait/types';
@@ -94,7 +95,12 @@ export default async function PageParente({ searchParams }: ParametresParente) {
                 <Vignette personne={portraitDePersonne(b)} photoUrl={b.photoUrl} />
               </section>
 
-              <Resultat parente={parente} memePersonne={aValide === bValide} />
+              <Resultat
+                parente={parente}
+                memePersonne={aValide === bValide}
+                idA={aValide!}
+                idB={bValide!}
+              />
 
               {parente.chemin.length > 1 && parente.ancetreCommun && (
                 <section aria-labelledby="titre-chemin">
@@ -127,6 +133,8 @@ export default async function PageParente({ searchParams }: ParametresParente) {
 function Resultat({
   parente,
   memePersonne,
+  idA,
+  idB,
 }: {
   parente: {
     lien: string;
@@ -136,6 +144,8 @@ function Resultat({
     distanceB: number;
   };
   memePersonne: boolean;
+  idA: string;
+  idB: string;
 }) {
   if (memePersonne) {
     return (
@@ -174,6 +184,9 @@ function Resultat({
         {parente.distanceA + parente.distanceB} génération
         {parente.distanceA + parente.distanceB > 1 ? 's' : ''} entre les deux, par
         l’ancêtre commun le plus proche.
+      </p>
+      <p className="mt-4">
+        <BoutonCopierLienParente idA={idA} idB={idB} libelleLien={parente.lien} />
       </p>
     </section>
   );

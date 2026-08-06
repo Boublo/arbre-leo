@@ -7,13 +7,14 @@ import { LIENS_PRINCIPAUX } from '@/lib/navigation-site';
 import { LiensNavigation } from '@/components/navigation-liens';
 import { NavigationPlus } from '@/components/navigation-plus';
 import { MenuMobile } from '@/components/menu-mobile';
+import { ClocheNotifications } from '@/components/notifications/cloche-notifications';
 
 export async function Navigation({ compact = false }: { compact?: boolean }) {
   const supabase = await creerClientServeur();
   const { data: { user } } = await supabase.auth.getUser();
 
   const { data: membre } = user
-    ? await supabase.from('membres').select('nom_affiche, role').eq('id', user.id).maybeSingle()
+    ? await supabase.from('membres').select('nom_affiche, role, personne_id, statut').eq('id', user.id).maybeSingle()
     : { data: null };
 
   const { count: enAttente } =
@@ -65,6 +66,17 @@ export async function Navigation({ compact = false }: { compact?: boolean }) {
         )}
 
         <BasculeTheme />
+
+        {membre?.statut === 'valide' && membre.personne_id && (
+          <Link
+            href={`/personne/${membre.personne_id}`}
+            className="hidden min-h-11 items-center rounded-[var(--rayon-petit)] px-2.5 py-2 text-encre-douce transition hover:bg-fond-doux hover:text-encre lg:flex"
+          >
+            Ma fiche
+          </Link>
+        )}
+
+        {membre && <ClocheNotifications />}
 
         {membre && (
           <span className="hidden max-w-[8rem] truncate text-encre-tres-douce sm:inline md:max-w-none">
