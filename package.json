@@ -11,6 +11,7 @@
     "arbre:sql": "node scripts/generate-import-sql.mjs",
     "arbre:maj": "node scripts/maj.mjs",
     "arbre:veille": "node scripts/veille.mjs",
+    "arbre:verifier-liens": "node scripts/verifier-liens-famille.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

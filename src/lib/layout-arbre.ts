@@ -252,7 +252,8 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
         derniereUnion !== '_' &&
         cleUnion !== '_'
       ) {
-        curseur += 0.85;
+        // Écart visible entre deux fratries cousines sur la même rangée.
+        curseur += 1.25;
       }
       derniereUnion = cleUnion;
 
@@ -274,6 +275,9 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
       parGroupe.set(cle, g);
     }
 
+    /** Marge minimale entre deux fratries cousines après recentrage. */
+    const margeEntreGroupes = 1.15;
+
     for (const [cle, groupe] of parGroupe) {
       if (cle === '_') continue;
       const xs = groupe.map((id) => positions.get(id) ?? 0);
@@ -285,20 +289,32 @@ function disposerFamille(donnees: DonneesArbre, racineId: string): Disposition {
       const decalage = ideal - centreActuel;
       if (Math.abs(decalage) < 0.1) continue;
 
-      // On applique le décalage seulement s'il ne crée pas de collision avec
-      // les personnes déjà posées (à gauche ou à droite du groupe).
       const indexPremier = liste.indexOf(groupe[0]!);
       const indexDernier = liste.indexOf(groupe[groupe.length - 1]!);
-      const marginGauche =
-        indexPremier > 0 ? (positions.get(liste[indexPremier - 1]!) ?? -Infinity) + 1 : -Infinity;
-      const marginDroite =
-        indexDernier < liste.length - 1
-          ? (positions.get(liste[indexDernier + 1]!) ?? Infinity) - 1
-          : Infinity;
+      const voisinGauche = indexPremier > 0 ? liste[indexPremier - 1]! : null;
+      const voisinDroite = indexDernier < liste.length - 1 ? liste[indexDernier + 1]! : null;
+
+      const unionVoisin = (id: string | null) => {
+        if (!id) return null;
+        const u = unionParentaleDe(id);
+        return u ? u.id : '_';
+      };
+      const margeGauche =
+        voisinGauche && unionVoisin(voisinGauche) !== cle
+          ? (positions.get(voisinGauche) ?? -Infinity) + margeEntreGroupes
+          : voisinGauche
+            ? (positions.get(voisinGauche) ?? -Infinity) + 1
+            : -Infinity;
+      const margeDroite =
+        voisinDroite && unionVoisin(voisinDroite) !== cle
+          ? (positions.get(voisinDroite) ?? Infinity) - margeEntreGroupes
+          : voisinDroite
+            ? (positions.get(voisinDroite) ?? Infinity) - 1
+            : Infinity;
 
       const decalageEffectif = Math.max(
-        marginGauche - xs[0]!,
-        Math.min(decalage, marginDroite - xs[xs.length - 1]!)
+        margeGauche - xs[0]!,
+        Math.min(decalage, margeDroite - xs[xs.length - 1]!)
       );
       if (!Number.isFinite(decalageEffectif)) continue;
       for (const id of groupe) {
