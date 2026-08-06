@@ -6,15 +6,15 @@ import { select } from 'd3-selection';
 import { zoom, zoomIdentity, type ZoomBehavior } from 'd3-zoom';
 import type { DonneesArbre } from '@/lib/arbre';
 import {
-  ESPACEMENT_Y,
   HAUTEUR_NOEUD,
-  nommerRang,
   type Disposition,
 } from '@/lib/layout-arbre';
 import { MiniMap } from '@/components/arbre/mini-map';
 import { MenuContextuel, type ActionContexte } from '@/components/arbre/menu-contextuel';
 import { BandeauAide } from '@/components/arbre/bandeau-aide';
+import { IndicationsMobile } from '@/components/arbre/indications-mobile';
 import { Legende } from '@/components/arbre/legende';
+import { ReperesRang } from '@/components/arbre/reperes-rang';
 import { LiensArbre } from '@/components/arbre/liens-arbre';
 import { CarteNoeud } from '@/components/arbre/carte-noeud';
 
@@ -281,20 +281,6 @@ export function VueArbre({
         <rect width="100%" height="100%" fill="url(#vignette-arbre)" pointerEvents="none" />
 
         <g ref={groupeRef}>
-          {/* Repères de rang, en marge */}
-          {Array.from({ length: disposition.rangMax + 1 }, (_, rang) => (
-            <text
-              key={`rang-${rang}`}
-              x={-40}
-              y={rang * ESPACEMENT_Y + HAUTEUR_NOEUD / 2}
-              textAnchor="end"
-              className="fill-[var(--encre-tres-douce)] text-[13px]"
-              style={{ fontFamily: 'var(--font-titre)' }}
-            >
-              {nommerRang(rang, disposition.mode, prenomFocus, disposition.rangRacine)}
-            </text>
-          ))}
-
           {/* Filiations et unions — tracé unifié (pedigree + orthogonaux) */}
           <LiensArbre disposition={disposition} donnees={donnees} noeudParId={noeudParId} />
 
@@ -325,6 +311,15 @@ export function VueArbre({
         </g>
       </svg>
 
+      <ReperesRang
+        disposition={disposition}
+        transform={transform}
+        prenomFocus={prenomFocus}
+        hauteurVue={tailleVue.hauteur}
+      />
+
+      <IndicationsMobile />
+
       {/* Menu contextuel */}
       {menu && personneMenu && (
         <MenuContextuel
@@ -336,8 +331,8 @@ export function VueArbre({
         />
       )}
 
-      {/* Bandeau d'aide — masqué sur mobile pour laisser place à l'arbre. */}
-      <div className="pointer-events-none absolute inset-x-0 top-3 hidden justify-center px-3 sm:flex">
+      {/* Bandeau d'aide détaillé — grands écrans ; sur mobile voir IndicationsMobile. */}
+      <div className="pointer-events-none absolute inset-x-0 top-3 z-20 hidden justify-center px-3 sm:flex">
         <BandeauAide signalActivite={signalActivite} />
       </div>
 
@@ -351,11 +346,11 @@ export function VueArbre({
         </div>
       )}
 
-      {/* Commandes en bas : légende repliée sur mobile. */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-2 sm:p-4">
-        <div className="pointer-events-auto flex flex-col items-start gap-2">
-          <div className="flex items-center gap-1">
-            <div className="carte flex items-center gap-1 p-1">
+      {/* Commandes et légende — toujours ancrées en bas du cadre visible. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex items-end justify-between gap-2 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:p-4">
+        <div className="pointer-events-auto flex max-w-[calc(100%-0.5rem)] flex-col items-start gap-2 sm:max-w-none">
+          <div className="flex flex-wrap items-end gap-1">
+            <div className="carte flex items-center gap-1 p-1 shadow-[var(--ombre-douce)]">
               <BoutonRond titre="Agrandir" onClick={() => zoomer(1.35)}>
                 +
               </BoutonRond>
@@ -371,22 +366,22 @@ export function VueArbre({
               onClick={() => setLegendeOuverte((v) => !v)}
               aria-expanded={legendeOuverte}
               aria-label={legendeOuverte ? 'Masquer la légende' : 'Afficher la légende'}
-              className="grid h-11 w-11 place-items-center rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte text-sm text-encre-douce shadow-[var(--ombre-douce)] lg:hidden"
+              className="grid h-11 w-11 place-items-center rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte text-sm text-encre-douce shadow-[var(--ombre-douce)] sm:hidden"
             >
               ?
             </button>
           </div>
-          <div className="hidden lg:block">
+          <div className="hidden max-w-[calc(100vw-1rem)] sm:block">
             <Legende />
           </div>
           {legendeOuverte && (
-            <div className="max-w-[calc(100vw-1rem)] lg:hidden">
+            <div className="max-w-[calc(100vw-1rem)] sm:hidden">
               <Legende />
             </div>
           )}
         </div>
 
-        <div className="hidden lg:block">
+        <div className="hidden md:block">
           <MiniMap
             disposition={disposition}
             transform={transform}

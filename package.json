@@ -12,6 +12,7 @@
     "arbre:maj": "node scripts/maj.mjs",
     "arbre:veille": "node scripts/veille.mjs",
     "arbre:verifier-liens": "node scripts/verifier-liens-famille.mjs",
+    "arbre:verifier-navigation": "node scripts/verifier-navigation-arbre.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
