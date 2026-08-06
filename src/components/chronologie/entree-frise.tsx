@@ -60,7 +60,7 @@ export function EntreeFrise({
 /** Le rail vertical et son marqueur, communs aux deux natures d'entrée. */
 function Ligne({ marqueur, children }: { marqueur: ReactNode; children: ReactNode }) {
   return (
-    <li className="grid grid-cols-[0.625rem_1fr] items-stretch gap-x-3 sm:gap-x-4">
+    <li className="apparition-douce grid grid-cols-[0.625rem_1fr] items-stretch gap-x-3 sm:gap-x-4">
       <div className="flex flex-col items-center" aria-hidden>
         <span className="h-3.5 w-px bg-bordure" />
         {marqueur}

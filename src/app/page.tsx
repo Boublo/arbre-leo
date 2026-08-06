@@ -18,6 +18,8 @@ import {
   prochainesEphemerides,
   type Ephemeride,
 } from '@/lib/ephemerides';
+import { chargerChapitreAccueil, type FaitChapitre } from '@/lib/histoire';
+import { chargerRecitVedette, type RecitResume } from '@/lib/recits';
 
 /**
  * Page d'accueil.
@@ -46,24 +48,27 @@ type SouvenirRecent = {
 export default async function PageAccueil() {
   const supabase = await creerClientServeur();
 
-  const [donnees, lieuxRes, actesRes, evtLieuxRes, souvenirRes] = await Promise.all([
-    chargerArbre(),
-    supabase.from('lieux').select('pays_actuel, pays'),
-    supabase
-      .from('evenements')
-      .select('id', { count: 'exact', head: true })
-      .in('niveau_preuve', ['acte', 'anom']),
-    supabase
-      .from('evenements')
-      .select('personne_id, lieu_id')
-      .not('personne_id', 'is', null)
-      .not('lieu_id', 'is', null),
-    supabase
-      .from('souvenirs')
-      .select('id, titre, recit, cree_le, souvenirs_personnes(personne_id)')
-      .order('cree_le', { ascending: false })
-      .limit(1),
-  ]);
+  const [donnees, lieuxRes, actesRes, evtLieuxRes, souvenirRes, chapitre, recitVedette] =
+    await Promise.all([
+      chargerArbre(),
+      supabase.from('lieux').select('pays_actuel, pays'),
+      supabase
+        .from('evenements')
+        .select('id', { count: 'exact', head: true })
+        .in('niveau_preuve', ['acte', 'anom']),
+      supabase
+        .from('evenements')
+        .select('personne_id, lieu_id')
+        .not('personne_id', 'is', null)
+        .not('lieu_id', 'is', null),
+      supabase
+        .from('souvenirs')
+        .select('id, titre, recit, cree_le, souvenirs_personnes(personne_id)')
+        .order('cree_le', { ascending: false })
+        .limit(1),
+      chargerChapitreAccueil(2),
+      chargerRecitVedette(),
+    ]);
 
   // Base entièrement vide : on annonce ce qu'il faut faire, plutôt qu'un tableau désolé.
   if (donnees.personnes.size === 0) {
@@ -208,6 +213,38 @@ export default async function PageAccueil() {
           )}
         </section>
 
+        {/* a bis) Voyage dans le temps — faits nationaux + récit, sans PII en dur */}
+        {(chapitre.length > 0 || recitVedette) && (
+          <section
+            aria-labelledby="chapitre-section"
+            className="apparition-douce flex flex-col gap-6"
+          >
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <h2 id="chapitre-section" className="text-xl">
+                Sur la route
+              </h2>
+              <Link
+                href="/histoire"
+                className="text-sm text-encre-douce underline-offset-4 hover:text-accent hover:underline"
+              >
+                Toute la grande Histoire
+              </Link>
+            </div>
+
+            {chapitre.length > 0 && (
+              <ul className="grid gap-4 sm:grid-cols-2">
+                {chapitre.map((fait) => (
+                  <li key={fait.id}>
+                    <FaitChapitreAccueil fait={fait} />
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {recitVedette && <RecitChapitreAccueil recit={recitVedette} />}
+          </section>
+        )}
+
         {/* b) Chiffres clés */}
         <PalmaresChiffres
           titre="En un coup d’œil"
@@ -325,6 +362,11 @@ export default async function PageAccueil() {
               accroche="Les chantiers ouverts : ce qu’on cherche encore, et ce qu’on a trouvé."
             />
             <CarteRoute
+              href="/archives"
+              titre="Les archives"
+              accroche="Actes et registres déjà lus — la bibliothèque des preuves de la famille."
+            />
+            <CarteRoute
               href="/parente"
               titre="La parenté"
               accroche="Deux personnes choisies — l’outil cherche comment elles sont liées."
@@ -380,6 +422,46 @@ function CarteRoute({
         <p className="text-sm text-encre-douce">{accroche}</p>
       </Link>
     </li>
+  );
+}
+
+function FaitChapitreAccueil({ fait }: { fait: FaitChapitre }) {
+  return (
+    <Link
+      href={`/histoire/${fait.id}`}
+      className="carte group flex h-full flex-col gap-2 p-5 transition
+                 hover:border-bordure-forte hover:shadow-[var(--ombre-forte)]
+                 focus-visible:ring-2 focus-visible:ring-accent"
+    >
+      <p className="text-[0.68rem] font-medium uppercase tracking-[0.09em] text-encre-tres-douce">
+        {fait.dateTexte}
+        {fait.lieuCourt ? ` · ${fait.lieuCourt}` : ''}
+      </p>
+      <h3 className="text-lg leading-snug transition group-hover:text-accent">{fait.titre}</h3>
+      {fait.resume && (
+        <p className="text-sm leading-relaxed text-encre-douce">{fait.resume}</p>
+      )}
+    </Link>
+  );
+}
+
+function RecitChapitreAccueil({ recit }: { recit: RecitResume }) {
+  const accroche = recit.chapeau?.trim() || null;
+  return (
+    <Link
+      href={`/recits/${recit.id}`}
+      className="carte group flex flex-col gap-2 border-l-4 border-l-or p-5 transition
+                 hover:border-bordure-forte hover:shadow-[var(--ombre-forte)]
+                 focus-visible:ring-2 focus-visible:ring-accent"
+    >
+      <p className="text-[0.68rem] font-medium uppercase tracking-[0.09em] text-encre-tres-douce">
+        Récit
+        {recit.periode ? ` · ${recit.periode}` : ''}
+        {recit.patronyme ? ` · ${recit.patronyme}` : ''}
+      </p>
+      <h3 className="text-xl leading-snug transition group-hover:text-accent">{recit.titre}</h3>
+      {accroche && <p className="text-sm leading-relaxed text-encre-douce">{accroche}</p>}
+    </Link>
   );
 }
 

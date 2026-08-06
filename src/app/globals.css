@@ -192,6 +192,27 @@ p {
   }
 }
 
+/* Apparition discrète (frise, chapitres) — désactivée par le bloc reduce ci-dessus. */
+@keyframes apparition-douce {
+  from {
+    opacity: 0;
+    transform: translateY(0.4rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.apparition-douce {
+  animation: apparition-douce 0.45s ease-out both;
+}
+
+/* Pastilles de la carte : transition douce quand la période change. */
+.carte-pastille-lieu {
+  transition: opacity 0.22s ease, r 0.22s ease;
+}
+
 /* --- Éléments récurrents ------------------------------------------------- */
 
 @utility carte {

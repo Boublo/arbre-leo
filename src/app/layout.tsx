@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Fraunces, Inter } from 'next/font/google';
 import './globals.css';
 import { NOM_DU_SITE, SOUS_TITRE_DU_SITE } from '@/lib/site';
+import { obtenirUrlSite } from '@/lib/url-site';
 
 // Fraunces pour les titres : une serif contemporaine à l'œil un peu ancien,
 // qui va bien à des noms relevés dans des registres du XVIIIe siècle.
@@ -19,6 +20,7 @@ const policeCorps = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(obtenirUrlSite()),
   title: {
     default: NOM_DU_SITE,
     template: `%s · ${NOM_DU_SITE}`,
@@ -26,6 +28,20 @@ export const metadata: Metadata = {
   description: SOUS_TITRE_DU_SITE,
   // Un arbre familial n'a rien à faire dans un index de moteur de recherche.
   robots: { index: false, follow: false, nocache: true },
+  // Partage entre cousins : titre et phrase génériques uniquement — jamais
+  // de noms de personnes vivantes dans les métadonnées publiques.
+  openGraph: {
+    title: NOM_DU_SITE,
+    description: SOUS_TITRE_DU_SITE,
+    locale: 'fr_FR',
+    type: 'website',
+    siteName: NOM_DU_SITE,
+  },
+  twitter: {
+    card: 'summary',
+    title: NOM_DU_SITE,
+    description: SOUS_TITRE_DU_SITE,
+  },
 };
 
 export const viewport: Viewport = {

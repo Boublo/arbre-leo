@@ -701,6 +701,7 @@ function PointLieu({
     >
       {enAvant && (
         <circle
+          className="carte-pastille-lieu"
           cx={point.x}
           cy={point.y}
           r={point.rayon + 5}
@@ -711,6 +712,7 @@ function PointLieu({
         />
       )}
       <circle
+        className="carte-pastille-lieu"
         cx={point.x}
         cy={point.y}
         r={point.rayon}

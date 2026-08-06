@@ -270,6 +270,45 @@ export async function chargerRecits(
   return lignes.map((l) => assembler(l, auteurs, personnes));
 }
 
+/**
+ * Récit mis en avant pour l’accueil : épinglé publié, sinon le plus récent publié.
+ * Sans personnes citées — le chapeau suffit à l’accroche.
+ */
+export async function chargerRecitVedette(): Promise<RecitResume | null> {
+  const supabase = await creerClientServeur();
+
+  const { data: epingle, error: errEpingle } = await supabase
+    .from('recits')
+    .select(CHAMPS_RECIT)
+    .eq('statut', 'publie')
+    .eq('epingle', true)
+    .order('modifie_le', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (errEpingle) throw new Error(`Chargement du récit vedette impossible : ${errEpingle.message}`);
+
+  let ligne = epingle as unknown as LigneRecit | null;
+
+  if (!ligne) {
+    const { data: recent, error } = await supabase
+      .from('recits')
+      .select(CHAMPS_RECIT)
+      .eq('statut', 'publie')
+      .order('cree_le', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error(`Chargement du récit vedette impossible : ${error.message}`);
+    ligne = recent as unknown as LigneRecit | null;
+  }
+
+  if (!ligne) return null;
+
+  const auteurs = await nomsMembres(supabase, [ligne.auteur_id]);
+  const resume = assembler(ligne, auteurs, new Map());
+  return { ...resume, personnes: [] };
+}
+
 /** Un récit précis, corps compris. */
 export async function chargerRecit(id: string): Promise<RecitDetail | null> {
   const supabase = await creerClientServeur();

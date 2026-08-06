@@ -311,6 +311,75 @@ export async function chargerFaits(): Promise<Fait[]> {
 }
 
 /**
+ * Deux faits de la grande Histoire pour ouvrir le livre de famille.
+ * Portée nationale / mondiale uniquement — pas de personnes rattachées
+ * (le dépôt est public ; les noms restent en base).
+ */
+export type FaitChapitre = Pick<
+  Fait,
+  'id' | 'titre' | 'resume' | 'dateTexte' | 'anneeDebut' | 'portee' | 'lieuCourt'
+>;
+
+export async function chargerChapitreAccueil(combien = 2): Promise<FaitChapitre[]> {
+  const supabase = await creerClientServeur();
+
+  const { data, error } = await supabase
+    .from('faits_historiques')
+    .select(
+      'id, titre, resume, annee_debut, mois_debut, jour_debut, annee_fin, lieu_id, lieu_libre, portee'
+    )
+    .in('portee', ['mondial', 'national'])
+    .order('annee_debut', { ascending: true })
+    .limit(40);
+
+  if (error) {
+    if (tableAbsente(error)) return [];
+    throw new Error(`Chargement du chapitre d’accueil impossible : ${error.message}`);
+  }
+
+  const lignes = (data ?? []) as LigneFait[];
+  if (lignes.length === 0) return [];
+
+  const lieux = await chargerLieux(
+    supabase,
+    [...new Set(lignes.map((l) => l.lieu_id).filter((id): id is string => id !== null))]
+  );
+
+  // Préférer les ruptures déjà encadrées par PERIODES (guerres, rapatriements…).
+  const anneesCles = new Set<number>();
+  for (const p of PERIODES) {
+    if (p.debut >= 1870) {
+      for (let a = p.debut; a <= (p.fin ?? p.debut + 20); a += 1) anneesCles.add(a);
+    }
+  }
+
+  const notes = lignes.map((ligne) => {
+    const dansCle = anneesCles.has(ligne.annee_debut) ? 0 : 1;
+    const aResume = ligne.resume?.trim() ? 0 : 1;
+    return { ligne, note: dansCle * 2 + aResume };
+  });
+
+  notes.sort(
+    (a, b) =>
+      a.note - b.note || a.ligne.annee_debut - b.ligne.annee_debut
+  );
+
+  return notes.slice(0, combien).map(({ ligne }) => {
+    const libelle =
+      (ligne.lieu_id ? lieux.get(ligne.lieu_id) : null) ?? ligne.lieu_libre ?? null;
+    return {
+      id: ligne.id,
+      titre: ligne.titre,
+      resume: ligne.resume,
+      dateTexte: formaterPeriodeFait(ligne),
+      anneeDebut: ligne.annee_debut,
+      portee: ligne.portee,
+      lieuCourt: lieuCourt(libelle),
+    };
+  });
+}
+
+/**
  * Un fait et son entourage. `null` si l'identifiant est inconnu ou hors de portée.
  * Mis en cache le temps de la requête : la fiche l'appelle deux fois, une fois
  * pour son titre de page, une fois pour son contenu.
