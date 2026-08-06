@@ -2,6 +2,9 @@ import type { ReactElement } from 'react';
 import type { DonneesArbre } from '@/lib/arbre';
 import { HAUTEUR_NOEUD, LARGEUR_NOEUD, type Disposition, type NoeudArbre } from '@/lib/layout-arbre';
 
+/** Deux conjoints côte à côte : barre dorée entre leurs cartes. Sinon pont sous la rangée. */
+const SEUIL_COUPLE_ADJACENT = LARGEUR_NOEUD + 48;
+
 /**
  * Liens en mode « famille autour » : barre de couple, puis barre de fratrie,
  * puis traits vers chaque enfant. On évite ainsi la grappe de traits horizontaux
@@ -35,30 +38,77 @@ export function LiensFamille({
       enfantsParUnion.add(enfant.personneId);
     }
 
-    // Barre de couple — bien visible, au milieu vertical des deux conjoints.
-    const yCouple = (a.y + b.y) / 2 + HAUTEUR_NOEUD / 2;
-    const xGauche = Math.min(a.x, b.x) + LARGEUR_NOEUD / 2;
-    const xDroite = Math.max(a.x, b.x) - LARGEUR_NOEUD / 2;
-    const xCentre = (xGauche + xDroite) / 2;
+    const memeRang = Math.abs(a.y - b.y) < 1;
+    const ecart = Math.abs(a.x - b.x);
+    const adjacents = memeRang && ecart <= SEUIL_COUPLE_ADJACENT;
 
-    traits.push(
-      <line
-        key={`couple-${id}`}
-        x1={xGauche}
-        y1={yCouple}
-        x2={xDroite}
-        y2={yCouple}
-        stroke="var(--or)"
-        strokeWidth={3}
-        opacity={0.85}
-      />
-    );
+    const xCentre = (a.x + b.x) / 2;
+    let yCouple: number;
+
+    if (adjacents) {
+      // Conjoints voisins : trait doré entre les deux cartes, au milieu vertical.
+      yCouple = (a.y + b.y) / 2 + HAUTEUR_NOEUD / 2;
+      const xGauche = Math.min(a.x, b.x) + LARGEUR_NOEUD / 2;
+      const xDroite = Math.max(a.x, b.x) - LARGEUR_NOEUD / 2;
+
+      traits.push(
+        <line
+          key={`couple-${id}`}
+          x1={xGauche}
+          y1={yCouple}
+          x2={xDroite}
+          y2={yCouple}
+          stroke="var(--or)"
+          strokeWidth={3}
+          opacity={0.85}
+        />
+      );
+    } else {
+      // Conjoints éloignés (frères/sœurs entre eux sur la rangée) : on descend
+      // sous la rangée pour ne pas donner l'impression qu'ils sont avec quelqu'un
+      // d'autre sur la même ligne.
+      const yBasA = a.y + HAUTEUR_NOEUD;
+      const yBasB = b.y + HAUTEUR_NOEUD;
+      yCouple = Math.max(yBasA, yBasB) + 10;
+
+      traits.push(
+        <line
+          key={`couple-stub-a-${id}`}
+          x1={a.x}
+          y1={yBasA}
+          x2={a.x}
+          y2={yCouple}
+          stroke="var(--or)"
+          strokeWidth={2}
+          opacity={0.85}
+        />,
+        <line
+          key={`couple-stub-b-${id}`}
+          x1={b.x}
+          y1={yBasB}
+          x2={b.x}
+          y2={yCouple}
+          stroke="var(--or)"
+          strokeWidth={2}
+          opacity={0.85}
+        />,
+        <line
+          key={`couple-${id}`}
+          x1={a.x}
+          y1={yCouple}
+          x2={b.x}
+          y2={yCouple}
+          stroke="var(--or)"
+          strokeWidth={3}
+          opacity={0.85}
+        />
+      );
+    }
 
     if (enfantsPlaces.length === 0) continue;
 
     const yHautEnfants = Math.min(...enfantsPlaces.map((e) => e.y));
-    const yBasParents = Math.max(a.y, b.y) + HAUTEUR_NOEUD;
-    const yBarreFratrie = yBasParents + Math.max(12, (yHautEnfants - yBasParents) * 0.45);
+    const yBarreFratrie = yCouple + Math.max(12, (yHautEnfants - yCouple) * 0.45);
 
     traits.push(
       <line
