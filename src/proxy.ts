@@ -59,8 +59,9 @@ export async function proxy(request: NextRequest) {
   }
 
   // Un compte connecté mais non encore validé n'a rien à faire ailleurs que
-  // sur sa page d'attente.
-  if (user && !estPublique && chemin !== '/attente') {
+  // sur sa page d'attente (sauf la boîte de notifications : validation, refus…).
+  const pagesAttente = ['/attente', '/notifications'];
+  if (user && !estPublique && !pagesAttente.includes(chemin)) {
     const { data: membre } = await supabase
       .from('membres')
       .select('statut')

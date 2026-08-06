@@ -7,6 +7,7 @@ import { LIENS_PRINCIPAUX } from '@/lib/navigation-site';
 import { LiensNavigation } from '@/components/navigation-liens';
 import { NavigationPlus } from '@/components/navigation-plus';
 import { MenuMobile } from '@/components/menu-mobile';
+import { ClocheNotifications } from '@/components/notifications/cloche-notifications';
 
 export async function Navigation({ compact = false }: { compact?: boolean }) {
   const supabase = await creerClientServeur();
@@ -65,6 +66,8 @@ export async function Navigation({ compact = false }: { compact?: boolean }) {
         )}
 
         <BasculeTheme />
+
+        {membre && <ClocheNotifications />}
 
         {membre && (
           <span className="hidden max-w-[8rem] truncate text-encre-tres-douce sm:inline md:max-w-none">
