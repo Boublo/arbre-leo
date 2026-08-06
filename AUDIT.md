@@ -57,7 +57,10 @@ Dernière mise à jour : 6 août 2026 — **v1–v6** (sécurité, lisibilité, 
 ✓ Liens   Unions familiales complétées jusqu’au point fixe (ordre en base neutre)
 ✓ Liens   groupesConjoints : plusieurs unions par personne, blocs atomiques
 ✓ Liens   Couples rapprochés aussi en ascendance / descendance (barre dorée lisible)
+✓ Liens   segmentOrthogonal même rangée ; pedigree par rang adjacent ; couloirs bornés
+✓ Liens   finaliser : collision après dernier rapprochement de couples
 ✓ Tests   test-geometrie-famille-complete.ts (oncle + tante + cousine)
+✓ Tests   même rangée + 20 unions disjointes (14 garde-fous arbre)
 ✓ Build   Wrapper client EcranArbreDynamique (ssr:false hors Server Component)
 ✓ CI      `npm run build` ajouté au workflow Garde-fous arbre
 ```
