@@ -113,8 +113,13 @@ export function EcranArbre({
       />
 
       {/* --- Arbre et panneau ---------------------------------------------- */}
-      <div className="relative flex flex-1 overflow-hidden">
-        <div className="flex-1">
+      {/*
+        min-h-0 sur la rangée flex : sans lui, le panneau latéral s'étire avec
+        son contenu et overflow-y-auto ne défile jamais — régression visible
+        dès que la fiche dépasse la hauteur de l'écran (portrait + notes).
+      */}
+      <div className="relative flex min-h-0 flex-1 overflow-hidden">
+        <div className="min-h-0 min-w-0 flex-1">
           <VueArbre
             donnees={donnees}
             disposition={disposition}
@@ -126,7 +131,7 @@ export function EcranArbre({
         </div>
 
         {personneSelectionnee && (
-          <aside className="hidden w-full max-w-sm shrink-0 overflow-y-auto border-l border-bordure bg-fond-carte lg:block">
+          <aside className="hidden h-full min-h-0 w-full max-w-sm shrink-0 overflow-y-auto overscroll-y-contain border-l border-bordure bg-fond-carte lg:block">
             <FichePersonne
               personne={personneSelectionnee}
               annees={anneesDeVie(personneSelectionnee)}
