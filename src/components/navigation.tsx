@@ -3,10 +3,10 @@ import { creerClientServeur } from '@/lib/supabase/server';
 import { deconnecter } from '@/app/actions/auth';
 import { BasculeTheme } from '@/components/bascule-theme';
 import { NOM_DU_SITE } from '@/lib/site';
+import { LIENS_PRINCIPAUX } from '@/lib/navigation-site';
 import { LiensNavigation } from '@/components/navigation-liens';
 import { NavigationPlus } from '@/components/navigation-plus';
 import { MenuMobile } from '@/components/menu-mobile';
-import { LIENS, LIENS_PLUS, LIENS_PRINCIPAUX } from '@/lib/navigation-site';
 
 export async function Navigation({ compact = false }: { compact?: boolean }) {
   const supabase = await creerClientServeur();
@@ -27,7 +27,6 @@ export async function Navigation({ compact = false }: { compact?: boolean }) {
   return (
     <header className="z-20 flex shrink-0 items-center gap-2 border-b border-bordure bg-fond-carte px-4 py-2.5 sm:gap-3">
       <MenuMobile
-        liens={LIENS}
         admin={
           membre?.role === 'admin'
             ? { href: '/admin', enAttente: enAttente ?? 0 }
@@ -44,7 +43,7 @@ export async function Navigation({ compact = false }: { compact?: boolean }) {
 
       <div className="hidden items-center gap-1 lg:flex">
         <LiensNavigation liens={LIENS_PRINCIPAUX} />
-        <NavigationPlus liens={LIENS_PLUS} />
+        <NavigationPlus />
       </div>
 
       <div className="ml-auto flex shrink-0 items-center gap-1 text-sm sm:gap-2">

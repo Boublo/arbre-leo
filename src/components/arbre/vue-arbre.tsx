@@ -10,6 +10,7 @@ import {
   HAUTEUR_NOEUD,
   type Disposition,
   type ModeArbre,
+  type NoeudArbre,
 } from '@/lib/layout-arbre';
 import { MiniMap } from '@/components/arbre/mini-map';
 import { MenuContextuel, type ActionContexte } from '@/components/arbre/menu-contextuel';
@@ -21,6 +22,43 @@ import { LiensArbre } from '@/components/arbre/liens-arbre';
 import { CarteNoeud } from '@/components/arbre/carte-noeud';
 
 type EtatMenu = { personneId: string; x: number; y: number } | null;
+
+/**
+ * Voisin spatial pour la navigation clavier : même rangée à gauche/droite,
+ * rangée adjacente au plus proche en x pour haut/bas.
+ */
+function voisinClavier(
+  noeuds: NoeudArbre[],
+  courantId: string,
+  touche: 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown'
+): string | null {
+  const courant = noeuds.find((n) => n.personneId === courantId);
+  if (!courant) return null;
+
+  const autres = noeuds.filter((n) => n.personneId !== courantId);
+  if (autres.length === 0) return null;
+
+  if (touche === 'ArrowLeft' || touche === 'ArrowRight') {
+    const memeRangee = autres.filter((n) => Math.abs(n.y - courant.y) < HAUTEUR_NOEUD * 0.6);
+    const cote =
+      touche === 'ArrowLeft'
+        ? memeRangee.filter((n) => n.x < courant.x).sort((a, b) => b.x - a.x)
+        : memeRangee.filter((n) => n.x > courant.x).sort((a, b) => a.x - b.x);
+    return cote[0]?.personneId ?? null;
+  }
+
+  const versLeHaut = touche === 'ArrowUp';
+  const candidats = autres
+    .filter((n) => (versLeHaut ? n.y < courant.y - 8 : n.y > courant.y + 8))
+    .map((n) => ({
+      id: n.personneId,
+      dy: Math.abs(n.y - courant.y),
+      dx: Math.abs(n.x - courant.x),
+    }))
+    .sort((a, b) => a.dy - b.dy || a.dx - b.dx);
+
+  return candidats[0]?.id ?? null;
+}
 
 export function VueArbre({
   donnees,
@@ -267,6 +305,35 @@ export function VueArbre({
   const detaille = transform.k > 0.32;
   const personneMenu = menu ? donnees.personnes.get(menu.personneId) ?? null : null;
 
+  const surClavierArbre = useCallback(
+    (e: React.KeyboardEvent<SVGSVGElement>) => {
+      const fleches = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'] as const;
+      if (!fleches.includes(e.key as (typeof fleches)[number])) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          const id = personneSelectionnee ?? focusId;
+          if (id) {
+            e.preventDefault();
+            onSelection(id);
+          }
+        }
+        return;
+      }
+
+      e.preventDefault();
+      const depuis = personneSelectionnee ?? focusId;
+      const suivant = voisinClavier(
+        disposition.noeuds,
+        depuis,
+        e.key as 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown'
+      );
+      if (!suivant) return;
+      onSelection(suivant);
+      // Recentrer doucement si le nœud sort trop du viewport serait trop agressif :
+      // on laisse le panneau s'ouvrir ; double-clic / Entrée longue = repartir.
+    },
+    [disposition.noeuds, focusId, onSelection, personneSelectionnee]
+  );
+
   return (
     <div ref={cadreRef} className="relative h-full w-full overflow-hidden bg-fond">
       {/* Liserés de branche : rappel latéral, deux ans après avoir découvert
@@ -294,7 +361,9 @@ export function VueArbre({
         ref={svgRef}
         className="h-full w-full cursor-grab active:cursor-grabbing"
         role="application"
-        aria-label="Arbre généalogique. Glissez pour vous déplacer, pincez pour zoomer, appuyez sur une personne pour l’ouvrir."
+        tabIndex={0}
+        aria-label="Arbre généalogique. Flèches pour parcourir les personnes, Entrée pour ouvrir la fiche, glisser pour déplacer, molette pour zoomer."
+        onKeyDown={surClavierArbre}
       >
         <defs>
           <pattern id="grille" width="48" height="48" patternUnits="userSpaceOnUse">

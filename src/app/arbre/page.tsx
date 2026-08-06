@@ -1,5 +1,5 @@
+import nextDynamic from 'next/dynamic';
 import { Navigation } from '@/components/navigation';
-import { EcranArbre } from '@/components/arbre/ecran-arbre';
 import { lireDroitsSaisie } from '@/components/saisie/donnees';
 import { chargerArbre, derniersEnfants, personneOuDefaut } from '@/lib/arbre';
 import { serialiserGraphe, versPersonneRecherche } from '@/lib/arbre-graphe';
@@ -8,6 +8,23 @@ export const metadata = { title: 'L’arbre' };
 
 // L'arbre change dès qu'un membre corrige une fiche ou saisit une naissance.
 export const dynamic = 'force-dynamic';
+
+const EcranArbre = nextDynamic(
+  () =>
+    import('@/components/arbre/ecran-arbre').then((m) => m.EcranArbre),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex flex-1 items-center justify-center p-8 text-encre-douce"
+        role="status"
+        aria-live="polite"
+      >
+        Préparation de l’arbre…
+      </div>
+    ),
+  }
+);
 
 export default async function PageArbre({ searchParams }: PageProps<'/arbre'>) {
   const { personne: focusDemande } = await searchParams;
@@ -38,6 +55,7 @@ export default async function PageArbre({ searchParams }: PageProps<'/arbre'>) {
 
   // Graphe complet côté client : le layout est instantané et l'ascendance
   // a besoin de toute la chaîne des ancêtres (un sous-graphe BFS la tronque).
+  // Les notes sont omises du payload (voir serialiserGraphe).
   const graphe = serialiserGraphe(donnees);
   const recherchePersonnes = [...donnees.personnes.values()].map(versPersonneRecherche);
 

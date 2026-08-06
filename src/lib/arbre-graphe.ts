@@ -135,8 +135,10 @@ export type GrapheSerialise = {
 };
 
 export function serialiserGraphe(donnees: DonneesArbre): GrapheSerialise {
+  // Les notes de fiche alourdissent le payload RSC sans servir au canvas SVG.
+  // La fiche complète (/personne/[id]) les charge séparément.
   return {
-    personnes: [...donnees.personnes.values()],
+    personnes: [...donnees.personnes.values()].map((p) => ({ ...p, notes: null })),
     unions: [...donnees.unions.values()],
     parents: [...donnees.parents.entries()],
     enfants: [...donnees.enfants.entries()],

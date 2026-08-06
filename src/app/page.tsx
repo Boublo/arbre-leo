@@ -171,26 +171,41 @@ export default async function PageAccueil() {
     <>
       <Navigation />
       <main id="contenu-principal" className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-14 px-4 py-10 sm:px-6 sm:py-14">
-        {/* a) En-tête */}
-        <section className="flex flex-col gap-5">
-          <h1 className="text-4xl leading-tight sm:text-5xl">{NOM_DU_SITE}</h1>
-          <p className="max-w-2xl text-lg leading-relaxed text-encre-douce">
+        {/* a) Hero — une composition : marque, phrase, CTA. Le reste est sous la ligne. */}
+        <section className="flex min-h-[min(70vh,36rem)] flex-col justify-center gap-6 border-b border-bordure pb-14">
+          <h1 className="max-w-3xl text-4xl leading-tight sm:text-5xl md:text-6xl">
+            {NOM_DU_SITE}
+          </h1>
+          <p className="max-w-xl text-lg leading-relaxed text-encre-douce sm:text-xl">
             {SOUS_TITRE_DU_SITE}
           </p>
           <div className="flex flex-wrap gap-3">
             <Link
               href="/arbre"
-              className="rounded-[var(--rayon-petit)] bg-accent px-4 py-2.5 font-medium text-accent-contraste transition hover:brightness-110"
+              className="rounded-[var(--rayon-petit)] bg-accent px-5 py-3 font-medium text-accent-contraste transition hover:brightness-110"
             >
               Explorer l’arbre
             </Link>
             <Link
-              href="/souvenirs/nouveau"
-              className="rounded-[var(--rayon-petit)] border border-bordure-forte bg-fond-carte px-4 py-2.5 font-medium text-encre transition hover:bg-fond-doux"
+              href="/chronologie"
+              className="rounded-[var(--rayon-petit)] border border-bordure-forte bg-transparent px-5 py-3 font-medium text-encre transition hover:bg-fond-doux"
             >
-              Déposer un souvenir
+              Parcourir le temps
             </Link>
           </div>
+          {plusAncien && (
+            <p className="max-w-xl text-sm text-encre-tres-douce">
+              L’arbre remonte jusqu’à{' '}
+              <Link
+                href={`/personne/${plusAncien.id}`}
+                className="font-medium text-encre underline-offset-4 hover:text-accent hover:underline"
+              >
+                {plusAncien.nomComplet}
+              </Link>
+              {plusAncien.naissance?.annee ? `, vers ${plusAncien.naissance.annee}` : ''}
+              {bornesAnnees ? ` — ${bornesAnnees.duree} années documentées` : ''}.
+            </p>
+          )}
         </section>
 
         {/* b) Chiffres clés */}
@@ -295,6 +310,16 @@ export default async function PageAccueil() {
               accroche="Histoires longues, reconstituées avec soin, pour transmettre ce que les dates ne disent pas."
             />
             <CarteRoute
+              href="/histoire"
+              titre="La grande Histoire"
+              accroche="Guerres, migrations, lois : le monde qui a traversé la famille — et réciproquement."
+            />
+            <CarteRoute
+              href="/aujourdhui"
+              titre="Ces jours-ci"
+              accroche="Anniversaires et dates qui reviennent : le calendrier vivant de la famille."
+            />
+            <CarteRoute
               href="/recherches"
               titre="Les recherches"
               accroche="Les chantiers ouverts : ce qu’on cherche encore, et ce qu’on a trouvé."
@@ -308,6 +333,11 @@ export default async function PageAccueil() {
               href="/statistiques"
               titre="Les statistiques"
               accroche="Chiffres et formes de l’arbre : générations, longévité, répartition géographique."
+            />
+            <CarteRoute
+              href="/souvenirs/nouveau"
+              titre="Déposer un souvenir"
+              accroche="Ajouter une voix, une photo, un détail que seuls les proches connaissent."
             />
             <CarteRoute
               href="/export"
