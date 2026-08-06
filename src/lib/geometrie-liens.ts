@@ -157,7 +157,9 @@ export function segmentsPedigree({
     : yBarreFratrie - HAUTEUR_COUCHES_ROUTAGE;
 
   const yDepart = enfantsAuDessus
-    ? Math.min(yCoupleVisuel, yHautParents - MARGE_SOUS_PARENTS)
+    ? // Ascendance : les enfants sont au-dessus — partir du HAUT des cartes parents
+      // (pas au-dessus, sinon le trait flotte et ne touche jamais le parent).
+      yHautParents
     : Math.max(yCoupleVisuel, yBasParents + MARGE_SOUS_PARENTS);
 
   // 1. Descente verticale depuis le couple jusqu'à la couche de routage (entre les rangées).

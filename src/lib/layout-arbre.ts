@@ -710,6 +710,25 @@ function disposerHierarchie(
           });
         }
       }
+
+      // Les parents ont été centrés sur la racine seule : après ajout de la
+      // fratrie, recentrer toute l'ascendance sous le groupe des enfants.
+      const fratrie = noeuds.filter((n) => n.rang === 0);
+      const parentsDirects = (parents.get(racineId) ?? [])
+        .map((id) => place.get(id))
+        .filter((n): n is NoeudArbre => n !== undefined);
+      if (fratrie.length > 1 && parentsDirects.length > 0) {
+        const cxEnfants =
+          fratrie.reduce((s, n) => s + n.x, 0) / fratrie.length;
+        const cxParents =
+          parentsDirects.reduce((s, n) => s + n.x, 0) / parentsDirects.length;
+        const delta = cxEnfants - cxParents;
+        if (Math.abs(delta) > 0.01) {
+          for (const noeud of noeuds) {
+            if (noeud.rang >= 1) noeud.x += delta;
+          }
+        }
+      }
     }
   }
 
