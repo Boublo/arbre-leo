@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Navigation } from '@/components/navigation';
 import { BarreScroll } from '@/components/interactions/barre-scroll';
 import { RaccourciAccueil } from '@/components/interactions/raccourci-accueil';
@@ -265,7 +266,7 @@ function CarteEphemeride({ ephemeride }: { ephemeride: Ephemeride }) {
 
   if (ephemeride.type === 'mariage') {
     return (
-      <article className="flex flex-col gap-2">
+      <article className="carte flex flex-col gap-2 p-4">
         <p className="text-xs uppercase tracking-[0.09em] text-encre-tres-douce">
           Mariage {resumeAnnees(ephemeride.annees)}
         </p>
@@ -294,7 +295,7 @@ function CarteEphemeride({ ephemeride }: { ephemeride: Ephemeride }) {
         ? `${feminin ? 'née' : 'né'} aujourd’hui`
         : `aurait ${ephemeride.annees} ans aujourd’hui`;
     return (
-      <article className="flex flex-col gap-2">
+      <article className="carte flex flex-col gap-2 p-4">
         <p className="text-xs uppercase tracking-[0.09em] text-encre-tres-douce">
           Naissance · {legende}
         </p>
@@ -302,6 +303,17 @@ function CarteEphemeride({ ephemeride }: { ephemeride: Ephemeride }) {
         <p className="text-xs text-encre-tres-douce">
           {feminin ? 'Née' : 'Né'} le {dateEcrite}.
         </p>
+        <div className="mt-1 flex flex-wrap gap-3 text-sm">
+          <Link href={`/personne/${p.id}`} className="font-medium text-accent transition hover:underline">
+            Voir la fiche
+          </Link>
+          <Link
+            href={`/personne/${p.id}#conversation`}
+            className="text-encre-douce transition hover:text-encre"
+          >
+            Laisser un mot
+          </Link>
+        </div>
       </article>
     );
   }
@@ -310,7 +322,7 @@ function CarteEphemeride({ ephemeride }: { ephemeride: Ephemeride }) {
   const p = ephemeride.personne;
   const feminin = p.sexe === 'F';
   return (
-    <article className="flex flex-col gap-2">
+    <article className="carte flex flex-col gap-2 p-4">
       <p className="text-xs uppercase tracking-[0.09em] text-encre-tres-douce">
         Décès {resumeAnnees(ephemeride.annees)}
       </p>
@@ -318,6 +330,17 @@ function CarteEphemeride({ ephemeride }: { ephemeride: Ephemeride }) {
       <p className="text-xs text-encre-tres-douce">
         {feminin ? 'Décédée' : 'Décédé'} le {dateEcrite}.
       </p>
+      <div className="mt-1 flex flex-wrap gap-3 text-sm">
+        <Link href={`/personne/${p.id}`} className="font-medium text-accent transition hover:underline">
+          Voir la fiche
+        </Link>
+        <Link
+          href={`/personne/${p.id}#conversation`}
+          className="text-encre-douce transition hover:text-encre"
+        >
+          Laisser un mot
+        </Link>
+      </div>
     </article>
   );
 }

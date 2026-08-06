@@ -13,7 +13,7 @@ export async function Navigation({ compact = false }: { compact?: boolean }) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const { data: membre } = user
-    ? await supabase.from('membres').select('nom_affiche, role').eq('id', user.id).maybeSingle()
+    ? await supabase.from('membres').select('nom_affiche, role, personne_id, statut').eq('id', user.id).maybeSingle()
     : { data: null };
 
   const { count: enAttente } =
@@ -65,6 +65,15 @@ export async function Navigation({ compact = false }: { compact?: boolean }) {
         )}
 
         <BasculeTheme />
+
+        {membre?.statut === 'valide' && membre.personne_id && (
+          <Link
+            href={`/personne/${membre.personne_id}`}
+            className="hidden min-h-11 items-center rounded-[var(--rayon-petit)] px-2.5 py-2 text-encre-douce transition hover:bg-fond-doux hover:text-encre lg:flex"
+          >
+            Ma fiche
+          </Link>
+        )}
 
         {membre && (
           <span className="hidden max-w-[8rem] truncate text-encre-tres-douce sm:inline md:max-w-none">
