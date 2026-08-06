@@ -1,12 +1,8 @@
 import { Navigation } from '@/components/navigation';
 import { EcranArbre } from '@/components/arbre/ecran-arbre';
 import { lireDroitsSaisie } from '@/components/saisie/donnees';
-import { chargerArbre, derniersEnfants, personneOuDefaut, signerPhotosPersonnes } from '@/lib/arbre';
-import {
-  extraireSousGraphe,
-  serialiserGraphe,
-  versPersonneRecherche,
-} from '@/lib/arbre-graphe';
+import { chargerArbre, derniersEnfants, personneOuDefaut } from '@/lib/arbre';
+import { serialiserGraphe, versPersonneRecherche } from '@/lib/arbre-graphe';
 
 export const metadata = { title: 'L’arbre' };
 
@@ -16,10 +12,7 @@ export const dynamic = 'force-dynamic';
 export default async function PageArbre({ searchParams }: PageProps<'/arbre'>) {
   const { personne: focusDemande } = await searchParams;
 
-  const [donnees, droits] = await Promise.all([
-    chargerArbre({ signerPhotosPour: new Set() }),
-    lireDroitsSaisie(),
-  ]);
+  const [donnees, droits] = await Promise.all([chargerArbre(), lireDroitsSaisie()]);
 
   if (donnees.personnes.size === 0) {
     return (
@@ -42,10 +35,10 @@ export default async function PageArbre({ searchParams }: PageProps<'/arbre'>) {
   );
 
   const focusId = focus?.id ?? [...donnees.personnes.keys()][0]!;
-  const sousGraphe = extraireSousGraphe(donnees, focusId);
-  await signerPhotosPersonnes(sousGraphe.personnes, new Set(sousGraphe.personnes.keys()));
 
-  const graphe = serialiserGraphe(sousGraphe);
+  // Graphe complet côté client : le layout est instantané et l'ascendance
+  // a besoin de toute la chaîne des ancêtres (un sous-graphe BFS la tronque).
+  const graphe = serialiserGraphe(donnees);
   const recherchePersonnes = [...donnees.personnes.values()].map(versPersonneRecherche);
 
   return (

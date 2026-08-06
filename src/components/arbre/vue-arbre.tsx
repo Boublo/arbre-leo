@@ -9,6 +9,7 @@ import type { DonneesArbre } from '@/lib/arbre';
 import {
   HAUTEUR_NOEUD,
   type Disposition,
+  type ModeArbre,
 } from '@/lib/layout-arbre';
 import { MiniMap } from '@/components/arbre/mini-map';
 import { MenuContextuel, type ActionContexte } from '@/components/arbre/menu-contextuel';
@@ -98,57 +99,87 @@ export function VueArbre({
     return () => observateur.disconnect();
   }, []);
 
-  const toutVoir = useCallback(() => {
+  const appliquerTransform = useCallback(
+    (transform: ReturnType<typeof zoomIdentity.translate>, duree = 500) => {
+      const svg = svgRef.current;
+      const comportement = comportementRef.current;
+      if (!svg || !comportement) return;
+      select(svg).transition().duration(duree).call(comportement.transform, transform);
+    },
+    []
+  );
+
+  /** Cadre par défaut : centrer la personne choisie à une échelle lisible. */
+  const recadrer = useCallback(() => {
     const svg = svgRef.current;
-    const comportement = comportementRef.current;
-    if (!svg || !comportement) return;
+    if (!svg) return;
 
     const { width, height } = svg.getBoundingClientRect();
-    if (width === 0) return;
+    if (width === 0 || height === 0) return;
 
-    const mobile = width < 1024;
     const noeudFocus = noeudParId.get(focusId);
+    const mode = disposition.mode;
+    const petitArbre =
+      disposition.noeuds.length <= 8 &&
+      disposition.rangMax <= 2 &&
+      disposition.largeur <= 900;
 
-    // Sur mobile, centrer sur la personne choisie à une échelle lisible plutôt
-    // que de tenter d'afficher les 80 ascendants en points minuscules.
-    if (mobile && noeudFocus) {
-      const k = 0.9;
-      const cx = noeudFocus.x;
-      const cy = noeudFocus.y + HAUTEUR_NOEUD / 2;
-      select(svg)
-        .transition()
-        .duration(500)
-        .call(
-          comportement.transform,
-          zoomIdentity.translate(width / 2 - cx * k, height / 2 - cy * k).scale(k)
-        );
+    if (petitArbre) {
+      const marge = width < 1024 ? 32 : 72;
+      const k = Math.min(
+        (width - marge * 2) / Math.max(disposition.largeur, 1),
+        (height - marge * 2) / Math.max(disposition.hauteur + HAUTEUR_NOEUD, 1),
+        1.05
+      );
+      appliquerTransform(
+        zoomIdentity
+          .translate((width - disposition.largeur * k) / 2, (height - disposition.hauteur * k) / 2)
+          .scale(k)
+      );
       return;
     }
 
-    const marge = mobile ? 32 : 90;
+    if (!noeudFocus) return;
+
+    const k = width < 1024 ? 0.9 : 0.88;
+    const cx = noeudFocus.x;
+    const cy = noeudFocus.y + HAUTEUR_NOEUD / 2;
+    const anchorY = ancreVerticale(mode);
+
+    appliquerTransform(
+      zoomIdentity.translate(width / 2 - cx * k, height * anchorY - cy * k).scale(k)
+    );
+  }, [appliquerTransform, disposition, focusId, noeudParId]);
+
+  /** Bouton « Voir tout » : réduit l'ensemble de l'arbre dans la fenêtre. */
+  const toutVoir = useCallback(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const { width, height } = svg.getBoundingClientRect();
+    if (width === 0 || height === 0) return;
+
+    const marge = width < 1024 ? 32 : 90;
     const k = Math.min(
       (width - marge * 2) / Math.max(disposition.largeur, 1),
       (height - marge * 2) / Math.max(disposition.hauteur + HAUTEUR_NOEUD, 1),
       1.1
     );
 
-    select(svg)
-      .transition()
-      .duration(500)
-      .call(
-        comportement.transform,
-        zoomIdentity
-          .translate((width - disposition.largeur * k) / 2, (height - disposition.hauteur * k) / 2)
-          .scale(k)
-      );
-  }, [disposition.largeur, disposition.hauteur, focusId, noeudParId]);
+    appliquerTransform(
+      zoomIdentity
+        .translate((width - disposition.largeur * k) / 2, (height - disposition.hauteur * k) / 2)
+        .scale(k)
+    );
+  }, [appliquerTransform, disposition.largeur, disposition.hauteur]);
 
-  // Chaque changement de personne ou de mode recadre sur l'ensemble : sans
-  // cela, la nouvelle disposition apparaîtrait hors de l'écran.
+  // Recadrer à chaque changement de focus/mode et dès que le cadre a une taille
+  // (le panneau en position absolue peut mesurer 0×0 au premier rendu).
   useEffect(() => {
-    const minuteur = setTimeout(toutVoir, 60);
+    if (tailleVue.largeur <= 0 || tailleVue.hauteur <= 0) return;
+    const minuteur = setTimeout(recadrer, 60);
     return () => clearTimeout(minuteur);
-  }, [toutVoir, disposition.racineId, disposition.mode]);
+  }, [recadrer, disposition.racineId, disposition.mode, tailleVue.largeur, tailleVue.hauteur]);
 
   const zoomer = useCallback((facteur: number) => {
     const svg = svgRef.current;
@@ -419,6 +450,13 @@ export function VueArbre({
       )}
     </div>
   );
+}
+
+/** Où placer verticalement la personne choisie dans la fenêtre (fraction de la hauteur). */
+function ancreVerticale(mode: ModeArbre): number {
+  if (mode === 'ascendance') return 0.3;
+  if (mode === 'descendance') return 0.55;
+  return 0.42;
 }
 
 function BoutonRond({
