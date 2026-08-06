@@ -4,6 +4,12 @@ import { HAUTEUR_NOEUD, LARGEUR_NOEUD, type LienArbre, type NoeudArbre } from '@
 /** Deux conjoints voisins sur la rangée : barre dorée entre leurs cartes. */
 export const SEUIL_COUPLE_ADJACENT = LARGEUR_NOEUD + 48;
 
+/** Au-delà, on ne trace plus de barre horizontale entre les tiges (évite le pont sous les cousins). */
+export const SEUIL_PONT_COUPLE = 320;
+
+/** Barre de fratrie minimale quand un seul enfant (sinon invisible). */
+const LARGEUR_BARRE_FRATRIE_MIN = 20;
+
 const MARGE_SOUS_PARENTS = 14;
 const MARGE_SUR_ENFANTS = 18;
 const MARGE_ENTRE_RANGS = 14;
@@ -70,8 +76,10 @@ export function segmentsCouple(a: NoeudArbre, b: NoeudArbre, id: string): Segmen
         y2: yCouple,
         strokeWidth: 2,
         ...style,
-      },
-      {
+      }
+    );
+    if (Math.abs(a.x - b.x) <= SEUIL_PONT_COUPLE) {
+      segments.push({
         id: `couple-${id}`,
         kind: 'line',
         x1: a.x,
@@ -80,8 +88,8 @@ export function segmentsCouple(a: NoeudArbre, b: NoeudArbre, id: string): Segmen
         y2: yCouple,
         strokeWidth: 3,
         ...style,
-      }
-    );
+      });
+    }
   }
 
   return segments;
@@ -189,11 +197,12 @@ export function segmentsPedigree({
   });
 
   // 4. Barre de fratrie : uniquement entre les enfants de CE couple.
+  const demiBarre = Math.max((xFratrieDroite - xFratrieGauche) / 2, LARGEUR_BARRE_FRATRIE_MIN / 2);
   ajouterSegment(segments, {
     id: `fratrie-${id}`,
-    x1: xFratrieGauche,
+    x1: xFratrieCentre - demiBarre,
     y1: yBarreFratrie,
-    x2: xFratrieDroite,
+    x2: xFratrieCentre + demiBarre,
     y2: yBarreFratrie,
     strokeWidth: 2,
     ...style,

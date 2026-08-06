@@ -70,7 +70,11 @@ export async function proxy(request: NextRequest) {
     if (!membre || membre.statut !== 'valide') {
       const url = request.nextUrl.clone();
       url.pathname = '/attente';
+      const destination = `${chemin}${request.nextUrl.search}`;
       url.search = '';
+      if (destination !== '/attente' && destination !== '/attente/') {
+        url.searchParams.set('suite', destination);
+      }
       return NextResponse.redirect(url);
     }
   }

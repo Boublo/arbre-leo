@@ -106,8 +106,8 @@ export function CarteNoeud({
         rx={RAYON_NOEUD}
         fill={estFocus ? 'var(--accent)' : 'var(--fond-carte)'}
         stroke={selectionne ? 'var(--accent)' : estFocus ? 'var(--accent)' : couleurs.trait}
-        strokeWidth={selectionne ? 3 : estFocus ? 2.5 : noeud.lien === 'collateral' ? 1 : 1.5}
-        strokeDasharray={noeud.lien === 'collateral' || noeud.lien === 'conjoint' ? '5 4' : undefined}
+        strokeWidth={selectionne ? 3 : estFocus ? 2.5 : noeud.lien === 'conjoint' ? 1.5 : 1}
+        strokeDasharray={noeud.lien === 'conjoint' ? '5 4' : undefined}
       />
 
       {/* Teinte de branche en fond doux (sauf focus) */}
@@ -198,6 +198,32 @@ export function CarteNoeud({
           stroke={estFocus ? 'var(--accent)' : 'var(--fond-carte)'}
           strokeWidth={1.5}
         />
+      )}
+
+      {/* Fratrie : pastille discrète pour ne pas confondre avec un conjoint (pointillé). */}
+      {detaille && noeud.lien === 'collateral' && !estFocus && (
+        <g aria-hidden>
+          <rect
+            x={LARGEUR_NOEUD - 52}
+            y={6}
+            width={46}
+            height={14}
+            rx={7}
+            fill="var(--fond-carte)"
+            stroke={couleurs.trait}
+            strokeWidth={0.75}
+            opacity={0.95}
+          />
+          <text
+            x={LARGEUR_NOEUD - 29}
+            y={16}
+            textAnchor="middle"
+            className="fill-[var(--encre-douce)]"
+            style={{ fontSize: 8, fontWeight: 600, letterSpacing: '0.02em' }}
+          >
+            FRATRIE
+          </text>
+        </g>
       )}
 
       {/* Nom — toujours visible */}

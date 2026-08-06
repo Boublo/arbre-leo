@@ -71,6 +71,16 @@ if (!geo.includes('HAUTEUR_COUCHES_ROUTAGE')) {
   console.error('geometrie-liens.ts : HAUTEUR_COUCHES_ROUTAGE manquant');
   process.exit(1);
 }
+if (!geo.includes('SEUIL_PONT_COUPLE')) {
+  console.error('geometrie-liens.ts : SEUIL_PONT_COUPLE manquant (pas de barre dorée traversante)');
+  process.exit(1);
+}
+
+const layout = readFileSync(join(racine, 'src/lib/layout-arbre.ts'), 'utf8');
+if (!layout.includes('rapprocherConjointsSurRang')) {
+  console.error('layout-arbre.ts : rapprocherConjointsSurRang manquant (AUDIT C2)');
+  process.exit(1);
+}
 
 // --- Scénario Laura (layout actuel simulé) — DOIT échouer tant que C2 non corrigé ---
 const p = SCENARIO_LURA;

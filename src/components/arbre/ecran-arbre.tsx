@@ -14,6 +14,20 @@ import {
 } from '@/lib/arbre-graphe';
 import { disposerArbre, type ModeArbre } from '@/lib/layout-arbre';
 
+const CLE_MODE_ARBRE = 'arbre-mode';
+const MODES_ARBRE: ModeArbre[] = ['ascendance', 'famille', 'descendance', 'eclate'];
+
+function lireModeInitial(): ModeArbre {
+  if (typeof window === 'undefined') return 'famille';
+  try {
+    const sauve = localStorage.getItem(CLE_MODE_ARBRE);
+    if (sauve && MODES_ARBRE.includes(sauve as ModeArbre)) return sauve as ModeArbre;
+  } catch {
+    /* localStorage indisponible */
+  }
+  return 'famille';
+}
+
 export function EcranArbre({
   graphe,
   focusInitial,
@@ -29,9 +43,21 @@ export function EcranArbre({
   const chemin = usePathname();
 
   const [focusId, setFocusId] = useState(focusInitial);
-  const [mode, setMode] = useState<ModeArbre>('ascendance');
+  const [mode, setMode] = useState<ModeArbre>('famille');
   const [selectionId, setSelectionId] = useState<string | null>(null);
   const [paletteOuverte, setPaletteOuverte] = useState(false);
+
+  useEffect(() => {
+    setMode(lireModeInitial());
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(CLE_MODE_ARBRE, mode);
+    } catch {
+      /* localStorage indisponible */
+    }
+  }, [mode]);
 
   const donnees = useMemo(() => reconstruireGraphe(graphe), [graphe]);
 

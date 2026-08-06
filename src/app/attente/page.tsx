@@ -5,7 +5,8 @@ import { deconnecter } from '@/app/actions/auth';
 
 export const metadata: Metadata = { title: 'Demande en attente' };
 
-export default async function PageAttente() {
+export default async function PageAttente({ searchParams }: PageProps<'/attente'>) {
+  const { suite } = await searchParams;
   const supabase = await creerClientServeur();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/connexion');
@@ -16,8 +17,14 @@ export default async function PageAttente() {
     .eq('id', user.id)
     .maybeSingle();
 
-  // L'accès vient d'être ouvert : plus rien à attendre ici.
-  if (membre?.statut === 'valide') redirect('/');
+  // L'accès vient d'être ouvert : reprendre la page demandée avant l'attente.
+  if (membre?.statut === 'valide') {
+    const destination =
+      typeof suite === 'string' && suite.startsWith('/') && !suite.startsWith('//')
+        ? suite
+        : '/';
+    redirect(destination);
+  }
 
   const refuse = membre?.statut === 'refuse';
   const suspendu = membre?.statut === 'suspendu';

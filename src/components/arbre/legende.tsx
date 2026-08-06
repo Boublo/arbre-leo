@@ -34,6 +34,17 @@ export function Legende() {
       <Separateur />
 
       <span className="flex items-center gap-1.5">
+        <span className="h-4 w-7 rounded-[3px] border border-bordure-forte bg-fond-carte" />
+        Frère, sœur, cousin
+      </span>
+      <span className="flex items-center gap-1.5">
+        <span className="h-4 w-7 rounded-[3px] border border-dashed border-bordure-forte bg-fond-carte" />
+        Conjoint
+      </span>
+
+      <Separateur />
+
+      <span className="flex items-center gap-1.5">
         <svg width={22} height={8} aria-hidden>
           <line x1={1} y1={4} x2={21} y2={4} stroke="var(--or)" strokeWidth={3} opacity={0.85} />
         </svg>
