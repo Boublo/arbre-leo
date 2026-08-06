@@ -288,7 +288,22 @@ export type TypeNotification =
   | 'reponse_commentaire'
   | 'nouveau_souvenir'
   | 'nouvelle_photo'
-  | 'nouvelle_personne';
+  | 'nouvelle_personne'
+  | 'demande_portrait_carte';
+
+export type StatutDemandePortrait = 'en_attente' | 'acceptee' | 'refusee';
+
+export type DemandePortraitCarte = {
+  id: string;
+  personne_id: string;
+  media_id: string;
+  demandeur_id: string;
+  statut: StatutDemandePortrait;
+  traite_par: string | null;
+  traite_le: string | null;
+  motif_refus: string | null;
+  cree_le: string;
+};
 
 export type Notification = {
   id: string;
@@ -328,6 +343,10 @@ export type BaseDeDonnees = {
       chantiers_recherche: Table<ChantierRecherche, 'titre'>;
       commentaires: Table<Commentaire, 'auteur_id' | 'texte'>;
       notifications: Table<Notification, 'destinataire_id' | 'type' | 'titre'>;
+      demandes_portrait_carte: Table<
+        DemandePortraitCarte,
+        'personne_id' | 'media_id' | 'demandeur_id'
+      >;
       journal: Table<EntreeJournal, 'action' | 'table_cible'>;
     };
     Views: Record<string, never>;
@@ -335,6 +354,8 @@ export type BaseDeDonnees = {
       est_membre_valide: { Args: Record<string, never>; Returns: boolean };
       est_admin: { Args: Record<string, never>; Returns: boolean };
       peut_contribuer: { Args: Record<string, never>; Returns: boolean };
+      peut_deposer_photo_album: { Args: { p_personne_id: string }; Returns: boolean };
+      personne_est_decedee: { Args: { p_personne_id: string }; Returns: boolean };
       assurer_fiche_membre: { Args: Record<string, never>; Returns: Membre };
     };
     Enums: {

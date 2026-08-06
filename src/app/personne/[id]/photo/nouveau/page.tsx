@@ -4,7 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { Navigation } from '@/components/navigation';
 import { FormulairePortrait } from '@/components/photos/formulaire-portrait';
 import { chargerFiche, chargerNomPersonne } from '@/components/personne/donnees';
-import { lireDroitsSaisie } from '@/components/saisie/donnees';
+import { lireDroitsSaisie, peutDeposerPhotoAlbum } from '@/components/saisie/donnees';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +24,11 @@ export default async function PageNouveauPortrait({
 
   if (!droits.utilisateurId) redirect(`/connexion?suite=/personne/${id}/photo/nouveau`);
 
-  const [nom, fiche] = await Promise.all([chargerNomPersonne(id), chargerFiche(id)]);
+  const [nom, fiche, peutDeposer] = await Promise.all([
+    chargerNomPersonne(id),
+    chargerFiche(id),
+    peutDeposerPhotoAlbum(id),
+  ]);
   if (!nom || !fiche) notFound();
 
   return (
@@ -45,17 +49,19 @@ export default async function PageNouveauPortrait({
         </p>
 
         <div className="mt-8">
-          {droits.peutContribuer ? (
+          {peutDeposer ? (
             <FormulairePortrait
               personneId={id}
               nomPersonne={nom}
-              utilisateurId={droits.utilisateurId}
+              utilisateurId={droits.utilisateurId!}
               aDejaPortrait={fiche.personne.photo_id !== null}
+              estAdmin={droits.estAdmin}
             />
           ) : (
             <p className="rounded-[var(--rayon-petit)] border border-bordure bg-fond-doux px-3 py-2.5 text-sm text-encre-douce">
-              Votre compte peut lire l’arbre mais pas encore y déposer de photos. Demandez à un
-              administrateur de la famille de vous passer contributeur.
+              Votre compte peut lire l’arbre mais pas encore y déposer de photos. Pour l’album
+              d’une personne décédée, tout membre validé peut participer — demandez l’ouverture de
+              votre accès si besoin.
             </p>
           )}
         </div>

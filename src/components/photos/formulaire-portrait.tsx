@@ -27,11 +27,13 @@ export function FormulairePortrait({
   nomPersonne,
   utilisateurId,
   aDejaPortrait,
+  estAdmin = false,
 }: {
   personneId: string;
   nomPersonne: string;
   utilisateurId: string;
   aDejaPortrait: boolean;
+  estAdmin?: boolean;
 }) {
   const [etat, action] = useActionState<EtatPortrait, FormData>(deposerPortrait, {});
   const [etape, setEtape] = useState<Etape>('choix');
@@ -135,9 +137,13 @@ export function FormulairePortrait({
         onChange={(e) => setPortraitSurCarte(e.target.checked)}
         label="Afficher cette photo sur la carte de l’arbre"
         aide={
-          aDejaPortrait
-            ? 'Remplace le portrait actuel ; l’ancienne photo reste dans l’album. Un cadrage 3:5 sera demandé.'
-            : 'Sans portrait, la carte ne montre qu’une initiale. Un cadrage 3:5 sera demandé.'
+          estAdmin
+            ? aDejaPortrait
+              ? 'Remplace le portrait actuel ; l’ancienne photo reste dans l’album. Un cadrage 3:5 sera demandé.'
+              : 'Sans portrait, la carte ne montre qu’une initiale. Un cadrage 3:5 sera demandé.'
+            : aDejaPortrait
+              ? 'Votre demande sera transmise à un administrateur. L’ancienne photo reste sur la carte en attendant.'
+              : 'Votre demande sera transmise à un administrateur. Un cadrage 3:5 sera demandé.'
         }
       />
 
@@ -190,7 +196,9 @@ export function FormulairePortrait({
             <p className="text-sm font-medium text-encre">{photo.nom}</p>
             <p className="mt-1 text-xs text-encre-tres-douce">
               {portraitSurCarte
-                ? 'Cadrage 3:5 prêt pour la carte et l’album.'
+                ? estAdmin
+                  ? 'Cadrage 3:5 prêt pour la carte et l’album.'
+                  : 'Cadrage 3:5 prêt — la photo ira dans l’album et une demande partira pour la carte.'
                 : 'Prête pour l’album de la fiche.'}
             </p>
             <button

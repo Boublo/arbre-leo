@@ -125,6 +125,14 @@ export async function lireDroitsSaisie(): Promise<DroitsSaisie> {
   };
 }
 
+/** Droit de déposer une photo dans l’album d’une fiche précise. */
+export async function peutDeposerPhotoAlbum(personneId: string): Promise<boolean> {
+  if (!estIdentifiant(personneId)) return false;
+  const supabase = await creerClientServeur();
+  const { data } = await supabase.rpc('peut_deposer_photo_album', { p_personne_id: personneId });
+  return data === true;
+}
+
 // ---------------------------------------------------------------------------
 // Listes de choix
 // ---------------------------------------------------------------------------

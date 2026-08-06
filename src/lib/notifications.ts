@@ -9,6 +9,7 @@ export const LIBELLE_TYPE_NOTIFICATION: Record<TypeNotification, string> = {
   nouveau_souvenir: 'Souvenir',
   nouvelle_photo: 'Photo',
   nouvelle_personne: 'Nouvelle fiche',
+  demande_portrait_carte: 'Portrait carte',
 };
 
 export const ICONE_TYPE_NOTIFICATION: Record<TypeNotification, string> = {
@@ -20,6 +21,7 @@ export const ICONE_TYPE_NOTIFICATION: Record<TypeNotification, string> = {
   nouveau_souvenir: '📖',
   nouvelle_photo: '🖼',
   nouvelle_personne: '🌿',
+  demande_portrait_carte: '🪪',
 };
 
 export type NotificationAffichee = {

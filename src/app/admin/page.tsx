@@ -7,8 +7,10 @@ import { DemandesEnAttente } from '@/components/admin/demandes-attente';
 import { DemandesEcartees } from '@/components/admin/demandes-ecartees';
 import { ListeMembres } from '@/components/admin/liste-membres';
 import { JournalModifications } from '@/components/admin/journal-modifications';
+import { DemandesPortrait } from '@/components/admin/demandes-portrait';
 import type {
   DemandeAdmin,
+  DemandePortraitAdmin,
   FicheArbre,
   LigneJournal,
   MembreAdmin,
@@ -45,6 +47,7 @@ export default async function PageAdmin() {
     journalRes,
     souvenirsRes,
     photosRes,
+    portraitsRes,
     arbre,
   ] = await Promise.all([
     supabase
@@ -72,6 +75,12 @@ export default async function PageAdmin() {
       .from('medias')
       .select('id', { count: 'exact', head: true })
       .eq('type', 'photo'),
+
+    supabase
+      .from('demandes_portrait_carte')
+      .select('id, personne_id, media_id, demandeur_id, cree_le')
+      .eq('statut', 'en_attente')
+      .order('cree_le', { ascending: true }),
 
     chargerArbre({ signerPhotosPour: 'aucun' }),
   ]);
@@ -139,7 +148,46 @@ export default async function PageAdmin() {
     acteur: e.acteur_id ? acteurs.get(e.acteur_id) ?? 'Compte supprimé' : null,
   }));
 
-  const erreurChargement = membresRes.error ?? personnesRes.error ?? journalRes.error ?? null;
+  const demandesBrutes = portraitsRes.data ?? [];
+  const idsPersonnesPortrait = [...new Set(demandesBrutes.map((d) => d.personne_id))];
+  const idsMediasPortrait = [...new Set(demandesBrutes.map((d) => d.media_id))];
+  const idsDemandeurs = [...new Set(demandesBrutes.map((d) => d.demandeur_id))];
+
+  const [personnesPortraitRes, mediasPortraitRes] = await Promise.all([
+    idsPersonnesPortrait.length > 0
+      ? supabase
+          .from('personnes')
+          .select('id, nom_complet, prenoms, nom')
+          .in('id', idsPersonnesPortrait)
+      : Promise.resolve({ data: [] as { id: string; nom_complet: string | null; prenoms: string | null; nom: string | null }[] }),
+    idsMediasPortrait.length > 0
+      ? supabase.from('medias').select('id, titre').in('id', idsMediasPortrait)
+      : Promise.resolve({ data: [] as { id: string; titre: string | null }[] }),
+  ]);
+
+  const nomsPersonnes = new Map(
+    (personnesPortraitRes.data ?? []).map((p) => [
+      p.id,
+      p.nom_complet?.trim() || p.prenoms || p.nom || 'Sans nom',
+    ])
+  );
+  const titresMedias = new Map((mediasPortraitRes.data ?? []).map((m) => [m.id, m.titre]));
+  const nomsDemandeurs = new Map(
+    membres.filter((m) => idsDemandeurs.includes(m.id)).map((m) => [m.id, m.nom_affiche])
+  );
+
+  const portraitsEnAttente: DemandePortraitAdmin[] = demandesBrutes.map((d) => ({
+    id: d.id,
+    personneId: d.personne_id,
+    nomPersonne: nomsPersonnes.get(d.personne_id) ?? 'Sans nom',
+    mediaId: d.media_id,
+    titrePhoto: titresMedias.get(d.media_id) ?? null,
+    demandeur: nomsDemandeurs.get(d.demandeur_id) ?? 'Un membre',
+    creeLe: d.cree_le,
+  }));
+
+  const erreurChargement =
+    membresRes.error ?? personnesRes.error ?? journalRes.error ?? portraitsRes.error ?? null;
 
   return (
     <>
@@ -168,12 +216,14 @@ export default async function PageAdmin() {
           personnes={personnesRes.count}
           souvenirs={souvenirsRes.count}
           photos={photosRes.count}
-          enAttente={enAttente.length}
+          enAttente={enAttente.length + portraitsEnAttente.length}
         />
 
         <CoherenceAdmin rapport={rapport} />
 
         <DemandesEnAttente demandes={enAttente} />
+
+        <DemandesPortrait demandes={portraitsEnAttente} />
 
         <ListeMembres membres={comptes} fiches={fiches} moiId={moi.id} />
 
