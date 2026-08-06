@@ -1,144 +1,268 @@
 # Audit complet — L'arbre de Léo
 
-Audit réalisé le 6 août 2026. Ce document recense l'état du site, les problèmes identifiés et les actions menées ou restantes.
+Dernière mise à jour : 6 août 2026 — commit `124324d` (main).
+
+Ce document recense **où ça coince**, **pourquoi**, et **dans quel ordre corriger**.
 
 ---
 
-## Synthèse
+## Résumé exécutif
 
-| Domaine | État | Note |
+| Zone | Verdict | Problème principal |
 | --- | --- | --- |
-| Fonctionnel | Bon | 32 routes, rôles lecteur/contributeur/admin |
-| Arbre interactif | Très bon | Cartes portrait, liens famille, dépôt photo/acte récents |
-| Accessibilité | Moyen | Améliorations en cours (focus clavier, skip link) |
-| Performance | À surveiller | Graphe complet envoyé au client sur `/arbre` |
-| Découvrabilité | Amélioré | Parenté + Export ajoutés à la navigation |
-| Thème sombre | Corrigé | Première visite respecte `prefers-color-scheme` |
+| **Liens de l'arbre** | Insuffisant | Le **placement** et le **tracé** ne sont pas synchronisés |
+| **Cartes personnes** | Bon | Portraits OK ; frère ≠ conjoint **pas visible** |
+| **Site global** | Bon | 32 routes, auth, navigation améliorées |
+| **Performance `/arbre`** | À surveiller | Tout le graphe + toutes les photos signées au chargement |
+| **Tests auto** | Faible | Scripts = grep de symboles, pas de tests géométriques |
+
+### Les 3 causes du « bordel sur les liens »
+
+```
+1. PLACEMENT   Les conjoints sont posés loin l'un de l'autre (ancrage par filiation,
+               pas par union). Ex. : Pierre @ x=0, Sophie @ x=600 sur la même rangée.
+
+2. TRACÉ       Le code dessine quand même une barre dorée sur toute la distance
+               Pierre–Sophie, qui passe SOUS les oncles/cousins entre les deux.
+
+3. STYLE       Frères/sœurs et conjoints ont le même contour pointillé sur les cartes
+               → on lit « Laura + son frère = couple ».
+```
+
+Ce n'est **pas** un bug de données généalogiques : c'est un décalage **layout ↔ géométrie ↔ légende visuelle**.
 
 ---
 
-## Routes (32)
+## Architecture de l'arbre (4 modes)
 
-### Cœur généalogique
-- `/` — Accueil (chiffres, silhouettes, navigation)
-- `/arbre` — Arbre interactif (4 modes)
-- `/chronologie` — Frise familiale + Histoire
-- `/carte` — Migrations géolocalisées
-- `/parente` — Calculateur de parenté
-- `/personne/[id]` — Fiche complète (onglets)
-- `/personne/nouvelle`, `/modifier`, `/imprimer`
-- `/personne/[id]/photo/nouveau`, `/acte/nouveau` — Dépôts récents
+| Mode | Fichier layout | Liens couple (or) | Liens pedigree (barre fratrie) | Fallback orthogonal |
+| --- | --- | --- | --- | --- |
+| D'où il vient | `disposerHierarchie` asc | Si même rangée + ≤248 px | Si rang adjacent + parents même rangée | Sinon |
+| Ce qu'il a laissé | `disposerHierarchie` desc | Idem | Idem | Idem |
+| **La famille autour** | `disposerFamille` | **Toujours** si 2 parents visibles | **Toujours** | Rare |
+| Tout (éclaté) | `disposerEclate` | Même rangée seulement | **Jamais** | Toujours |
 
-### Mémoire & récits
-- `/souvenirs`, `/souvenirs/nouveau`, `/souvenirs/[id]`
-- `/recits`, `/recits/nouveau`, `/recits/[id]`, `/modifier`
-- `/histoire`, `/histoire/[id]`
-
-### Outils & admin
-- `/statistiques`, `/recherches`, `/nouveautes`, `/aujourdhui`
-- `/export`, `/export/{gedcom,csv,json}`
-- `/admin` — Modération membres
-
-### Auth
-- `/connexion`, `/inscription`, `/attente`, `/auth/callback`
-- `/erreur` — Page d'erreur générique
+Fichiers clés :
+- `src/lib/layout-arbre.ts` — où sont posées les cartes
+- `src/lib/geometrie-liens.ts` — comment sont tracés les traits
+- `src/components/arbre/liens-arbre.tsx` — rendu SVG
+- `src/components/arbre/carte-noeud.tsx` — cartes portrait
 
 ---
 
-## Corrections appliquées (PR audit)
+## CRITIQUE — ce que l'utilisateur voit de travers
 
-### Critique
-- [x] Messages d'erreur sur `/connexion` (`?erreur=lien_invalide|lien_expire`)
-- [x] Frontière d'erreur globale `src/app/error.tsx`
-- [x] Focus clavier arbre : un seul nœud tabulable (focus ou sélection)
+### C1 — Frère et conjoint : même apparence de carte
 
-### Haute priorité
-- [x] Navigation : menu « Plus » (Parenté, Export, etc.)
-- [x] Accueil : 9 cartes « Où aller » au lieu de 4
-- [x] Thème sombre au premier chargement (script layout + OS)
-- [x] Page `/erreur` créée
-- [x] Skeleton `loading.tsx` global
-- [x] Parenté : recherche par nom au lieu de `<select>` géant
-- [x] Lien d'évitement « Aller au contenu principal »
-- [x] `id="contenu-principal"` sur les `<main>`
+**Fichier :** `src/components/arbre/carte-noeud.tsx` (~l.109–110)
 
-### Moyenne priorité
-- [x] Cibles tactiles 44 px (thème, nav desktop)
-- [x] Couleurs hardcodées (`text-white`, `#211c17`) → tokens CSS
-- [x] Texte vide recherche arbre corrigé
+```tsx
+strokeDasharray={noeud.lien === 'collateral' || noeud.lien === 'conjoint' ? '5 4' : undefined}
+```
+
+| Type | Signification | Style actuel |
+| --- | --- | --- |
+| `collateral` | Frère, sœur, cousin | Contour **pointillé** |
+| `conjoint` | Époux, épouse | Contour **pointillé** (identique) |
+
+**Symptôme :** Léo (frère) à côté de Laura a la même carte qu'un conjoint. Avec la barre dorée dans la légende, l'utilisateur conclut « mon frère est avec Laura ».
+
+**Correction :** Contour **plein** + pastille « frère/sœur » pour `collateral` ; pointillé réservé au conjoint. Mettre à jour `legende.tsx`.
 
 ---
 
-## Points restants (backlog)
+### C2 — Conjoints éloignés : barre dorée traversante (mode famille)
 
-### Performance
-1. **`/arbre`** — Sérialiser un sous-graphe (focus ± N générations) plutôt que l'arbre entier.
-2. **`chargerArbre()`** — Appelé sur accueil, fiche personne, parenté : mutualiser avec `React.cache()` ou requêtes légères.
-3. **URLs photo signées** — Expirent après 1 h ; prévoir refresh si l'onglet reste ouvert longtemps.
+**Fichiers :** `src/lib/layout-arbre.ts` (`disposerFamille`), `src/lib/geometrie-liens.ts` (`segmentsCouple`, `planifierLiens`)
 
-### Accessibilité
-4. **Onglets** — `barre-outils-arbre` et fiche personne : compléter `aria-controls` / `id` des panneaux.
-5. **Audio/vidéo** — Lecteur inline dans `medias.tsx` (au lieu d'un simple lien).
+**Cause :** En mode « famille autour », le layout place chaque personne sous **ses propres parents**, pas **à côté de son conjoint**. Les cousins sur la même rangée écartent encore les fratries. Résultat : deux époux peuvent être à 400–600 px l'un de l'autre.
 
-### Cohérence visuelle
-6. **`Vignette`** — Ajouter mini-portrait (photo ou initiale) comme les cartes arbre.
-7. **`CarteSouvenir` / `CarteRecit`** — Liseré de branche harmonisé.
+Le tracé dessine alors un **pont doré** ( deux verticals + horizontal ) sur toute la largeur, **sous** les cartes des oncles/cousins intermédiaires.
 
-### SEO / partage (faible priorité — site `noindex`)
-8. Favicon absent dans `public/`.
-9. Descriptions Open Graph par page (partage iMessage entre proches).
+**Scénario type (Laura, focus, mode famille) :**
 
-### Infrastructure
-10. **`Navigation`** — 3 requêtes Supabase à chaque page : cache par requête serveur.
-11. Tests E2E — Scripts de vérif (`verifier-*.mjs`) existants ; pas de CI automatisée.
+```
+Rang parents :  [Pierre]───────[Paul oncle]───────[Sophie]
+                      \         (cartes entre)         /
+Barre dorée :   ═══════════════════════════════════════  ← traverse tout
+Rang enfants :              [Julie]    [Laura]──[Léo]
+```
+
+**Symptôme :** Trait doré sous Paul → on croit que Paul est marié à Pierre ou Sophie.
+
+**Correction (layout, pas seulement liens) :**
+1. Après placement d'une rangée, **rapprocher les conjoints** (comme `ordonnerCoucheEclate` le fait déjà partiellement).
+2. Recentrer les fratries sous le couple **après** rapprochement.
+3. Si distance > seuil : **ne pas** tracer de barre horizontale longue ; deux tiges depuis chaque conjoint seulement.
 
 ---
 
-## Sécurité
+### C3 — Décalage centre parents ↔ centre enfants (spaghetti)
 
-| Élément | Statut |
+**Fichiers :** `layout-arbre.ts` + `geometrie-liens.ts` (`raccord-*`)
+
+Même scénario Laura : parents centrés à x≈300, enfants Laura+Léo à x≈708 → raccord horizontal de **400 px** sur la couche intermédiaire.
+
+**Symptôme :** Le trait de filiation ne descend pas « sous les parents puis vers les enfants » : il traverse des colonnes entières de personnes non concernées.
+
+**Correction :** Liée à C2 — si les conjoints sont côte à côte et les enfants centrés dessous, Δx tombe sous ~120 px.
+
+---
+
+## HAUTE priorité
+
+### H1 — Mode par défaut = ascendance, pas « famille autour »
+
+**Fichier :** `src/components/arbre/ecran-arbre.tsx` l.32
+
+```tsx
+const [mode, setMode] = useState<ModeArbre>('ascendance');
+```
+
+**Symptôme :** On arrive sur l'arbre en « D'où il vient » — pas de cousins, fratrie réduite. L'utilisateur ne voit pas « toute la famille » et les liens paraissent incomplets.
+
+**Correction :** Défaut `'famille'` ou mémoriser le dernier mode dans `localStorage`.
+
+---
+
+### H2 — Graphe entier envoyé au navigateur
+
+**Fichiers :** `src/app/arbre/page.tsx`, `src/lib/arbre-graphe.ts`, `src/lib/arbre.ts`
+
+Chaque visite de `/arbre` sérialise **toutes** les personnes, unions, listes d'adjacence, et URLs photo signées (1 h).
+
+**Symptôme :** Chargement lent sur mobile ; onglet ouvert >1 h → photos cassées (URLs expirées).
+
+**Correction :** Sous-graphe serveur (focus ±3 générations) ; re-signer les photos visibles à la demande.
+
+---
+
+### H3 — Scripts de vérification insuffisants
+
+**Fichiers :** `scripts/verifier-*.mjs`
+
+Ils vérifient que certains **noms de fonctions existent** dans le code, pas que la géométrie est correcte.
+
+**Symptôme :** Régressions visuelles (C1, C2) passent tous les scripts « OK ».
+
+**Correction :** Ajouter `verifier-geometrie-arbre.mjs` avec graphe Laura fixture + seuils (longueur barre couple < 300 px, Δx parents-enfants < 150 px).
+
+---
+
+### H4 — Membre en attente perd le lien profond
+
+**Fichier :** `src/proxy.ts`
+
+Redirection vers `/attente` sans conserver `?suite=/arbre?personne=…`.
+
+**Symptôme :** Lien « voir Laura dans l'arbre » → inscription → attente → accueil (pas Laura).
+
+---
+
+## MOYENNE priorité
+
+| ID | Problème | Fichier | Correction |
+| --- | --- | --- | --- |
+| M1 | `ecarterCollisions` sépare des conjoints déjà adjacents | `layout-arbre.ts` | Traiter les couples comme groupes atomiques |
+| M2 | Cousin et frère : même `lien: collateral` | `layout-arbre.ts` | Sous-types ou badges |
+| M3 | Mode éclaté : que des L orthogonaux, illisible | `geometrie-liens.ts` | Pedigree partiel ou avertissement UI |
+| M4 | Enfant unique : barre fratrie invisible (x1=x2) | `geometrie-liens.ts` | Barre minimale 20 px |
+| M5 | `chargerArbre()` charge **toutes** les photos médias | `arbre.ts` | Filtrer par `photo_id` des personnes |
+| M6 | Mobile : pas de mini-carte, repères gauche larges | `vue-arbre.tsx`, `reperes-rang.tsx` | Repères repliables |
+| M7 | Photos : initiales si pas de `photoUrl` | Normal | Déposer portraits via fiche / arbre |
+
+---
+
+## FAIBLE priorité / déjà corrigé
+
+| Sujet | État |
 | --- | --- |
-| RLS Supabase | Actif (rôles membres) |
-| `robots: noindex` | Correct pour site familial privé |
-| Export filtré | Oui (vie privée, vivants) |
-| Auth callback | Erreurs maintenant affichées |
-| Admin guard | `exigerAdmin()` serveur |
+| Erreurs connexion (`?erreur=`) | Corrigé |
+| Thème sombre 1ère visite | Corrigé |
+| Navigation Parenté + Export | Corrigé |
+| Skip link, error.tsx, loading.tsx | Corrigé |
+| Focus clavier arbre (1 tab stop) | Corrigé |
+| Vignettes avec mini-portrait | Corrigé |
+| Routage liens en 2 couches (dernier fix) | Amélioré, insuffisant sans C2 |
 
 ---
 
-## Modules — maturité
+## Matrice layout ↔ tracé (quand ça diverge)
 
-| Module | Maturité | Commentaire |
+| Situation | Layout | Tracé | Problème visuel |
+| --- | --- | --- | --- |
+| Conjoints ≤248 px, même rangée | Côte à côte | Barre or inline | OK |
+| Conjoints >248 px, mode famille | Loin | Pont doré long | **C2** |
+| Fratrie + cousins même rangée | Groupes écartés | Raccord long | **C3** |
+| Frère à côté du focus | `collateral` | — | **C1** (style) |
+| 1 parent visible | 1 carte | Pedigree solo | OK |
+| Implexe (éclaté) | BFS | Trait pointillé or | OK mais dense (M3) |
+
+---
+
+## Scénarios de test manuels
+
+### 1. Laura + Léo + Julie (focus Laura, « La famille autour »)
+
+- [ ] Léo identifiable comme **frère** (pas contour conjoint)
+- [ ] Barre dorée parents **courte** (entre Pierre et Sophie seulement)
+- [ ] Trait vers Laura+Léo **vertical sous les parents**, pas diagonal 400 px
+- [ ] Julie groupée sous Paul, **sans** trait la traversant
+
+### 2. Focus Léo, ascendance
+
+- [ ] Fratrie Laura visible si mode famille ; ascendance seule = parents directs
+- [ ] Frères/sœurs : contour distinct du conjoint
+
+### 3. Onglet ouvert 2 h
+
+- [ ] Photos toujours visibles (ou initiales de repli)
+
+### 4. Membre `en_attente` clique lien `/arbre?personne=…`
+
+- [ ] Après validation, arrive sur la bonne personne
+
+---
+
+## Modules — maturité (site entier)
+
+| Module | Note | Commentaire |
 | --- | --- | --- |
-| Arbre | ★★★★★ | Refonte cartes portrait, liens famille, dépôt photo |
-| Fiche personne | ★★★★☆ | Onglets riches, dépôt acte/photo récent |
-| Chronologie | ★★★★☆ | Frise + contexte historique |
-| Carte | ★★★★☆ | Dépend du géocodage des lieux |
-| Souvenirs | ★★★★☆ | Masonry, calendrier |
-| Récits | ★★★★☆ | Markdown, patronymes |
-| Statistiques | ★★★☆☆ | Solide, peu de graphiques avancés |
-| Recherches | ★★★★☆ | Kanban chantiers |
-| Export | ★★★★☆ | Fonctionnel, désormais dans le menu |
-| Parenté | ★★★★☆ | Recherche améliorée |
-| Admin | ★★★★☆ | Modération membres |
+| Arbre | ★★★☆☆ | Cartes bonnes ; **liens + layout famille** à refondre |
+| Fiche personne | ★★★★☆ | Riche, dépôt photo/acte |
+| Chronologie / Carte | ★★★★☆ | Solide |
+| Souvenirs / Récits | ★★★★☆ | Solide |
+| Export / Parenté / Admin | ★★★★☆ | OK |
+| Performance globale | ★★★☆☆ | `chargerArbre()` partout |
 
 ---
 
-## Commandes utiles
+## Ordre de correction recommandé
 
-```bash
-npm run build          # Vérifier la compilation
-npm run lint           # ESLint
-node scripts/verifier-liens-famille.mjs
-node scripts/verifier-navigation-arbre.mjs
-node scripts/verifier-panneau-arbre.mjs
+```
+1. C1  Style cartes : frère ≠ conjoint (+ légende)
+2. C2  Layout famille : rapprocher les conjoints après chaque rangée
+3. C3  (suit C2)       Recentrer fratries ; raccourcir raccords
+4. H3  Tests géométrie automatisés (fixture Laura)
+5. H1  Mode défaut « famille autour »
+6. H2  Sous-graphe + refresh photos
+7. H4  Suite URL pour membres en attente
 ```
 
 ---
 
-## Prochaine itération recommandée
+## Commandes
 
-1. Sous-graphe client pour `/arbre` (gain perf majeur)
-2. Harmoniser `Vignette` avec portraits
-3. Lecteurs audio/vidéo inline
-4. Favicon + icône PWA légère
+```bash
+npm run build
+node scripts/verifier-liens-famille.mjs      # grep symboles (insuffisant seul)
+node scripts/verifier-navigation-arbre.mjs
+node scripts/verifier-panneau-arbre.mjs
+node scripts/verifier-avant-commit.mjs         # les trois ci-dessus
+```
+
+---
+
+## Sécurité (inchangé)
+
+RLS actif, `noindex`, export filtré, admin gardé côté serveur. Pas de faille critique identifiée côté auth (hors perte de deep link H4).
