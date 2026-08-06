@@ -38,9 +38,10 @@ export default async function PageNouveauPortrait({
 
         <h1 className="mt-4 text-3xl">Déposer une photo</h1>
         <p className="mt-2 text-encre-douce">
-          Un portrait scanné, une photo de mariage, un cliché retrouvé dans un album : versez-le
-          ici pour qu’il apparaisse sur la fiche et, si vous le souhaitez, sur la carte de
-          l’arbre.
+          Un portrait scanné, une photo de mariage, un cliché retrouvé dans un album :
+          versez-le ici. Pour la carte de l’arbre, un cadrage 3 × 5 place le visage
+          correctement ; la photo rejoint aussi l’album de la fiche, où la famille
+          pourra y laisser un souvenir.
         </p>
 
         <div className="mt-8">

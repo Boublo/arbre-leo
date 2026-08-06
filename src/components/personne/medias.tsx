@@ -4,23 +4,28 @@ import { LIBELLE_MEDIA } from '@/components/personne/vocabulaire';
 import type { MediaFiche } from '@/components/personne/donnees';
 
 /**
- * Photographies et actes où elle figure.
+ * Album de la fiche — photographies et actes.
  *
- * Le dépôt est privé : chaque fichier est servi par une URL signée, valable une
- * heure, jamais par une adresse publique. Un lien recopié dans un message
- * expire donc de lui-même — c'est voulu.
+ * Chaque vignette ouvre la page de la photo, où la famille peut laisser un
+ * souvenir. Le dépôt reste privé (URL signée).
  */
 export function MediasPersonne({
   medias,
   personneId,
   peutDeposer = false,
+  photoCarteId = null,
 }: {
   medias: MediaFiche[];
   personneId?: string;
   peutDeposer?: boolean;
+  /** Identifiant du portrait actuellement sur la carte de l’arbre. */
+  photoCarteId?: string | null;
 }) {
+  const images = medias.filter((m) => m.estImage);
+  const autres = medias.filter((m) => !m.estImage);
+
   return (
-    <Section titre="Photographies et actes" compte={medias.length}>
+    <Section titre="Album" compte={medias.length}>
       {medias.length === 0 ? (
         <Rien>
           Aucune image ne lui est encore rattachée. Une photo de mariage, un portrait de
@@ -37,19 +42,37 @@ export function MediasPersonne({
           )}
         </Rien>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2">
-          {medias.map((m) => (
-            <li key={m.id}>
-              <Vignette media={m} />
-            </li>
-          ))}
-        </ul>
+        <div className="flex flex-col gap-8">
+          {images.length > 0 && (
+            <ul className="grid gap-4 sm:grid-cols-2">
+              {images.map((m) => (
+                <li key={m.id}>
+                  <Vignette
+                    media={m}
+                    personneId={personneId}
+                    estPortraitCarte={photoCarteId === m.id}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {autres.length > 0 && (
+            <ul className="grid gap-4 sm:grid-cols-2">
+              {autres.map((m) => (
+                <li key={m.id}>
+                  <Vignette media={m} personneId={personneId} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
 
       {peutDeposer && personneId && (
-        <p className="mt-3 text-sm">
+        <p className="mt-4 text-sm">
           <Link href={`/personne/${personneId}/photo/nouveau`} className="lien-discret">
-            Déposer une photo ou un scan
+            Ajouter une photo à l’album
           </Link>
         </p>
       )}
@@ -57,31 +80,44 @@ export function MediasPersonne({
   );
 }
 
-function Vignette({ media: m }: { media: MediaFiche }) {
+function Vignette({
+  media: m,
+  personneId,
+  estPortraitCarte = false,
+}: {
+  media: MediaFiche;
+  personneId?: string;
+  estPortraitCarte?: boolean;
+}) {
   const legende = [m.date, m.lieu, m.role].filter(Boolean).join(' · ');
   const reference = [m.depot, m.cote && `cote ${m.cote}`].filter(Boolean).join(' · ');
   const alternative = m.titre ?? `${LIBELLE_MEDIA[m.type]} sans titre`;
+  const href =
+    personneId && m.estImage ? `/personne/${personneId}/photo/${m.id}` : m.url;
 
-  return (
-    <figure className="flex h-full flex-col overflow-hidden rounded-[var(--rayon-petit)] border border-bordure">
+  const corps = (
+    <>
       {m.estImage && m.url ? (
-        <a href={m.url} target="_blank" rel="noopener noreferrer" className="bg-fond-doux">
-          {/* eslint-disable-next-line @next/next/no-img-element -- URL signée temporaire : l'optimiseur d'images ne peut pas la mettre en cache. */}
+        <div className="relative bg-fond-doux">
+          {/* eslint-disable-next-line @next/next/no-img-element -- URL signée temporaire */}
           <img
             src={m.url}
             alt={alternative}
             loading="lazy"
             width={m.largeur ?? undefined}
             height={m.hauteur ?? undefined}
-            className="h-56 w-full object-contain"
+            className="h-56 w-full object-cover"
           />
-        </a>
+          {estPortraitCarte && (
+            <span className="absolute left-2 top-2 rounded-[var(--rayon-petit)] bg-accent px-2 py-0.5 text-[0.65rem] font-medium uppercase tracking-wide text-accent-contraste">
+              Carte
+            </span>
+          )}
+        </div>
       ) : (
         <div className="flex h-24 items-center justify-center bg-fond-doux px-4 text-center text-sm text-encre-tres-douce">
           {m.url ? (
-            <a href={m.url} target="_blank" rel="noopener noreferrer" className="lien-discret">
-              Ouvrir {LIBELLE_MEDIA[m.type].toLowerCase()}
-            </a>
+            <span className="lien-discret">Ouvrir {LIBELLE_MEDIA[m.type].toLowerCase()}</span>
           ) : (
             <span>Fichier momentanément indisponible</span>
           )}
@@ -98,20 +134,33 @@ function Vignette({ media: m }: { media: MediaFiche }) {
         {reference && <span className="text-xs text-encre-tres-douce">{reference}</span>}
 
         {m.description && (
-          <span className="mt-1 text-sm leading-relaxed text-encre-douce">{m.description}</span>
+          <span className="mt-1 line-clamp-2 text-sm leading-relaxed text-encre-douce">
+            {m.description}
+          </span>
         )}
 
-        {m.transcription && (
-          <details className="mt-2">
-            <summary className="cursor-pointer text-sm text-encre-douce">
-              Lire la transcription
-            </summary>
-            <p className="mt-2 whitespace-pre-line border-l-2 border-or/60 py-1 pl-3 font-titre text-sm leading-relaxed text-encre">
-              {m.transcription}
-            </p>
-          </details>
+        {personneId && m.estImage && (
+          <span className="mt-2 text-xs text-accent">Voir et commenter →</span>
         )}
       </figcaption>
+    </>
+  );
+
+  return (
+    <figure className="flex h-full flex-col overflow-hidden rounded-[var(--rayon-petit)] border border-bordure transition hover:border-bordure-forte">
+      {href ? (
+        <Link
+          href={href}
+          {...(href.startsWith('http')
+            ? { target: '_blank', rel: 'noopener noreferrer' }
+            : {})}
+          className="flex h-full flex-col"
+        >
+          {corps}
+        </Link>
+      ) : (
+        corps
+      )}
     </figure>
   );
 }

@@ -135,7 +135,7 @@ export async function deposerPortrait(
   const { error: erreurLien } = await supabase.from('medias_personnes').insert({
     media_id: mediaId,
     personne_id: v.personneId,
-    role: 'portrait',
+    role: v.portraitSurCarte ? 'portrait' : 'sujet',
   });
   if (erreurLien) {
     await nettoyerMedia(supabase, mediaId, v.photo.chemin);
@@ -155,8 +155,67 @@ export async function deposerPortrait(
     }
   }
 
-  rafraichir(v.personneId);
-  redirect(`/personne/${v.personneId}`);
+  rafraichir(v.personneId, mediaId);
+  redirect(`/personne/${v.personneId}/photo/${mediaId}`);
+}
+
+/** Choisir une photo déjà dans l’album comme portrait de carte. */
+export async function choisirPortraitCarte(
+  personneId: string,
+  mediaId: string
+): Promise<EtatPortrait> {
+  const supabase = await creerClientServeur();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { erreur: 'Votre session a expiré. Reconnectez-vous.' };
+
+  const { data: autorise } = await supabase.rpc('peut_contribuer');
+  if (autorise !== true) {
+    return { erreur: 'Seuls les contributeurs peuvent changer le portrait de la carte.' };
+  }
+
+  const ids = z
+    .object({
+      personneId: z.uuid(),
+      mediaId: z.uuid(),
+    })
+    .safeParse({ personneId, mediaId });
+  if (!ids.success) return { erreur: 'Identifiants invalides.' };
+
+  const { data: lien } = await supabase
+    .from('medias_personnes')
+    .select('media_id')
+    .eq('media_id', ids.data.mediaId)
+    .eq('personne_id', ids.data.personneId)
+    .maybeSingle();
+  if (!lien) {
+    return { erreur: 'Cette photo n’appartient pas à cette fiche.' };
+  }
+
+  const { data: media } = await supabase
+    .from('medias')
+    .select('id, type, mime')
+    .eq('id', ids.data.mediaId)
+    .maybeSingle();
+  if (!media || (media.type !== 'photo' && !media.mime?.startsWith('image/'))) {
+    return { erreur: 'Seule une image peut devenir le portrait de la carte.' };
+  }
+
+  const { error } = await supabase
+    .from('personnes')
+    .update({ photo_id: ids.data.mediaId, modifie_par: user.id })
+    .eq('id', ids.data.personneId);
+  if (error) return { erreur: traduire(error.message) };
+
+  await supabase
+    .from('medias_personnes')
+    .update({ role: 'portrait' })
+    .eq('media_id', ids.data.mediaId)
+    .eq('personne_id', ids.data.personneId);
+
+  rafraichir(ids.data.personneId, ids.data.mediaId);
+  return { message: 'Portrait de la carte mis à jour.' };
 }
 
 async function nettoyerMedia(
@@ -168,8 +227,9 @@ async function nettoyerMedia(
   await supabase.storage.from(BUCKET_MEDIAS).remove([chemin]);
 }
 
-function rafraichir(personneId: string) {
+function rafraichir(personneId: string, mediaId?: string) {
   revalidatePath(`/personne/${personneId}`);
+  if (mediaId) revalidatePath(`/personne/${personneId}/photo/${mediaId}`);
   revalidatePath('/arbre');
   revalidatePath('/');
 }

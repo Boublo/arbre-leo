@@ -5,35 +5,48 @@ import { z } from 'zod';
 import { creerClientServeur } from '@/lib/supabase/server';
 
 /**
- * Le fil de discussion d'une fiche.
+ * Fil de discussion — fiche ou photo.
  *
- * Écrire sur une fiche, c'est souvent corriger : « ce n'est pas Oran mais
- * La Sénia », « ma mère disait 1947 ». Le droit d'écrire est arbitré par les
- * politiques RLS, pas ici : cette action se contente de vérifier la forme du
- * message et de signer l'auteur avec la session en cours, jamais avec un
- * identifiant venu du formulaire.
+ * Une seule cible à la fois (contrainte SQL). L’auteur vient de la session,
+ * jamais du formulaire.
  */
 
 export type EtatCommentaire = { erreur?: string; message?: string };
 
-const schemaCommentaire = z.object({
-  personneId: z.uuid('Cette fiche est introuvable.'),
-  parentId: z.uuid('Ce message n’existe plus.').nullable(),
-  texte: z
-    .string()
-    .trim()
-    .min(2, 'Écrivez au moins quelques mots.')
-    .max(4000, 'Message trop long : 4000 caractères au maximum.'),
-});
+const schema = z
+  .object({
+    personneId: z.uuid().optional(),
+    mediaId: z.uuid().optional(),
+    parentId: z.uuid().nullable(),
+    texte: z
+      .string()
+      .trim()
+      .min(2, 'Écrivez au moins quelques mots.')
+      .max(4000, 'Message trop long : 4000 caractères au maximum.'),
+  })
+  .superRefine((v, ctx) => {
+    const aPersonne = Boolean(v.personneId);
+    const aMedia = Boolean(v.mediaId);
+    if (aPersonne === aMedia) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Indiquez la fiche ou la photo concernée.',
+      });
+    }
+  });
 
 export async function deposerCommentaire(
   _precedent: EtatCommentaire,
   donnees: FormData
 ): Promise<EtatCommentaire> {
   const parentBrut = donnees.get('parentId');
+  const personneBrut = donnees.get('personneId');
+  const mediaBrut = donnees.get('mediaId');
 
-  const analyse = schemaCommentaire.safeParse({
-    personneId: donnees.get('personneId'),
+  const analyse = schema.safeParse({
+    personneId:
+      typeof personneBrut === 'string' && personneBrut !== '' ? personneBrut : undefined,
+    mediaId: typeof mediaBrut === 'string' && mediaBrut !== '' ? mediaBrut : undefined,
     parentId: typeof parentBrut === 'string' && parentBrut !== '' ? parentBrut : null,
     texte: donnees.get('texte'),
   });
@@ -42,10 +55,9 @@ export async function deposerCommentaire(
     return { erreur: analyse.error.issues[0]?.message ?? 'Message incomplet.' };
   }
 
-  const { personneId, parentId, texte } = analyse.data;
+  const { personneId, mediaId, parentId, texte } = analyse.data;
   const supabase = await creerClientServeur();
 
-  // getUser() interroge le serveur d'authentification : on ne se fie pas au cookie seul.
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -56,7 +68,8 @@ export async function deposerCommentaire(
 
   const { error } = await supabase.from('commentaires').insert({
     auteur_id: user.id,
-    personne_id: personneId,
+    personne_id: personneId ?? null,
+    media_id: mediaId ?? null,
     parent_id: parentId,
     texte,
   });
@@ -65,19 +78,26 @@ export async function deposerCommentaire(
     return { erreur: traduireErreur(error.message) };
   }
 
-  revalidatePath(`/personne/${personneId}`);
+  if (personneId) revalidatePath(`/personne/${personneId}`);
+  if (mediaId) {
+    // On ne connaît pas forcément la personne ici : la page photo se
+    // revalide via le layout personne.
+    revalidatePath('/personne', 'layout');
+  }
 
   return { message: 'Votre message est enregistré. Merci.' };
 }
 
-/** Les refus de la base sont en anglais et parlent de politiques : on traduit. */
 function traduireErreur(message: string): string {
   const m = message.toLowerCase();
   if (m.includes('row-level security') || m.includes('policy')) {
-    return "Votre compte ne permet pas encore d'écrire sur les fiches. Demandez à un administrateur de la famille.";
+    return "Votre compte ne permet pas encore d'écrire ici. Demandez à un administrateur de la famille.";
   }
   if (m.includes('violates foreign key')) {
-    return 'Cette fiche ou ce message n’existe plus.';
+    return 'Cette fiche, cette photo ou ce message n’existe plus.';
+  }
+  if (m.includes('commentaires_une_seule_cible') || m.includes('check constraint')) {
+    return 'Le message doit porter sur une fiche ou une photo, pas les deux.';
   }
   return 'Le message n’a pas pu être enregistré. Réessayez dans un instant.';
 }
