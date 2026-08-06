@@ -15,14 +15,3 @@ export function obtenirUrlSite(): string {
 
   return 'http://localhost:3000';
 }
-
-/** Hôte canonique si `NEXT_PUBLIC_SITE_URL` est renseigné, sinon null. */
-export function hoteCanonique(): string | null {
-  const url = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (!url) return null;
-  try {
-    return new URL(url).host;
-  } catch {
-    return null;
-  }
-}
