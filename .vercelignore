@@ -1,0 +1,13 @@
+# Données familiales et secrets — ne jamais envoyer à Vercel (build cloud).
+#
+# Le slash initial ancre le motif à la racine du projet.
+# Sans lui, `supabase/` matcherait aussi `src/lib/supabase/`, qui contient
+# les helpers d'accès à la base — indispensables au build.
+
+/data/
+/supabase/
+/scripts/
+/.githooks/
+.env*
+*.ged
+*.gedcom

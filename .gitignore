@@ -80,3 +80,6 @@ photo_*.png
 /supabase/.branches/
 /supabase/.temp/
 /backups/
+
+.vercel
+.env*
