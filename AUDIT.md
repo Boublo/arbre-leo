@@ -57,6 +57,7 @@ Dernière mise à jour : 6 août 2026 — **v1–v5** (sécurité, lisibilité, 
 ✓ Centrage  Recentrage fratrie + re-colle couples (plus d’enfant qui flotte)
 ✓ Zoom      recadrer à k ≈ 1.0–1.05 ; noms de cartes un peu plus grands
 ✓ Cadre     Bbox aligné sur les bords de cartes (moins de vide asymétrique)
+✓ Ambiance  Fond parchemin vivant (grain, lavis, points d’encre, parallaxe)
 ```
 
 ---
