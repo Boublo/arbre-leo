@@ -5,10 +5,16 @@
 #
 #     git config core.hooksPath .githooks
 #
-# Il relit ce que git s'apprête à commiter et refuse la publication de
-# tout ce qui touche à la vie privée de la famille : patronymes en dur,
-# prénoms combinés à des dates identifiantes, fichiers GEDCOM / actes /
-# photos, secrets Supabase, mots de passe dans une URL.
-#
-# La logique est dans scripts/verifier-avant-commit.mjs.
-exec node scripts/verifier-avant-commit.mjs
+# 1. Données sensibles (patronymes, secrets, GEDCOM…) — toujours.
+# 2. Garde-fous arbre — si des fichiers arbre sont dans le staging.
+
+set -e
+
+node scripts/verifier-avant-commit.mjs
+
+if git diff --cached --name-only | grep -qE \
+  '^(src/components/arbre/|src/app/arbre/|src/app/actions/arbre\.ts|src/lib/(layout-arbre|geometrie-liens|arbre-graphe)\.ts|src/components/interactions/panneau-mobile\.tsx|scripts/(verifier|test-geometrie))'; then
+  echo ""
+  echo "Fichiers arbre détectés — lancement des garde-fous anti-régression…"
+  node scripts/verifier-arbre.mjs
+fi

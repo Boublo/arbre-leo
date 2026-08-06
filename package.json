@@ -16,6 +16,10 @@
     "arbre:verifier-navigation": "node scripts/verifier-navigation-arbre.mjs",
     "arbre:test-geometrie": "npx tsx scripts/test-geometrie-laura.ts",
     "arbre:verifier-geometrie": "node scripts/verifier-geometrie-arbre.mjs",
+    "arbre:verifier-chargement": "node scripts/verifier-chargement-arbre.mjs",
+    "arbre:verifier-zoom": "node scripts/verifier-zoom-arbre.mjs",
+    "arbre:verifier": "node scripts/verifier-arbre.mjs",
+    "test": "npm run typecheck && npm run arbre:verifier",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
