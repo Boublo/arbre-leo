@@ -85,15 +85,14 @@ export async function connecter(_precedent: EtatFormulaire, donnees: FormData): 
 
   const { data: { user } } = await supabase.auth.getUser();
   if (user) {
-    const { data: membre } = await supabase
-      .from('membres')
-      .select('statut')
-      .eq('id', user.id)
-      .maybeSingle();
+    const { data: membre, error: erreurFiche } = await supabase.rpc('assurer_fiche_membre');
+    if (erreurFiche || !membre) {
+      return { erreur: 'Connexion acceptée, mais la fiche membre est inaccessible. Réessayez.' };
+    }
 
     // Tant qu'un admin n'a pas ouvert l'accès, on évite d'envoyer sur l'accueil
     // (ou ailleurs) : la page d'attente explique la suite.
-    if (!membre || membre.statut !== 'valide') {
+    if (membre.statut !== 'valide') {
       revalidatePath('/', 'layout');
       const suite = String(donnees.get('suite') ?? '/');
       const destination =

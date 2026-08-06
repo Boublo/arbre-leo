@@ -58,21 +58,47 @@ Ouvrir l'URL et vérifier que la page d'accueil s'affiche. À ce stade, la
 navigation fonctionne mais **l'authentification ne redirige pas correctement**
 tant que les URL Supabase ne sont pas alignées (étape suivante).
 
+## 4 bis. Base Supabase partagée avec Modulyx / PixelForge
+
+L'arbre **ne possède pas** son propre projet Supabase. Il vit dans le projet
+`brsjdxrsmdbbcdqgncfs` (organisation PixelForge), à côté de Modulyx :
+
+| Schéma Postgres | Application |
+| --- | --- |
+| `public` | Modulyx / PixelForge (Prisma) |
+| `arbre` | L'arbre de Léo |
+
+Conséquences :
+
+- **Même `NEXT_PUBLIC_SUPABASE_URL` et clé anon** que Modulyx — c'est normal.
+- **`auth.users` est partagé** : un compte créé sur Modulyx peut se connecter
+  sur l'arbre ; la RPC `assurer_fiche_membre` crée alors `arbre.membres` en
+  attente de validation.
+- **Ne jamais créer de tables arbre dans `public`**, ni lancer `prisma db push`
+  sans précaution sur ce projet.
+- Dans le MCP Supabase Cursor, choisir le projet **PixelForge** puis cibler le
+  schéma `arbre` dans les requêtes SQL.
+
 ## 5. Aligner les URL
 
-**a. Renseigner `NEXT_PUBLIC_SITE_URL` sur Vercel.**
+**a. Renseigner `NEXT_PUBLIC_SITE_URL` sur Vercel (projet `arbre-leo`).**
 Dans **Settings → Environment Variables**, éditer `NEXT_PUBLIC_SITE_URL`
-et y mettre l'URL de production complète (par exemple
-`https://arbre-leo.vercel.app`). Redéployer (**Deployments → … → Redeploy**).
+et y mettre l'URL de production : `https://arbre.modulyx.eu`.
+Redéployer (**Deployments → … → Redeploy**).
 
-**b. Autoriser cette URL côté Supabase.**
-Dans le tableau de bord Supabase :
+**b. Autoriser les URL côté Supabase (projet partagé).**
+Dans le tableau de bord Supabase → **Authentication → URL Configuration** :
 
-1. **Authentication → URL Configuration**
-   - **Site URL** : `https://arbre-leo.vercel.app` (l'URL Vercel).
-   - **Redirect URLs** : ajouter la même URL, plus les URL de preview si vous
-     voulez tester les branches (par exemple `https://arbre-leo-*.vercel.app`).
-2. Enregistrer.
+1. **Site URL** : URL principale de l'app qui envoie les e-mails (souvent
+   Modulyx). Peut rester `https://modulyx-v3-….vercel.app` si les mails
+   d'auth passent par Modulyx.
+2. **Redirect URLs** : ajouter **les deux** familles d'URL, séparées par des
+   retours à la ligne :
+   - `https://arbre.modulyx.eu/**`
+   - `https://arbre.modulyx.eu/auth/callback`
+   - `https://arbre-leo-*.vercel.app/**` (previews arbre)
+   - URLs Modulyx déjà présentes (ne pas les retirer)
+3. Enregistrer.
 
 Sans cette étape, les liens de confirmation d'inscription envoyés par mail
 pointent vers `http://localhost:3000` et cassent l'inscription des nouveaux
