@@ -18,12 +18,14 @@ export function FichePersonne({
   estFocus,
   onRepartirDIci,
   onFermer,
+  peutDeposerPhoto = false,
 }: {
   personne: PersonneArbre;
   annees: string | null;
   estFocus: boolean;
   onRepartirDIci: () => void;
   onFermer: () => void;
+  peutDeposerPhoto?: boolean;
 }) {
   const cote = coteDesBranches(personne.branches);
   const initiale = (personne.nomComplet.trim().charAt(0) || '?').toUpperCase();
@@ -57,6 +59,14 @@ export function FichePersonne({
           <span className="absolute bottom-2 right-2 rounded-full bg-succes px-2 py-0.5 text-[10px] font-medium text-white">
             Vivant
           </span>
+        )}
+        {peutDeposerPhoto && (
+          <Link
+            href={`/personne/${personne.id}/photo/nouveau`}
+            className="absolute bottom-2 left-2 rounded-full border border-bordure bg-fond-carte/90 px-3 py-1 text-xs font-medium text-encre shadow-[var(--ombre-douce)] backdrop-blur-sm transition hover:bg-fond-carte"
+          >
+            {personne.photoUrl ? 'Changer la photo' : 'Ajouter une photo'}
+          </Link>
         )}
         <button
           type="button"

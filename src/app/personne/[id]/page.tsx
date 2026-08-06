@@ -118,7 +118,13 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
             parente={<ParentePersonne fiche={fiche} />}
             souvenirs={<SouvenirsPersonne souvenirs={fiche.souvenirs} />}
             recits={<RecitsQuiLaMentionnent recits={recits} />}
-            photos={<MediasPersonne medias={fiche.medias} />}
+            photos={
+              <MediasPersonne
+                medias={fiche.medias}
+                personneId={fiche.personne.id}
+                peutDeposer={droits.peutContribuer}
+              />
+            }
             conversation={
               <CommentairesPersonne
                 personneId={fiche.personne.id}

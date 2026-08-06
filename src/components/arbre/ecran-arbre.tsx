@@ -18,10 +18,12 @@ export function EcranArbre({
   graphe,
   focusInitial,
   derniersEnfants,
+  peutDeposerPhoto = false,
 }: {
   graphe: GrapheSerialise;
   focusInitial: string;
   derniersEnfants: string[];
+  peutDeposerPhoto?: boolean;
 }) {
   const router = useRouter();
   const chemin = usePathname();
@@ -138,6 +140,7 @@ export function EcranArbre({
               estFocus={personneSelectionnee.id === focusId}
               onRepartirDIci={() => changerFocus(personneSelectionnee.id)}
               onFermer={() => setSelectionId(null)}
+              peutDeposerPhoto={peutDeposerPhoto}
             />
           </aside>
         )}
@@ -155,6 +158,7 @@ export function EcranArbre({
             estFocus={personneSelectionnee.id === focusId}
             onRepartirDIci={() => changerFocus(personneSelectionnee.id)}
             onFermer={() => setSelectionId(null)}
+            peutDeposerPhoto={peutDeposerPhoto}
           />
         )}
       </PanneauMobile>

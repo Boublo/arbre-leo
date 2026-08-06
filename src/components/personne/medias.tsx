@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Moderation, Rien, Section } from '@/components/personne/blocs';
 import { LIBELLE_MEDIA } from '@/components/personne/vocabulaire';
 import type { MediaFiche } from '@/components/personne/donnees';
@@ -9,13 +10,31 @@ import type { MediaFiche } from '@/components/personne/donnees';
  * heure, jamais par une adresse publique. Un lien recopié dans un message
  * expire donc de lui-même — c'est voulu.
  */
-export function MediasPersonne({ medias }: { medias: MediaFiche[] }) {
+export function MediasPersonne({
+  medias,
+  personneId,
+  peutDeposer = false,
+}: {
+  medias: MediaFiche[];
+  personneId?: string;
+  peutDeposer?: boolean;
+}) {
   return (
     <Section titre="Photographies et actes" compte={medias.length}>
       {medias.length === 0 ? (
         <Rien>
           Aucune image ne lui est encore rattachée. Une photo de mariage, un portrait de
-          communion, la copie d’un acte : tout se dépose.
+          communion, la copie d’un acte :{' '}
+          {peutDeposer && personneId ? (
+            <>
+              <Link href={`/personne/${personneId}/photo/nouveau`} className="lien-discret">
+                déposez-la ici
+              </Link>
+              .
+            </>
+          ) : (
+            <>tout se dépose.</>
+          )}
         </Rien>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2">
@@ -25,6 +44,14 @@ export function MediasPersonne({ medias }: { medias: MediaFiche[] }) {
             </li>
           ))}
         </ul>
+      )}
+
+      {peutDeposer && personneId && (
+        <p className="mt-3 text-sm">
+          <Link href={`/personne/${personneId}/photo/nouveau`} className="lien-discret">
+            Déposer une photo ou un scan
+          </Link>
+        </p>
       )}
     </Section>
   );
