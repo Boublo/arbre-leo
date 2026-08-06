@@ -1,5 +1,5 @@
-import nextDynamic from 'next/dynamic';
 import { Navigation } from '@/components/navigation';
+import { EcranArbreDynamique } from '@/components/arbre/ecran-arbre-dynamique';
 import { lireDroitsSaisie } from '@/components/saisie/donnees';
 import { chargerArbre, derniersEnfants, personneOuDefaut } from '@/lib/arbre';
 import { serialiserGraphe, versPersonneRecherche } from '@/lib/arbre-graphe';
@@ -8,23 +8,6 @@ export const metadata = { title: 'L’arbre' };
 
 // L'arbre change dès qu'un membre corrige une fiche ou saisit une naissance.
 export const dynamic = 'force-dynamic';
-
-const EcranArbre = nextDynamic(
-  () =>
-    import('@/components/arbre/ecran-arbre').then((m) => m.EcranArbre),
-  {
-    ssr: false,
-    loading: () => (
-      <div
-        className="flex flex-1 items-center justify-center p-8 text-encre-douce"
-        role="status"
-        aria-live="polite"
-      >
-        Préparation de l’arbre…
-      </div>
-    ),
-  }
-);
 
 export default async function PageArbre({ searchParams }: PageProps<'/arbre'>) {
   const { personne: focusDemande } = await searchParams;
@@ -63,7 +46,7 @@ export default async function PageArbre({ searchParams }: PageProps<'/arbre'>) {
     <>
       <Navigation compact />
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden h-[calc(100dvh-3.25rem)] max-h-[calc(100dvh-3.25rem)]">
-        <EcranArbre
+        <EcranArbreDynamique
           graphe={graphe}
           recherchePersonnes={recherchePersonnes}
           focusInitial={focusId}
