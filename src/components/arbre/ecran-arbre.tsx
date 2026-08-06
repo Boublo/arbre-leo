@@ -120,8 +120,13 @@ export function EcranArbre({
         son contenu et overflow-y-auto ne défile jamais — régression visible
         dès que la fiche dépasse la hauteur de l'écran (portrait + notes).
       */}
-      <div className="relative flex min-h-0 flex-1 overflow-hidden">
-        <div className="min-h-0 min-w-0 flex-1">
+      {/*
+        Position absolue pour le panneau : en flex-row, un aside dont le contenu
+        dépasse l'écran grossit la ligne et overflow-y-auto ne s'active jamais.
+        inset-y-0 borne la hauteur au cadre visible, le défilement devient fiable.
+      */}
+      <div className="relative min-h-0 flex-1 overflow-hidden">
+        <div className="absolute inset-0 min-h-0 min-w-0">
           <VueArbre
             donnees={donnees}
             disposition={disposition}
@@ -133,7 +138,7 @@ export function EcranArbre({
         </div>
 
         {personneSelectionnee && (
-          <aside className="hidden h-full min-h-0 w-full max-w-sm shrink-0 overflow-y-auto overscroll-y-contain border-l border-bordure bg-fond-carte lg:block">
+          <aside className="absolute inset-y-0 right-0 z-10 hidden w-full max-w-sm overflow-y-auto overscroll-y-contain border-l border-bordure bg-fond-carte [-webkit-overflow-scrolling:touch] lg:block">
             <FichePersonne
               personne={personneSelectionnee}
               annees={anneesDeVie(personneSelectionnee)}

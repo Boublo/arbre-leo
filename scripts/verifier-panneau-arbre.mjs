@@ -3,10 +3,10 @@
  *
  *   node scripts/verifier-panneau-arbre.mjs
  *
- * Après la refonte des cartes (portrait en en-tête de fiche), le contenu du
- * panneau dépasse souvent la hauteur de l'écran. Le défilement ne fonctionne
- * que si la rangée flex et l'aside respectent le contrat min-h-0 — sans quoi
- * le panneau s'étire et overflow-y-auto n'a aucun effet.
+ * Le contenu de la fiche (portrait + notes) dépasse souvent la hauteur de
+ * l'écran. Le défilement ne fonctionne que si le panneau est borné en hauteur
+ * (position absolue inset-y-0) et porte overflow-y-auto — pas en flex-row où
+ * le contenu grossit la ligne et empêche le scroll.
  *
  * Ce script relit le fichier source et refuse de continuer si le contrat est
  * rompu. À lancer après toute modification de l'écran arbre ou de la fiche
@@ -24,14 +24,19 @@ const source = readFileSync(FICHIER, 'utf8');
 
 const CONTRATS = [
   {
-    motif: /relative flex min-h-0 flex-1 overflow-hidden/,
+    motif: /relative min-h-0 flex-1 overflow-hidden/,
     message:
-      'La rangée arbre + panneau doit porter « min-h-0 » pour contraindre la hauteur flex.',
+      'Le cadre arbre + panneau doit porter « relative min-h-0 flex-1 overflow-hidden ».',
   },
   {
-    motif: /aside className="[^"]*\bh-full\b[^"]*\bmin-h-0\b[^"]*\boverflow-y-auto\b/,
+    motif: /absolute inset-0 min-h-0 min-w-0/,
     message:
-      'L’aside du panneau doit avoir h-full, min-h-0 et overflow-y-auto pour défiler.',
+      'L’arbre doit occuper le cadre en position absolue (absolute inset-0) pour ne pas être repoussé par le panneau.',
+  },
+  {
+    motif: /aside className="[^"]*\babsolute\b[^"]*\binset-y-0\b[^"]*\boverflow-y-auto\b/,
+    message:
+      'L’aside du panneau doit être en absolute inset-y-0 avec overflow-y-auto pour défiler.',
   },
 ];
 

@@ -29,14 +29,18 @@ export function PanneauMobile({
       }
     }
 
+    // Sur grand écran le panneau est masqué (lg:hidden) : ne pas verrouiller
+    // le body, sinon le défilement du panneau latéral desktop est bloqué.
+    const mobile = window.matchMedia('(max-width: 1023px)').matches;
     const debordement = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    if (mobile) document.body.style.overflow = 'hidden';
+
     document.addEventListener('keydown', surTouche);
     ref.current?.focus();
 
     return () => {
       document.removeEventListener('keydown', surTouche);
-      document.body.style.overflow = debordement || '';
+      if (mobile) document.body.style.overflow = debordement || '';
     };
   }, [ouvert, onFermer]);
 
@@ -44,13 +48,13 @@ export function PanneauMobile({
 
   return (
     <div
-      className="fixed inset-0 z-30 flex flex-col justify-end lg:hidden"
+      className="fixed inset-0 z-30 flex flex-col lg:hidden"
       role="presentation"
       onClick={(evt) => {
         if (evt.target === evt.currentTarget) onFermer();
       }}
     >
-      <div aria-hidden className="absolute inset-0 bg-encre/40 backdrop-blur-[1px]" />
+      <div aria-hidden className="min-h-0 flex-1 bg-encre/40 backdrop-blur-[1px]" />
 
       <div
         ref={ref}
@@ -58,14 +62,16 @@ export function PanneauMobile({
         aria-modal="true"
         aria-label={etiquette}
         tabIndex={-1}
-        className="panneau-bas-entree relative max-h-[min(85dvh,100%)] overflow-y-auto rounded-t-2xl border-t border-bordure bg-fond-carte shadow-[var(--ombre-forte)] outline-none"
+        className="panneau-bas-entree relative flex max-h-[min(85dvh,100%)] min-h-0 flex-col overflow-hidden rounded-t-2xl border-t border-bordure bg-fond-carte shadow-[var(--ombre-forte)] outline-none"
         onClick={(evt) => evt.stopPropagation()}
       >
         <div
           aria-hidden
           className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-bordure-forte"
         />
-        {children}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] touch-pan-y">
+          {children}
+        </div>
       </div>
 
       <style>{`
