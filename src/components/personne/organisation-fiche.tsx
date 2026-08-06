@@ -75,7 +75,7 @@ export function OrganisationFiche({
     { id: 'vue', libelle: libelle('Vue d’ensemble', compteurs.vue) },
     { id: 'parente', libelle: libelle('Parenté', compteurs.parente) },
     { id: 'souvenirs', libelle: libelle('Souvenirs', compteurs.souvenirs) },
-    { id: 'photos', libelle: libelle('Photos et actes', compteurs.photos) },
+    { id: 'photos', libelle: libelle('Album', compteurs.photos) },
     { id: 'conversation', libelle: libelle('Conversation', compteurs.conversation) },
   ];
 
@@ -129,7 +129,7 @@ function libelleBrut(id: IdOnglet): string {
     vue: 'Vue d’ensemble',
     parente: 'Parenté',
     souvenirs: 'Souvenirs',
-    photos: 'Photos et actes',
+    photos: 'Album',
     conversation: 'Conversation',
   };
   return table[id];
