@@ -1,9 +1,9 @@
 # Audit complet — L'arbre de Léo
 
-Dernière mise à jour : 6 août 2026 — **v1 fondations** (sécurité RPC + perf + a11y contraste).
+Dernière mise à jour : 6 août 2026 — **v1 + v2** (sécurité, lisibilité, perf perçue).
 
 > Revue senior du 6 août 2026 : voir le rapport d'audit cloud agent.
-> Correctifs v1 déjà appliqués ci-dessous ; le reste du plan reste ouvert.
+> Correctifs v1 et v2 déjà appliqués ci-dessous ; v3 (immersion) reste ouvert.
 
 ---
 
@@ -17,6 +17,17 @@ Dernière mise à jour : 6 août 2026 — **v1 fondations** (sécurité RPC + pe
 ✓ P2  React.cache sur chargerArbre + option signerPhotosPour: 'aucun'
 ✓ S4  Headers sécurité (CSP, frame-ancestors, nosniff…) dans next.config.ts
 ✓     .env.example versionné (!.env.example dans .gitignore)
+```
+
+## Correctifs v2 (août 2026)
+
+```
+✓ U1  Hero accueil allégé (composition marque + CTA ; reste sous la ligne)
+✓ U2  Navigation groupée Raconter / Chercher / Outils (+ clavier menu Plus)
+✓ P3  DTO arbre sans notes + dynamic import EcranArbre
+✓ S2  Storage SELECT restreint + préfixe {userId}/ à l’upload (0016)
+✓ S3  Tables liées aux fiches confidentielles filtrées (0016)
+✓ AX3 Flèches clavier sur l’arbre (voisin spatial)
 ```
 
 ---
