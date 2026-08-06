@@ -5,7 +5,12 @@
  *
  * Le contenu de la fiche (portrait + notes) dépasse souvent la hauteur de
  * l'écran. Le défilement ne fonctionne que si le panneau est borné en hauteur
- * (position absolue inset-y-0) et porte overflow-y-auto.
+ * (position absolue inset-y-0) et porte overflow-y-auto — pas en flex-row où
+ * le contenu grossit la ligne et empêche le scroll.
+ *
+ * Ce script relit le fichier source et refuse de continuer si le contrat est
+ * rompu. À lancer après toute modification de l'écran arbre ou de la fiche
+ * latérale.
  */
 
 import { readFileSync } from 'node:fs';

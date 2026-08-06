@@ -185,6 +185,17 @@ export function EcranArbre({
         </p>
       )}
 
+      {/* --- Arbre et panneau ---------------------------------------------- */}
+      {/*
+        min-h-0 sur la rangée flex : sans lui, le panneau latéral s'étire avec
+        son contenu et overflow-y-auto ne défile jamais — régression visible
+        dès que la fiche dépasse la hauteur de l'écran (portrait + notes).
+      */}
+      {/*
+        Position absolue pour le panneau : en flex-row, un aside dont le contenu
+        dépasse l'écran grossit la ligne et overflow-y-auto ne s'active jamais.
+        inset-y-0 borne la hauteur au cadre visible, le défilement devient fiable.
+      */}
       <div className="relative min-h-0 flex-1 overflow-hidden">
         <div className="absolute inset-0 min-h-0 min-w-0">
           <VueArbre
