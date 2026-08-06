@@ -1,6 +1,7 @@
 import { FriseVie, type EvenementFrise } from '@/components/portrait/frise-vie';
 import type { Portrait } from '@/components/portrait/types';
 import type { EvenementFiche, Fiche } from '@/components/personne/donnees';
+import { personneEstVivante } from '@/lib/vivant';
 
 /**
  * La frise de vie, sortie au bon format depuis la fiche.
@@ -22,7 +23,7 @@ export function FriseFiche({ fiche }: { fiche: Fiche }) {
     surnom: personne.surnom,
     sexe: personne.sexe,
     branches: personne.branches ?? [],
-    presumeVivant: personne.presume_vivant,
+    presumeVivant: personneEstVivante(personne.presume_vivant, { aEvenementFinDeVie: Boolean(deces) }),
     anneeNaissance: naissance?.annee ?? null,
     anneeDeces: deces?.annee ?? null,
     lieuNaissance: naissance?.lieuCourt ?? null,
