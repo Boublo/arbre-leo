@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import type { PersonneArbre } from '@/lib/arbre';
+import { coteDesBranches, LIBELLE_COTE, TON_COTE } from '@/lib/branches';
 import { PREUVES, trierParFiabilite } from '@/lib/preuves';
 
 /**
@@ -24,113 +25,150 @@ export function FichePersonne({
   onRepartirDIci: () => void;
   onFermer: () => void;
 }) {
+  const cote = coteDesBranches(personne.branches);
+  const initiale = (personne.nomComplet.trim().charAt(0) || '?').toUpperCase();
+
   return (
-    <div className="flex flex-col gap-5 p-5">
-      <div className="flex items-start justify-between gap-3">
+    <div className="flex flex-col">
+      {/* Portrait en en-tête — même logique que les cartes de l'arbre */}
+      <div className="relative aspect-[5/3] w-full overflow-hidden bg-fond-doux">
+        {personne.photoUrl ? (
+          /* eslint-disable-next-line @next/next/no-img-element -- URL signée temporaire */
+          <img
+            src={personne.photoUrl}
+            alt={`Portrait de ${personne.nomComplet}`}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div
+            aria-hidden
+            className="flex h-full w-full items-center justify-center text-6xl text-encre-tres-douce"
+            style={{ fontFamily: 'var(--font-titre)' }}
+          >
+            {initiale}
+          </div>
+        )}
+        <span
+          aria-hidden
+          className="absolute left-0 top-0 h-full w-1"
+          style={{ background: TON_COTE[cote] }}
+        />
+        {personne.presumeVivant && (
+          <span className="absolute bottom-2 right-2 rounded-full bg-succes px-2 py-0.5 text-[10px] font-medium text-white">
+            Vivant
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={onFermer}
+          aria-label="Fermer le panneau"
+          className="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-full border border-bordure bg-fond-carte/90 text-encre-douce shadow-[var(--ombre-douce)] backdrop-blur-sm hover:bg-fond-carte"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-5 p-5">
         <div>
-          <h2 className="text-xl leading-tight">{personne.nomComplet}</h2>
+          <p className="text-xs font-medium uppercase tracking-wider text-encre-tres-douce">
+            {LIBELLE_COTE[cote]}
+          </p>
+          <h2 className="mt-1 text-xl leading-tight">{personne.nomComplet}</h2>
           {personne.surnom && (
             <p className="text-sm text-encre-douce">
               dit{personne.sexe === 'F' ? 'e' : ''} « {personne.surnom} »
             </p>
           )}
           {annees && <p className="mt-0.5 text-sm text-encre-tres-douce">{annees}</p>}
+          {personne.profession && (
+            <p className="mt-1 text-sm text-encre-douce">{personne.profession}</p>
+          )}
         </div>
-        <button
-          type="button"
-          onClick={onFermer}
-          aria-label="Fermer le panneau"
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-[var(--rayon-petit)] text-encre-douce hover:bg-fond-doux sm:h-8 sm:w-8"
-        >
-          ✕
-        </button>
-      </div>
 
-      <dl className="flex flex-col gap-3 text-sm">
-        {personne.naissance && (
-          <Ligne terme="Naissance">
-            {personne.naissance.texte || 'Date inconnue'}
-            {personne.naissance.lieu && (
-              <span className="block text-encre-tres-douce">{personne.naissance.lieu}</span>
-            )}
-          </Ligne>
+        <dl className="flex flex-col gap-3 text-sm">
+          {personne.naissance && (
+            <Ligne terme="Naissance">
+              {personne.naissance.texte || 'Date inconnue'}
+              {personne.naissance.lieu && (
+                <span className="block text-encre-tres-douce">{personne.naissance.lieu}</span>
+              )}
+            </Ligne>
+          )}
+
+          {personne.deces ? (
+            <Ligne terme="Décès">
+              {personne.deces.texte || 'Date inconnue'}
+              {personne.deces.lieu && (
+                <span className="block text-encre-tres-douce">{personne.deces.lieu}</span>
+              )}
+            </Ligne>
+          ) : personne.presumeVivant ? (
+            <Ligne terme="Décès">
+              <span className="text-encre-tres-douce">Aucun décès connu.</span>
+            </Ligne>
+          ) : null}
+        </dl>
+
+        {personne.niveauxPreuve.length > 0 && (
+          <div>
+            <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-encre-tres-douce">
+              Ce qui l’atteste
+            </h3>
+            <ul className="flex flex-col gap-1.5">
+              {trierParFiabilite(personne.niveauxPreuve).map((niveau) => {
+                const p = PREUVES[niveau];
+                return (
+                  <li key={niveau} className="flex items-start gap-2 text-xs">
+                    <span
+                      className="mt-1 h-2 w-2 shrink-0 rounded-full"
+                      style={{ background: p.ton }}
+                      aria-hidden
+                    />
+                    <span>
+                      <span className="font-medium text-encre">{p.libelle}</span>
+                      <span className="block text-encre-douce">{p.explication}</span>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         )}
 
-        {personne.deces ? (
-          <Ligne terme="Décès">
-            {personne.deces.texte || 'Date inconnue'}
-            {personne.deces.lieu && (
-              <span className="block text-encre-tres-douce">{personne.deces.lieu}</span>
-            )}
-          </Ligne>
-        ) : personne.presumeVivant ? (
-          <Ligne terme="Décès">
-            <span className="text-encre-tres-douce">Aucun décès connu.</span>
-          </Ligne>
-        ) : null}
+        {personne.notes && (
+          <div>
+            <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-encre-tres-douce">
+              Notes d’enquête
+            </h3>
+            <p className="whitespace-pre-line text-sm leading-relaxed text-encre-douce">
+              {extraire(personne.notes, 700)}
+            </p>
+          </div>
+        )}
 
-        {personne.profession && <Ligne terme="Métier">{personne.profession}</Ligne>}
-      </dl>
-
-      {personne.niveauxPreuve.length > 0 && (
-        <div>
-          <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-encre-tres-douce">
-            Ce qui l’atteste
-          </h3>
-          <ul className="flex flex-col gap-1.5">
-            {trierParFiabilite(personne.niveauxPreuve).map((niveau) => {
-              const p = PREUVES[niveau];
-              return (
-                <li key={niveau} className="flex items-start gap-2 text-xs">
-                  <span
-                    className="mt-1 h-2 w-2 shrink-0 rounded-full"
-                    style={{ background: p.ton }}
-                    aria-hidden
-                  />
-                  <span>
-                    <span className="font-medium text-encre">{p.libelle}</span>
-                    <span className="block text-encre-tres-douce">{p.explication}</span>
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
-
-      {personne.notes && (
-        <div>
-          <h3 className="mb-2 text-xs font-medium uppercase tracking-wider text-encre-tres-douce">
-            Notes d’enquête
-          </h3>
-          <p className="whitespace-pre-line text-sm leading-relaxed text-encre-douce">
-            {extraire(personne.notes, 700)}
-          </p>
-        </div>
-      )}
-
-      <div className="flex flex-col gap-2">
-        {!estFocus && (
-          <button
-            type="button"
-            onClick={onRepartirDIci}
-            className="rounded-[var(--rayon-petit)] bg-accent px-4 py-2.5 text-sm font-medium text-accent-contraste transition hover:brightness-110"
+        <div className="flex flex-col gap-2">
+          {!estFocus && (
+            <button
+              type="button"
+              onClick={onRepartirDIci}
+              className="rounded-[var(--rayon-petit)] bg-accent px-4 py-2.5 text-sm font-medium text-accent-contraste transition hover:brightness-110"
+            >
+              Repartir d’ici
+            </button>
+          )}
+          <Link
+            href={`/personne/${personne.id}`}
+            className="rounded-[var(--rayon-petit)] border border-bordure px-4 py-2.5 text-center text-sm text-encre transition hover:bg-fond-doux"
           >
-            Repartir d’ici
-          </button>
-        )}
-        <Link
-          href={`/personne/${personne.id}`}
-          className="rounded-[var(--rayon-petit)] border border-bordure px-4 py-2.5 text-center text-sm text-encre transition hover:bg-fond-doux"
-        >
-          Ouvrir sa fiche complète
-        </Link>
-        <Link
-          href={`/chronologie?personne=${encodeURIComponent(personne.id)}`}
-          className="lien-discret text-center text-xs"
-        >
-          Voir sa chronologie
-        </Link>
+            Ouvrir sa fiche complète
+          </Link>
+          <Link
+            href={`/chronologie?personne=${encodeURIComponent(personne.id)}`}
+            className="lien-discret text-center text-xs"
+          >
+            Voir sa chronologie
+          </Link>
+        </div>
       </div>
     </div>
   );

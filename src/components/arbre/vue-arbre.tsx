@@ -4,8 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { select } from 'd3-selection';
 import { zoom, zoomIdentity, type ZoomBehavior } from 'd3-zoom';
-import type { DonneesArbre, PersonneArbre } from '@/lib/arbre';
-import { anneesDeVie } from '@/lib/arbre-graphe';
+import type { DonneesArbre } from '@/lib/arbre';
 import {
   ESPACEMENT_Y,
   HAUTEUR_NOEUD,
@@ -19,13 +18,7 @@ import { MenuContextuel, type ActionContexte } from '@/components/arbre/menu-con
 import { BandeauAide } from '@/components/arbre/bandeau-aide';
 import { Legende } from '@/components/arbre/legende';
 import { LiensFamille } from '@/components/arbre/liens-famille';
-import { iconesPour, IconeSvg } from '@/components/arbre/icones-richesse';
-
-const COULEUR_COTE = {
-  paternelle: { trait: 'var(--paternelle)', fond: 'var(--paternelle-douce)' },
-  maternelle: { trait: 'var(--maternelle)', fond: 'var(--maternelle-douce)' },
-  commune: { trait: 'var(--commune)', fond: 'var(--fond-doux)' },
-} as const;
+import { CarteNoeud } from '@/components/arbre/carte-noeud';
 
 type EtatMenu = { personneId: string; x: number; y: number } | null;
 
@@ -241,7 +234,7 @@ export function VueArbre({
 
   const focus = donnees.personnes.get(focusId);
   const prenomFocus = focus?.prenoms?.split(' ')[0] ?? focus?.nomComplet ?? '';
-  const detaille = transform.k > 0.45;
+  const detaille = transform.k > 0.32;
   const personneMenu = menu ? donnees.personnes.get(menu.personneId) ?? null : null;
 
   return (
@@ -274,12 +267,20 @@ export function VueArbre({
         aria-label="Arbre généalogique. Glissez pour vous déplacer, pincez pour zoomer, appuyez sur une personne pour l’ouvrir."
       >
         <defs>
-          <pattern id="grille" width="40" height="40" patternUnits="userSpaceOnUse">
-            <circle cx="1" cy="1" r="1" fill="var(--bordure)" opacity="0.5" />
+          <pattern id="grille" width="48" height="48" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="0.8" fill="var(--bordure)" opacity="0.35" />
           </pattern>
+          <filter id="ombre-noeud" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="2" stdDeviation="4" floodColor="#211c17" floodOpacity="0.1" />
+          </filter>
+          <radialGradient id="vignette-arbre" cx="50%" cy="50%" r="70%">
+            <stop offset="70%" stopColor="transparent" />
+            <stop offset="100%" stopColor="var(--fond)" stopOpacity="0.45" />
+          </radialGradient>
         </defs>
 
         <rect width="100%" height="100%" fill="url(#grille)" />
+        <rect width="100%" height="100%" fill="url(#vignette-arbre)" pointerEvents="none" />
 
         <g ref={groupeRef}>
           {/* Repères de rang, en marge */}
@@ -351,26 +352,27 @@ export function VueArbre({
 
           {/* Personnes */}
           <g>
-            {disposition.noeuds.map((noeud) => (
-              <Noeud
-                key={noeud.personneId}
-                noeud={noeud}
-                personne={donnees.personnes.get(noeud.personneId)}
-                estFocus={noeud.personneId === focusId}
-                selectionne={personneSelectionnee === noeud.personneId}
-                detaille={detaille}
-                onClick={() => onSelection(noeud.personneId)}
-                onDoubleClick={() => onRecentrer(noeud.personneId)}
-                onMenu={(evenement) => ouvrirMenu(noeud.personneId, evenement)}
-                onAjouterEnfant={(personne) => {
-                  // Le formulaire d'ajout attend `pere` ou `mere` selon le sexe
-                  // du parent pressenti — féminin d'un côté, masculin ou inconnu
-                  // de l'autre, faute de mieux.
-                  const cle = personne.sexe === 'F' ? 'mere' : 'pere';
-                  router.push(`/personne/nouvelle?${cle}=${personne.id}`);
-                }}
-              />
-            ))}
+            {disposition.noeuds.map((noeud) => {
+              const personne = donnees.personnes.get(noeud.personneId);
+              if (!personne) return null;
+              return (
+                <CarteNoeud
+                  key={noeud.personneId}
+                  noeud={noeud}
+                  personne={personne}
+                  estFocus={noeud.personneId === focusId}
+                  selectionne={personneSelectionnee === noeud.personneId}
+                  detaille={detaille}
+                  onClick={() => onSelection(noeud.personneId)}
+                  onDoubleClick={() => onRecentrer(noeud.personneId)}
+                  onMenu={(evenement) => ouvrirMenu(noeud.personneId, evenement)}
+                  onAjouterEnfant={(p) => {
+                    const cle = p.sexe === 'F' ? 'mere' : 'pere';
+                    router.push(`/personne/nouvelle?${cle}=${p.id}`);
+                  }}
+                />
+              );
+            })}
           </g>
         </g>
       </svg>
@@ -457,260 +459,6 @@ export function VueArbre({
       )}
     </div>
   );
-}
-
-// ---------------------------------------------------------------------------
-
-function Noeud({
-  noeud,
-  personne,
-  estFocus,
-  selectionne,
-  detaille,
-  onClick,
-  onDoubleClick,
-  onMenu,
-  onAjouterEnfant,
-}: {
-  noeud: NoeudArbre;
-  personne: PersonneArbre | undefined;
-  estFocus: boolean;
-  selectionne: boolean;
-  detaille: boolean;
-  onClick: () => void;
-  onDoubleClick: () => void;
-  onMenu: (evenement: React.MouseEvent) => void;
-  onAjouterEnfant: (personne: PersonneArbre) => void;
-}) {
-  if (!personne) return null;
-
-  const couleurs = COULEUR_COTE[noeud.cote];
-  const vie = anneesDeVie(personne);
-  const icones = detaille ? iconesPour(personne) : [];
-  const couleurIcone = estFocus ? 'var(--accent-contraste)' : 'var(--encre-douce)';
-
-  return (
-    <g
-      transform={`translate(${noeud.x - LARGEUR_NOEUD / 2}, ${noeud.y})`}
-      onClick={onClick}
-      onDoubleClick={onDoubleClick}
-      onContextMenu={onMenu}
-      className="cursor-pointer"
-      role="button"
-      tabIndex={0}
-      aria-label={`${personne.nomComplet}${vie ? `, ${vie}` : ''}`}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onClick();
-        }
-      }}
-    >
-      {/* Fond doré pour la personne choisie : ce n'est pas juste un contour,
-          c'est un fond patiné, comme un cadre autour d'un portrait. */}
-      <rect
-        width={LARGEUR_NOEUD}
-        height={HAUTEUR_NOEUD}
-        rx={10}
-        fill={estFocus ? 'var(--accent)' : couleurs.fond}
-        stroke={selectionne ? 'var(--accent)' : couleurs.trait}
-        strokeWidth={selectionne ? 3 : estFocus ? 2 : noeud.lien === 'collateral' ? 1 : 1.5}
-        strokeDasharray={noeud.lien === 'collateral' || noeud.lien === 'conjoint' ? '4 3' : undefined}
-      />
-
-      {/* Un liseré rappelle les personnes encore vivantes : leurs données
-          appellent plus de retenue si l'écran est montré à l'extérieur. */}
-      {personne.presumeVivant && !estFocus && (
-        <rect x={0} y={0} width={4} height={HAUTEUR_NOEUD} rx={2} fill="var(--succes)" opacity={0.7} />
-      )}
-
-      {/* Avatar : la photo de profil rend le nœud immédiatement reconnaissable.
-          Cerclée pour ne pas rompre la géométrie carrée du nœud, tronquée par
-          un clipPath — sans clipPath, une image dépasserait le rectangle. */}
-      {personne.photoUrl && detaille && (
-        <>
-          <defs>
-            <clipPath id={`clip-avatar-${personne.id}`}>
-              <circle cx={22} cy={HAUTEUR_NOEUD / 2} r={16} />
-            </clipPath>
-          </defs>
-          <image
-            href={personne.photoUrl}
-            x={6}
-            y={HAUTEUR_NOEUD / 2 - 16}
-            width={32}
-            height={32}
-            preserveAspectRatio="xMidYMid slice"
-            clipPath={`url(#clip-avatar-${personne.id})`}
-          />
-          <circle
-            cx={22}
-            cy={HAUTEUR_NOEUD / 2}
-            r={16}
-            fill="none"
-            stroke={couleurs.trait}
-            strokeWidth={1.5}
-            opacity={0.6}
-          />
-        </>
-      )}
-
-      <text
-        x={personne.photoUrl && detaille ? 46 : LARGEUR_NOEUD / 2}
-        y={detaille ? (personne.surnom ? 22 : 24) : 38}
-        textAnchor={personne.photoUrl && detaille ? 'start' : 'middle'}
-        className={estFocus ? 'fill-[var(--accent-contraste)]' : 'fill-[var(--encre)]'}
-        style={{ fontFamily: 'var(--font-titre)', fontSize: 14, fontWeight: 600 }}
-      >
-        {tronquer(personne.nomComplet, personne.photoUrl && detaille ? 18 : 22)}
-      </text>
-
-      {detaille && (
-        <>
-          {/* Le surnom, quand il y en a un : discret, en italique, juste sous
-              le nom. « dit Papou », « dite Mémé » — selon le sexe. */}
-          {personne.surnom && (
-            <text
-              x={personne.photoUrl ? 46 : LARGEUR_NOEUD / 2}
-              y={34}
-              textAnchor={personne.photoUrl ? 'start' : 'middle'}
-              className={estFocus ? 'fill-[var(--accent-contraste)]' : 'fill-[var(--encre-douce)]'}
-              style={{ fontSize: 10.5, fontStyle: 'italic' }}
-              opacity={0.9}
-            >
-              {personne.sexe === 'F' ? 'dite' : 'dit'}{' '}
-              {tronquer(personne.surnom, personne.photoUrl ? 18 : 24)}
-            </text>
-          )}
-          {vie && (
-            <text
-              x={personne.photoUrl ? 46 : LARGEUR_NOEUD / 2}
-              y={personne.surnom ? 48 : 41}
-              textAnchor={personne.photoUrl ? 'start' : 'middle'}
-              className={estFocus ? 'fill-[var(--accent-contraste)]' : 'fill-[var(--encre-douce)]'}
-              style={{ fontSize: 11.5 }}
-              opacity={0.9}
-            >
-              {vie}
-            </text>
-          )}
-          {personne.naissance?.lieuCourt && (
-            <text
-              x={personne.photoUrl ? 46 : LARGEUR_NOEUD / 2}
-              y={personne.surnom ? 60 : 55}
-              textAnchor={personne.photoUrl ? 'start' : 'middle'}
-              className={
-                estFocus ? 'fill-[var(--accent-contraste)]' : 'fill-[var(--encre-tres-douce)]'
-              }
-              style={{ fontSize: 10.5 }}
-              opacity={0.85}
-            >
-              {tronquer(personne.naissance.lieuCourt, personne.photoUrl ? 20 : 26)}
-            </text>
-          )}
-
-          {/* Icônes de richesse — alignées en bas à droite du nœud. */}
-          {icones.length > 0 && (
-            <g>
-              {icones.map((type, index) => (
-                <IconeSvg
-                  key={type}
-                  type={type}
-                  x={LARGEUR_NOEUD - 10 - index * 13}
-                  y={HAUTEUR_NOEUD - 8}
-                  couleur={couleurIcone}
-                />
-              ))}
-            </g>
-          )}
-
-          {/* Descendance à compléter : petite pastille discrète, hors du cadre
-              pour ne pas empiéter sur les icônes de richesse ni sur le nom. */}
-          {personne.descendanceIncomplete && (
-            <IndicateurDescendance
-              personne={personne}
-              estFocus={estFocus}
-              onAjouterEnfant={onAjouterEnfant}
-            />
-          )}
-        </>
-      )}
-    </g>
-  );
-}
-
-/**
- * Pastille silencieuse à la sortie bas-droit du nœud : rappelle qu'ici, la
- * descendance n'est peut-être pas complète. Un clic conduit au formulaire
- * d'ajout, déjà rattaché à cette personne comme parent probable.
- */
-function IndicateurDescendance({
-  personne,
-  estFocus,
-  onAjouterEnfant,
-}: {
-  personne: PersonneArbre;
-  estFocus: boolean;
-  onAjouterEnfant: (personne: PersonneArbre) => void;
-}) {
-  // On centre la pastille sur le coin bas-droit du nœud : elle en dépasse à
-  // moitié, ce qui la distingue nettement des icônes de richesse et évite le
-  // chevauchement.
-  const cx = LARGEUR_NOEUD - 4;
-  const cy = HAUTEUR_NOEUD - 4;
-  const rayon = 8;
-
-  const traitTeinte = estFocus ? 'var(--accent-contraste)' : 'var(--encre-douce)';
-  const fondTeinte = estFocus ? 'var(--accent)' : 'var(--fond-carte)';
-  const libelle = 'Descendance à compléter ? Ajouter un enfant';
-
-  return (
-    <g
-      className="cursor-pointer"
-      role="button"
-      aria-label={libelle}
-      tabIndex={0}
-      onClick={(e) => {
-        e.stopPropagation();
-        onAjouterEnfant(personne);
-      }}
-      onDoubleClick={(e) => e.stopPropagation()}
-      onContextMenu={(e) => e.stopPropagation()}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          e.stopPropagation();
-          onAjouterEnfant(personne);
-        }
-      }}
-    >
-      <title>{libelle}</title>
-      <circle
-        cx={cx}
-        cy={cy}
-        r={rayon}
-        fill={fondTeinte}
-        stroke={traitTeinte}
-        strokeWidth={1}
-        opacity={0.9}
-      />
-      {/* Chevron discret pointé vers le bas : « quelque chose sous cette
-          personne peut manquer ». Deux segments plutôt qu'une flèche pleine,
-          pour rester à peine marqué. */}
-      <path
-        d={`M ${cx - 3} ${cy - 1.5} L ${cx} ${cy + 1.5} L ${cx + 3} ${cy - 1.5}`}
-        fill="none"
-        stroke={traitTeinte}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </g>
-  );
-}
-
-function tronquer(texte: string, max: number) {
-  return texte.length <= max ? texte : `${texte.slice(0, max - 1)}…`;
 }
 
 function BoutonRond({

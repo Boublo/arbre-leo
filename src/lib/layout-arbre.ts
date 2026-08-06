@@ -79,10 +79,13 @@ export type Disposition = {
   rangRacine: number;
 };
 
-export const ESPACEMENT_X = 210;
-export const ESPACEMENT_Y = 150;
-export const LARGEUR_NOEUD = 180;
-export const HAUTEUR_NOEUD = 64;
+export const ESPACEMENT_X = 240;
+export const ESPACEMENT_Y = 175;
+export const LARGEUR_NOEUD = 200;
+export const HAUTEUR_NOEUD = 90;
+/** Bandeau photo à gauche de chaque carte dans l'arbre SVG. */
+export const LARGEUR_PHOTO_NOEUD = 54;
+export const RAYON_NOEUD = 12;
 
 /** Garde-fou : au-delà, la vue devient illisible et le calcul coûteux. */
 const RANG_MAX = 25;

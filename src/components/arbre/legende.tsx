@@ -24,6 +24,16 @@ export function Legende() {
       <Separateur />
 
       <span className="flex items-center gap-1.5">
+        <span className="flex h-4 w-7 overflow-hidden rounded-[3px] border border-bordure bg-fond-doux">
+          <span className="h-full w-2 bg-paternelle" />
+          <span className="flex-1 bg-fond-carte" />
+        </span>
+        Portrait (photo ou initiale)
+      </span>
+
+      <Separateur />
+
+      <span className="flex items-center gap-1.5">
         <svg width={22} height={8} aria-hidden>
           <line x1={1} y1={4} x2={21} y2={4} stroke="var(--or)" strokeWidth={3} opacity={0.85} />
         </svg>
