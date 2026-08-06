@@ -1,6 +1,6 @@
 # Audit complet — L'arbre de Léo
 
-Dernière mise à jour : 6 août 2026 — correctifs audit (C1–C3, H1, H4, M4).
+Dernière mise à jour : 6 août 2026 — couples atomiques (M1) + correctifs audit.
 
 Ce document recense **où ça coince**, **pourquoi**, et **dans quel ordre corriger**.
 
@@ -10,11 +10,11 @@ Ce document recense **où ça coince**, **pourquoi**, et **dans quel ordre corri
 
 | Zone | Verdict | Problème principal |
 | --- | --- | --- |
-| **Liens de l'arbre** | Amélioré | Conjoints rapprochés, fratrie ≠ conjoint, ponts longs supprimés |
+| **Liens de l'arbre** | Bon | Conjoints collés (blocs atomiques), fratrie ≠ conjoint |
 | **Cartes personnes** | Bon | Portraits OK ; badge « Fratrie » + contour plein |
 | **Site global** | Bon | 32 routes, auth, navigation améliorées |
-| **Performance `/arbre`** | Amélioré | Sous-graphe + photos signées ciblées + refresh 45 min |
-| **Tests auto** | Moyen | Scripts grep + seuils géométriques documentés |
+| **Performance `/arbre`** | Acceptable | Graphe complet (nécessaire à l'ascendance) + refresh photos |
+| **Tests auto** | Bon | Suite `npm run arbre:verifier` (8 checks + CI) |
 
 ### Correctifs appliqués (audit)
 
@@ -23,8 +23,9 @@ Ce document recense **où ça coince**, **pourquoi**, et **dans quel ordre corri
 ✓ C2  Layout famille : rapprocherConjointsSurRang après chaque rangée
 ✓ C3  (suit C2) + pas de barre dorée horizontale si distance > 320 px
 ✓ H1  Mode par défaut « La famille autour », mémorisé dans localStorage
-✓ H2  Sous-graphe autour du focus (±4 sauts) + refresh photos /api/arbre/photos
+✓ H2  Refresh photos /api/arbre/photos (sous-graphe retiré : tronquait l'ascendance)
 ✓ H4  URL ?suite= conservée vers /attente pour les membres en attente
+✓ M1  Couples = blocs atomiques (personne ne s'intercale entre époux)
 ✓ M4  Barre de fratrie minimale (20 px) pour enfant unique
 ✓ M5  Médias filtrés par photo_id référencés (plus de scan de tout le bucket)
 ✓ M2  Badge COUSIN distinct de FRATRIE (lien + cartes + légende)
@@ -165,12 +166,12 @@ Redirection vers `/attente` sans conserver `?suite=/arbre?personne=…`.
 
 | ID | Problème | Fichier | Correction |
 | --- | --- | --- | --- |
-| M1 | `ecarterCollisions` sépare des conjoints déjà adjacents | `layout-arbre.ts` | Traiter les couples comme groupes atomiques |
-| M2 | Cousin et frère : même `lien: collateral` | `layout-arbre.ts` | Sous-types ou badges |
+| M1 | `ecarterCollisions` sépare des conjoints déjà adjacents | `layout-arbre.ts` | **Corrigé** — couples = unités atomiques |
+| M2 | Cousin et frère : même `lien: collateral` | `layout-arbre.ts` | **Corrigé** — sous-type `cousin` + badges |
 | M3 | Mode éclaté : que des L orthogonaux, illisible | `geometrie-liens.ts` | Pedigree partiel ou avertissement UI |
-| M4 | Enfant unique : barre fratrie invisible (x1=x2) | `geometrie-liens.ts` | Barre minimale 20 px |
-| M5 | `chargerArbre()` charge **toutes** les photos médias | `arbre.ts` | Filtrer par `photo_id` des personnes |
-| M6 | Mobile : pas de mini-carte, repères gauche larges | `vue-arbre.tsx`, `reperes-rang.tsx` | Repères repliables |
+| M4 | Enfant unique : barre fratrie invisible (x1=x2) | `geometrie-liens.ts` | **Corrigé** — barre min 20 px |
+| M5 | `chargerArbre()` charge **toutes** les photos médias | `arbre.ts` | **Corrigé** — filtre `photo_id` |
+| M6 | Mobile : pas de mini-carte, repères gauche larges | `vue-arbre.tsx`, `reperes-rang.tsx` | **Corrigé** |
 | M7 | Photos : initiales si pas de `photoUrl` | Normal | Déposer portraits via fiche / arbre |
 
 ---
@@ -206,10 +207,11 @@ Redirection vers `/attente` sans conserver `?suite=/arbre?personne=…`.
 
 ### 1. Laura + Léo + Julie (focus Laura, « La famille autour »)
 
-- [ ] Léo identifiable comme **frère** (pas contour conjoint)
-- [ ] Barre dorée parents **courte** (entre Pierre et Sophie seulement)
-- [ ] Trait vers Laura+Léo **vertical sous les parents**, pas diagonal 400 px
-- [ ] Julie groupée sous Paul, **sans** trait la traversant
+- [x] Léo identifiable comme **frère** (pas contour conjoint)
+- [x] Barre dorée parents **courte** (entre Pierre et Sophie seulement)
+- [x] Trait vers Laura+Léo **vertical sous les parents**, pas diagonal 400 px
+- [x] Julie groupée sous Paul, **sans** trait la traversant
+- [x] Paul **hors** du couple Pierre–Sophie (couples atomiques)
 
 ### 2. Focus Léo, ascendance
 
@@ -230,7 +232,7 @@ Redirection vers `/attente` sans conserver `?suite=/arbre?personne=…`.
 
 | Module | Note | Commentaire |
 | --- | --- | --- |
-| Arbre | ★★★☆☆ | Cartes bonnes ; **liens + layout famille** à refondre |
+| Arbre | ★★★★☆ | Cartes, liens famille, couples atomiques, garde-fous CI |
 | Fiche personne | ★★★★☆ | Riche, dépôt photo/acte |
 | Chronologie / Carte | ★★★★☆ | Solide |
 | Souvenirs / Récits | ★★★★☆ | Solide |
@@ -257,10 +259,10 @@ Redirection vers `/attente` sans conserver `?suite=/arbre?personne=…`.
 
 ```bash
 npm run build
-node scripts/verifier-liens-famille.mjs      # grep symboles (insuffisant seul)
+npm run arbre:verifier                   # suite anti-régression complète
+node scripts/verifier-liens-famille.mjs  # grep symboles (insuffisant seul)
 node scripts/verifier-navigation-arbre.mjs
 node scripts/verifier-panneau-arbre.mjs
-node scripts/verifier-avant-commit.mjs         # les trois ci-dessus
 ```
 
 ---
