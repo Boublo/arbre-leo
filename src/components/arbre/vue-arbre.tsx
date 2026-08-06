@@ -8,16 +8,14 @@ import type { DonneesArbre } from '@/lib/arbre';
 import {
   ESPACEMENT_Y,
   HAUTEUR_NOEUD,
-  LARGEUR_NOEUD,
   nommerRang,
   type Disposition,
-  type NoeudArbre,
 } from '@/lib/layout-arbre';
 import { MiniMap } from '@/components/arbre/mini-map';
 import { MenuContextuel, type ActionContexte } from '@/components/arbre/menu-contextuel';
 import { BandeauAide } from '@/components/arbre/bandeau-aide';
 import { Legende } from '@/components/arbre/legende';
-import { LiensFamille } from '@/components/arbre/liens-famille';
+import { LiensArbre } from '@/components/arbre/liens-arbre';
 import { CarteNoeud } from '@/components/arbre/carte-noeud';
 
 type EtatMenu = { personneId: string; x: number; y: number } | null;
@@ -297,58 +295,8 @@ export function VueArbre({
             </text>
           ))}
 
-          {/* Filiations */}
-          {disposition.mode === 'famille' ? (
-            <LiensFamille disposition={disposition} donnees={donnees} noeudParId={noeudParId} />
-          ) : (
-            <g fill="none">
-              {disposition.liens.map((lien) => {
-                const enfant = noeudParId.get(lien.enfantId);
-                const parent = noeudParId.get(lien.parentId);
-                if (!enfant || !parent) return null;
-
-                const [haut, bas] = enfant.y <= parent.y ? [enfant, parent] : [parent, enfant];
-                const y1 = haut.y + HAUTEUR_NOEUD;
-                const y2 = bas.y;
-                const milieu = y1 + (y2 - y1) / 2;
-
-                return (
-                  <path
-                    key={lien.id}
-                    d={`M ${haut.x} ${y1} V ${milieu} H ${bas.x} V ${y2}`}
-                    stroke={lien.reprise ? 'var(--or)' : 'var(--bordure-forte)'}
-                    strokeWidth={lien.reprise ? 2 : 1.5}
-                    strokeDasharray={lien.reprise ? '5 4' : undefined}
-                    opacity={0.85}
-                  />
-                );
-              })}
-            </g>
-          )}
-
-          {/* Traits d'union entre conjoints (hors mode famille, déjà tracés là-bas) */}
-          {disposition.mode !== 'famille' && (
-            <g fill="none">
-              {disposition.unions.map((union) => {
-                const a = noeudParId.get(union.aId);
-                const b = noeudParId.get(union.bId);
-                if (!a || !b || a.rang !== b.rang) return null;
-                const y = a.y + HAUTEUR_NOEUD / 2;
-                return (
-                  <line
-                    key={union.id}
-                    x1={Math.min(a.x, b.x) + LARGEUR_NOEUD / 2}
-                    y1={y}
-                    x2={Math.max(a.x, b.x) - LARGEUR_NOEUD / 2}
-                    y2={y}
-                    stroke="var(--or)"
-                    strokeWidth={2}
-                    opacity={0.5}
-                  />
-                );
-              })}
-            </g>
-          )}
+          {/* Filiations et unions — tracé unifié (pedigree + orthogonaux) */}
+          <LiensArbre disposition={disposition} donnees={donnees} noeudParId={noeudParId} />
 
           {/* Personnes */}
           <g>

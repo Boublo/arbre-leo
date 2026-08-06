@@ -549,6 +549,129 @@ function disposerHierarchie(
 // Éclaté : tout le monde autour d'une personne, par distance de parenté
 // ---------------------------------------------------------------------------
 
+/** Distance minimale entre centres de cartes sur une même rangée (px). */
+const ECART_MINIMUM_CENTRES = LARGEUR_NOEUD + 28;
+
+/**
+ * Ordonne une couche BFS : racine d'abord, conjoints côte à côte, fratries
+ * groupées, puis le reste par nom.
+ */
+function ordonnerCoucheEclate(
+  couche: { id: string; lien: LienRacine }[],
+  rang: number,
+  personnes: DonneesArbre['personnes'],
+  unions: DonneesArbre['unions'],
+  place: Map<string, NoeudArbre>
+): { id: string; lien: LienRacine }[] {
+  const parId = new Map(couche.map((e) => [e.id, e]));
+  const utilises = new Set<string>();
+  const resultat: { id: string; lien: LienRacine }[] = [];
+
+  const nom = (id: string) => personnes.get(id)?.nomComplet ?? '';
+
+  const ajouter = (id: string) => {
+    if (utilises.has(id)) return;
+    const entree = parId.get(id);
+    if (!entree) return;
+    resultat.push(entree);
+    utilises.add(id);
+  };
+
+  const partenairePlace = (id: string): NoeudArbre | null => {
+    const personne = personnes.get(id);
+    if (!personne) return null;
+    for (const unionId of personne.unions ?? []) {
+      const union = unions.get(unionId);
+      if (!union) continue;
+      for (const c of [union.conjointA, union.conjointB]) {
+        if (!c || c === id) continue;
+        const noeud = place.get(c);
+        if (noeud && noeud.rang === rang - 1) return noeud;
+      }
+    }
+    return null;
+  };
+
+  const fratrieDe = (id: string): string[] => {
+    const issuDe = personnes.get(id)?.issuDe;
+    if (!issuDe) return [];
+    return (unions.get(issuDe)?.enfants ?? []).filter((f) => f !== id && parId.has(f));
+  };
+
+  const conjointsDe = (id: string): string[] => {
+    const personne = personnes.get(id);
+    if (!personne) return [];
+    const trouves: string[] = [];
+    for (const unionId of personne.unions ?? []) {
+      const union = unions.get(unionId);
+      if (!union) continue;
+      for (const c of [union.conjointA, union.conjointB]) {
+        if (c && c !== id && parId.has(c)) trouves.push(c);
+      }
+    }
+    return trouves;
+  };
+
+  const racine = couche.find((e) => e.lien === 'racine');
+  if (racine) ajouter(racine.id);
+
+  // Conjoints d'une personne déjà posée à la couche précédente.
+  const conjointsLies = couche
+    .filter((e) => e.lien === 'conjoint' && partenairePlace(e.id))
+    .sort(
+      (a, b) =>
+        (partenairePlace(a.id)?.x ?? 0) - (partenairePlace(b.id)?.x ?? 0)
+    );
+  for (const entree of conjointsLies) ajouter(entree.id);
+
+  // Fratries et paires de conjoints dans la couche.
+  const groupes: string[][] = [];
+  for (const entree of couche) {
+    if (utilises.has(entree.id)) continue;
+    const groupe = [entree.id];
+    for (const frere of fratrieDe(entree.id)) {
+      if (!utilises.has(frere) && parId.has(frere)) groupe.push(frere);
+    }
+    for (const conjoint of conjointsDe(entree.id)) {
+      if (!utilises.has(conjoint) && parId.has(conjoint)) groupe.push(conjoint);
+    }
+    groupes.push([...new Set(groupe)].sort((a, b) => nom(a).localeCompare(nom(b), 'fr')));
+  }
+
+  groupes.sort((ga, gb) => nom(ga[0]!).localeCompare(nom(gb[0]!), 'fr'));
+  for (const groupe of groupes) {
+    for (const id of groupe) ajouter(id);
+  }
+
+  for (const entree of couche) ajouter(entree.id);
+
+  return resultat;
+}
+
+/**
+ * Écarte les cartes qui se chevauchent sur une même rangée.
+ */
+function ecarterCollisions(noeuds: NoeudArbre[]): void {
+  const parRang = new Map<number, NoeudArbre[]>();
+  for (const noeud of noeuds) {
+    const liste = parRang.get(noeud.rang) ?? [];
+    liste.push(noeud);
+    parRang.set(noeud.rang, liste);
+  }
+
+  for (const liste of parRang.values()) {
+    liste.sort((a, b) => a.x - b.x);
+    for (let i = 1; i < liste.length; i++) {
+      const prev = liste[i - 1]!;
+      const courant = liste[i]!;
+      const ecart = courant.x - prev.x;
+      if (ecart < ECART_MINIMUM_CENTRES) {
+        courant.x = prev.x + ECART_MINIMUM_CENTRES;
+      }
+    }
+  }
+}
+
 function disposerEclate(donnees: DonneesArbre, racineId: string): Disposition {
   const { parents, enfants, unions, personnes } = donnees;
 
@@ -588,14 +711,7 @@ function disposerEclate(donnees: DonneesArbre, racineId: string): Disposition {
   let rang = 0;
 
   while (couche.length > 0 && rang <= RANG_MAX) {
-    // Les couches lointaines s'élargissent vite ; on les range par nom pour
-    // que l'affichage reste stable d'un chargement à l'autre.
-    const ordonnee = [...couche].sort((a, b) =>
-      (personnes.get(a.id)?.nomComplet ?? '').localeCompare(
-        personnes.get(b.id)?.nomComplet ?? '',
-        'fr'
-      )
-    );
+    const ordonnee = ordonnerCoucheEclate(couche, rang, personnes, unions, place);
 
     ordonnee.forEach((entree, index) => {
       const noeud: NoeudArbre = {
@@ -679,6 +795,8 @@ function finaliser(
     // La personne choisie est en haut ; l'exploration se déroule vers le bas.
     noeud.y = noeud.rang * ESPACEMENT_Y;
   }
+
+  ecarterCollisions(noeuds);
 
   const unionsAffichees: LienUnion[] = [];
   for (const union of donnees.unions.values()) {
