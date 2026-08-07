@@ -57,6 +57,7 @@ export function FormulairePersonne({
   const idLieux = useId();
   const [prenomsSaisis, setPrenomsSaisis] = useState('');
   const [nomSaisi, setNomSaisi] = useState('');
+  const [anneeNaissanceSaisie, setAnneeNaissanceSaisie] = useState('');
 
   // React vide les champs non contrôlés après chaque envoi. Le formulaire est
   // donc remonté avec ce que le serveur vient de nous rendre : une année
@@ -110,7 +111,12 @@ export function FormulairePersonne({
           />
         </div>
 
-        <DoublonsPossibles prenoms={prenomsSaisis} nom={nomSaisi} personnes={personnes} />
+        <DoublonsPossibles
+          prenoms={prenomsSaisis}
+          nom={nomSaisi}
+          anneeNaissance={anneeNaissanceSaisie}
+          personnes={personnes}
+        />
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Champ
@@ -151,6 +157,7 @@ export function FormulairePersonne({
         legende="Sa naissance"
         valeurs={depart.naissance}
         idLieux={idLieux}
+        onChangerAnnee={setAnneeNaissanceSaisie}
       />
 
       <DateEvenement
@@ -247,10 +254,12 @@ export function FormulairePersonne({
 function DoublonsPossibles({
   prenoms,
   nom,
+  anneeNaissance,
   personnes,
 }: {
   prenoms: string;
   nom: string;
+  anneeNaissance: string;
   personnes: OptionPersonne[];
 }) {
   const candidats = useMemo(() => {
@@ -258,13 +267,19 @@ function DoublonsPossibles({
     if (nomNormalise.length < 3) return [];
 
     const termes = [nomNormalise, sansAccent(prenoms.trim())].filter((terme) => terme.length >= 2);
+    const annee = Number(anneeNaissance);
+    const anneeConnue = Number.isInteger(annee) && annee >= 1200 && annee <= new Date().getFullYear();
     return personnes
       .filter((personne) => {
         const identite = sansAccent(personne.nomComplet);
         return termes.every((terme) => identite.includes(terme));
       })
+      .sort((a, b) => {
+        if (!anneeConnue) return 0;
+        return Number(b.anneeNaissance === annee) - Number(a.anneeNaissance === annee);
+      })
       .slice(0, 5);
-  }, [nom, personnes, prenoms]);
+  }, [anneeNaissance, nom, personnes, prenoms]);
 
   if (candidats.length === 0) return null;
 
@@ -280,6 +295,9 @@ function DoublonsPossibles({
             <Link href={`/personne/${personne.id}`} className="lien-discret">
               {personne.nomComplet}
               <span className="text-encre-douce"> — {personne.repere}</span>
+              {personne.anneeNaissance === Number(anneeNaissance) && (
+                <span className="text-encre-douce"> · même année de naissance</span>
+              )}
             </Link>
           </li>
         ))}

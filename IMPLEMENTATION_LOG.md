@@ -29,6 +29,7 @@
 | Aperçu du raccourci | `ADD-001` affiche avant le formulaire le parent, le conjoint ou l’enfant proposé par le raccourci suivi. Il s’agit d’une information modifiable : le formulaire et les validations serveur restent la source de vérité. |
 | Filiation à compléter | `ADD-002` affiche, lorsqu’un seul parent est connu, un raccourci vers le formulaire de rattachement. Il ne propose que de relier une personne déjà dans l’arbre et ne déplace aucune filiation automatiquement. |
 | Choix du foyer | `ADD-002` liste les foyers connus avant d’ajouter un enfant. Chaque raccourci transmet l’union exacte au formulaire ; une personne ayant plusieurs unions ne voit plus un conjoint choisi arbitrairement. |
+| Homonymes et année | `ADD-001` remonte les homonymes dont l’année de naissance correspond à celle saisie et les signale comme tels. L’année est un indice de lecture, jamais un critère de fusion ou de refus. |
 
 +## Lot ROADMAP-001 — 7 août 2026
 

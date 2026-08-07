@@ -33,6 +33,7 @@ export function DateEvenement({
   valeurs,
   idLieux,
   aideLieu,
+  onChangerAnnee,
 }: {
   prefixe: 'naissance' | 'deces' | 'inhumation';
   legende: string;
@@ -41,6 +42,7 @@ export function DateEvenement({
   /** Identifiant de la liste de suggestions de lieux, partagée par le formulaire. */
   idLieux: string;
   aideLieu?: string;
+  onChangerAnnee?: (annee: string) => void;
 }) {
   const [precision, setPrecision] = useState<PrecisionSaisie>(valeurs.precision);
 
@@ -90,6 +92,7 @@ export function DateEvenement({
             min={ANNEE_MIN}
             max={anneeMax()}
             defaultValue={valeurs.annee}
+            onChange={(event) => onChangerAnnee?.(event.currentTarget.value)}
             placeholder="1887"
           />
 
