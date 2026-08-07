@@ -94,14 +94,27 @@ export const LARGEUR_PHOTO_NOEUD = 54;
 export const RAYON_NOEUD = 12;
 
 /** Garde-fou : au-delà, la vue devient illisible et le calcul coûteux. */
-const RANG_MAX = 25;
+/** Profondeur maximale du parcours BFS (mode éclaté « tout l'entourage »). */
+export const RANG_MAX_ECLATE = 25;
+const RANG_MAX = RANG_MAX_ECLATE;
+
+/** Profondeur par défaut du mode « Tout » à l'écran (réglable par l'utilisateur). */
+export const PROFONDEUR_ECLATE_DEFAUT = 8;
+
+export type OptionsDisposition = {
+  /** Nombre maximal de degrés de parenté en mode éclaté (défaut : tout l'entourage). */
+  profondeurEclate?: number;
+};
 
 export function disposerArbre(
   donnees: DonneesArbre,
   racineId: string,
-  mode: ModeArbre = 'ascendance'
+  mode: ModeArbre = 'ascendance',
+  options?: OptionsDisposition
 ): Disposition {
-  if (mode === 'eclate') return disposerEclate(donnees, racineId);
+  if (mode === 'eclate') {
+    return disposerEclate(donnees, racineId, options?.profondeurEclate ?? RANG_MAX);
+  }
   if (mode === 'famille') return disposerFamille(donnees, racineId);
   return disposerHierarchie(donnees, racineId, mode);
 }
@@ -993,7 +1006,11 @@ function recentererFratriesSousCouples(
   }
 }
 
-function disposerEclate(donnees: DonneesArbre, racineId: string): Disposition {
+function disposerEclate(
+  donnees: DonneesArbre,
+  racineId: string,
+  profondeurMax = RANG_MAX
+): Disposition {
   const { parents, enfants, unions, personnes } = donnees;
 
   const noeuds: NoeudArbre[] = [];
@@ -1031,7 +1048,7 @@ function disposerEclate(donnees: DonneesArbre, racineId: string): Disposition {
   let couche = [{ id: racineId, lien: 'racine' as LienRacine }];
   let rang = 0;
 
-  while (couche.length > 0 && rang <= RANG_MAX) {
+  while (couche.length > 0 && rang <= profondeurMax) {
     const ordonnee = ordonnerCoucheEclate(couche, rang, personnes, unions, place);
 
     ordonnee.forEach((entree, index) => {
@@ -1243,6 +1260,6 @@ export const LIBELLE_MODE: Record<ModeArbre, { titre: string; aide: string }> = 
   },
   eclate: {
     titre: 'Tout',
-    aide: 'Tout ce qui l’entoure, rangé par degré de parenté : frères, cousins, conjoints, ancêtres et descendants.',
+    aide: 'L’entourage par degrés de parenté. Réglez l’étendue pour garder une vue lisible.',
   },
 };

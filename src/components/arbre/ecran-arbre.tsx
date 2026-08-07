@@ -16,7 +16,11 @@ import {
   type GrapheSerialise,
   type PersonneRecherche,
 } from '@/lib/arbre-graphe';
-import { disposerArbre, LIBELLE_MODE, type ModeArbre } from '@/lib/layout-arbre';
+import { disposerArbre, LIBELLE_MODE, PROFONDEUR_ECLATE_DEFAUT, type ModeArbre } from '@/lib/layout-arbre';
+import {
+  lireProfondeurEclateInitiale,
+  ReglageProfondeurEclate,
+} from '@/components/arbre/reglage-profondeur-eclate';
 import { urlImpressionArbre } from '@/lib/arbre-impression';
 
 const CLE_MODE_ARBRE = 'arbre-mode';
@@ -81,13 +85,33 @@ export function EcranArbre({
     }
   }, [mode]);
 
+  const [profondeurEclate, setProfondeurEclate] = useState(PROFONDEUR_ECLATE_DEFAUT);
+
+  useEffect(() => {
+    setProfondeurEclate(lireProfondeurEclateInitiale());
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('arbre-profdondeur-eclate', String(profondeurEclate));
+    } catch {
+      /* localStorage indisponible */
+    }
+  }, [profondeurEclate]);
+
   useRafraichirPhotosArbre(graphe, setGraphe);
 
   const donnees = useMemo(() => reconstruireGraphe(graphe), [graphe]);
 
   const disposition = useMemo(
-    () => disposerArbre(donnees, focusId, mode),
-    [donnees, focusId, mode]
+    () =>
+      disposerArbre(
+        donnees,
+        focusId,
+        mode,
+        mode === 'eclate' ? { profondeurEclate } : undefined
+      ),
+    [donnees, focusId, mode, profondeurEclate]
   );
 
   const focus = donnees.personnes.get(focusId) ?? null;
@@ -211,14 +235,23 @@ export function EcranArbre({
       />
 
       {mode === 'eclate' && (
-        <p
+        <div
           role="status"
-          className="shrink-0 border-b border-bordure bg-fond-doux px-3 py-2 text-center text-xs text-encre-douce sm:px-4"
+          className="shrink-0 border-b border-bordure bg-fond-doux px-3 py-2.5 sm:px-4"
         >
-          Mode « {LIBELLE_MODE.eclate.titre} » : parentés proches en pedigree, le reste en traits
-          simples. Les liens lointains ou d’implexe peuvent se croiser — préférez «{' '}
-          {LIBELLE_MODE.famille.titre} » pour lire une branche.
-        </p>
+          <p className="text-center text-xs text-encre-douce sm:text-left">
+            Mode « {LIBELLE_MODE.eclate.titre} » : les parentés proches sont en barres de fratrie ;
+            les liens lointains sont atténués et peuvent se croiser — préférez «{' '}
+            {LIBELLE_MODE.famille.titre} » pour lire une branche.
+          </p>
+          <div className="mt-2 flex justify-center sm:justify-start">
+            <ReglageProfondeurEclate
+              valeur={profondeurEclate}
+              onChange={setProfondeurEclate}
+              nombrePersonnes={disposition.noeuds.length}
+            />
+          </div>
+        </div>
       )}
 
       {chargementFocus && (
