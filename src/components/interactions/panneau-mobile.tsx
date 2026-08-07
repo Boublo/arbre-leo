@@ -72,7 +72,7 @@ export function PanneauMobile({
           aria-hidden
           className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-bordure-forte"
         />
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] touch-pan-y">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain pb-[max(0.75rem,env(safe-area-inset-bottom))] [-webkit-overflow-scrolling:touch] touch-pan-y">
           {children}
         </div>
       </div>

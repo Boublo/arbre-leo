@@ -17,9 +17,12 @@ import {
  */
 export function MenuMobile({
   admin,
+  maFiche,
   groupes = GROUPES_NAVIGATION,
 }: {
   admin?: { href: string; enAttente: number };
+  /** Lien vers la fiche de la personne liée au compte (mobile : absent du bandeau). */
+  maFiche?: { href: string };
   groupes?: readonly GroupeNavigation[];
 }) {
   const [ouvert, setOuvert] = useState(false);
@@ -56,6 +59,15 @@ export function MenuMobile({
               chemin={chemin}
             />
           ))}
+
+          <SectionLiens
+            titre="Mon compte"
+            liens={[
+              { href: '/notifications', libelle: 'Notifications' },
+              ...(maFiche ? [{ href: maFiche.href, libelle: 'Ma fiche' }] : []),
+            ]}
+            chemin={chemin}
+          />
 
           {admin && (
             <Link

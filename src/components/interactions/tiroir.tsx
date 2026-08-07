@@ -134,7 +134,7 @@ export function Tiroir({
             type="button"
             onClick={onFermer}
             aria-label="Fermer le panneau"
-            className="rounded-[var(--rayon-petit)] px-2 py-1 text-encre-douce transition hover:bg-fond-doux hover:text-encre"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-[var(--rayon-petit)] text-encre-douce transition hover:bg-fond-doux hover:text-encre"
           >
             ✕
           </button>

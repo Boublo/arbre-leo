@@ -80,7 +80,7 @@ export function VisionneusePhoto({
       role="dialog"
       aria-modal="true"
       aria-label={alt}
-      className="fixed inset-0 z-50 flex flex-col bg-fond/95 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex flex-col bg-fond/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm"
       onClick={(evenement) => {
         if (evenement.target === evenement.currentTarget) onFermer();
       }}
@@ -92,7 +92,7 @@ export function VisionneusePhoto({
             onClick={() => ajusterEchelle(1 / 1.25)}
             disabled={echelle <= ECHELLE_MIN}
             aria-label="Réduire"
-            className="grid h-9 w-9 place-items-center rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte text-lg text-encre transition hover:bg-fond-doux disabled:opacity-40"
+            className="grid h-11 w-11 place-items-center rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte text-lg text-encre transition hover:bg-fond-doux disabled:opacity-40"
           >
             −
           </button>
@@ -101,7 +101,7 @@ export function VisionneusePhoto({
             onClick={() => ajusterEchelle(1.25)}
             disabled={echelle >= ECHELLE_MAX}
             aria-label="Agrandir"
-            className="grid h-9 w-9 place-items-center rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte text-lg text-encre transition hover:bg-fond-doux disabled:opacity-40"
+            className="grid h-11 w-11 place-items-center rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte text-lg text-encre transition hover:bg-fond-doux disabled:opacity-40"
           >
             +
           </button>
@@ -109,7 +109,7 @@ export function VisionneusePhoto({
             <button
               type="button"
               onClick={reinitialiser}
-              className="rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte px-3 py-1.5 text-xs text-encre transition hover:bg-fond-doux"
+              className="min-h-11 rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte px-3 py-2 text-xs text-encre transition hover:bg-fond-doux"
             >
               Réinitialiser
             </button>
@@ -119,7 +119,7 @@ export function VisionneusePhoto({
           type="button"
           onClick={onFermer}
           autoFocus
-          className="rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte px-3 py-1.5 text-sm text-encre transition hover:bg-fond-doux"
+          className="min-h-11 rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte px-4 py-2 text-sm text-encre transition hover:bg-fond-doux"
         >
           Fermer
         </button>

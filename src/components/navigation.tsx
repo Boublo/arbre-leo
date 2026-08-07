@@ -33,11 +33,20 @@ export async function Navigation({ compact = false }: { compact?: boolean }) {
             ? { href: '/admin', enAttente: enAttente ?? 0 }
             : undefined
         }
+        maFiche={
+          membre?.statut === 'valide' && membre.personne_id
+            ? { href: `/personne/${membre.personne_id}` }
+            : undefined
+        }
       />
 
       <Link
         href="/"
-        className={`min-w-0 items-baseline gap-2 truncate ${compact ? 'hidden flex-1 lg:flex lg:flex-none' : 'flex flex-1 lg:flex-none'}`}
+        className={`min-w-0 items-baseline gap-2 truncate ${
+          compact
+            ? 'flex min-w-0 max-w-[42vw] flex-1 sm:max-w-none lg:flex-none'
+            : 'flex flex-1 lg:flex-none'
+        }`}
       >
         <span className="truncate font-titre text-lg">{NOM_DU_SITE}</span>
       </Link>
