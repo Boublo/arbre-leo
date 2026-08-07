@@ -22,6 +22,7 @@
 | Recherche globale | `UX-002` ajoute `/recherche`, alimentée par l’index léger déjà filtré côté serveur par RLS. La page n’expose ni notes, ni sources, ni médias, ni fiches invisibles. |
 | Récit par génération | `EXP-002` ajoute `/histoire/famille` : depuis une personne choisie, les ascendants connus sont groupés par génération et renvoient vers leurs fiches. Les lacunes restent explicitement affichées. |
 | Voyage dans le temps | `EXP-003` relie « Notre histoire » à la chronologie de lignée existante, avec une période calculée uniquement depuis les années connues. Aucun événement n’est déduit. |
+| Ajout guidé | `ADD-001` ajoute depuis une fiche le raccourci « Ajouter un frère ou une sœur ». Seuls les parents dont le rôle est connu sont préremplis ; le formulaire et la validation serveur restent inchangés. |
 
 +## Lot ROADMAP-001 — 7 août 2026
 

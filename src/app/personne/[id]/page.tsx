@@ -167,6 +167,7 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
             personneId={fiche.personne.id}
             nomComplet={fiche.nomComplet}
             sexe={fiche.personne.sexe}
+            parents={fiche.parents}
           />
 
           <OrganisationFiche
