@@ -33,6 +33,9 @@ export async function BarreDeSaisie({
   const parentsFratrie = parentsPourFratrie(parents);
   const urlNouvelleFratrie = construireUrlNouvelEnfant(parentsFratrie.pereId, parentsFratrie.mereId);
   const urlNouveauConjoint = `/personne/nouvelle?conjoint=${encodeURIComponent(personneId)}`;
+  const aucunParent = parents.length === 0;
+  const urlNouveauPere = `/personne/nouvelle?enfant=${encodeURIComponent(personneId)}&sexe=M`;
+  const urlNouvelleMere = `/personne/nouvelle?enfant=${encodeURIComponent(personneId)}&sexe=F`;
 
   return (
     <section className="carte flex flex-wrap items-center gap-x-4 gap-y-3 p-4">
@@ -54,6 +57,16 @@ export async function BarreDeSaisie({
         <Link href={urlNouveauConjoint} className="lien-discret">
           Ajouter son conjoint ou sa conjointe
         </Link>
+        {aucunParent && (
+          <>
+            <Link href={urlNouveauPere} className="lien-discret">
+              Ajouter son père
+            </Link>
+            <Link href={urlNouvelleMere} className="lien-discret">
+              Ajouter sa mère
+            </Link>
+          </>
+        )}
         {parentsFratrie.libelles.length > 0 && (
           <Link href={urlNouvelleFratrie} className="lien-discret">
             Ajouter un frère ou une sœur

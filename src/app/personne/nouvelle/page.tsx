@@ -38,6 +38,11 @@ function connu(id: string, personnes: OptionPersonne[]): string {
   return personnes.some((p) => p.id === id) ? id : '';
 }
 
+/** Un raccourci peut proposer le sexe d'un parent, jamais une valeur arbitraire. */
+function sexeSuggere(valeur: string): 'M' | 'F' | 'inconnu' {
+  return valeur === 'M' || valeur === 'F' ? valeur : 'inconnu';
+}
+
 export default async function PageNouvellePersonne({ searchParams }: PageProps<'/personne/nouvelle'>) {
   const droits = await lireDroitsSaisie();
 
@@ -54,6 +59,8 @@ export default async function PageNouvellePersonne({ searchParams }: PageProps<'
     ...PERSONNE_VIDE,
     pereId: connu(premier(parametres.pere), personnes),
     mereId: connu(premier(parametres.mere), personnes),
+    enfants: [connu(premier(parametres.enfant), personnes)].filter(Boolean),
+    sexe: sexeSuggere(premier(parametres.sexe)),
   };
   const conjointId = connu(premier(parametres.conjoint), personnes);
 
