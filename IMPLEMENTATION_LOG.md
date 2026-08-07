@@ -25,6 +25,7 @@
 | Ajout guidé | `ADD-001` ajoute depuis une fiche le raccourci « Ajouter un frère ou une sœur ». Seuls les parents dont le rôle est connu sont préremplis ; le formulaire et la validation serveur restent inchangés. |
 | Ajout guidé étendu | `ADD-002` propose aussi « Ajouter son conjoint ou sa conjointe » depuis la fiche. L’identifiant est seulement prérempli dans le formulaire existant, qui conserve ses validations serveur. |
 | Parents sans lien connu | `ADD-002` propose « Ajouter son père » et « Ajouter sa mère » seulement si la fiche n’a aucun parent. L’enfant et le sexe sont préremplis ; une filiation déjà présente n’est jamais déplacée automatiquement. |
+| Homonymes avant création | `ADD-001` signale jusqu’à cinq personnes dont le nom correspond à la saisie. Chaque piste affiche son repère de vie et ouvre la fiche existante ; aucun doublon n’est fusionné ou bloqué automatiquement. |
 
 +## Lot ROADMAP-001 — 7 août 2026
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useId } from 'react';
+import { useActionState, useId, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { enregistrerPersonne, modifierPersonne, type EtatPersonne } from '@/app/actions/personnes';
 import { Alerte, BoutonEnvoi, Champ, ZoneTexte } from '@/components/ui/champs';
@@ -16,6 +16,7 @@ import type {
   ValeursPersonne,
 } from '@/components/saisie/donnees';
 import type { NiveauPreuve, Sexe } from '@/lib/types-base';
+import { sansAccent } from '@/lib/souvenirs-partage';
 
 /**
  * La saisie d’une personne, du nom jusqu’au rattachement.
@@ -54,6 +55,8 @@ export function FormulairePersonne({
     {}
   );
   const idLieux = useId();
+  const [prenomsSaisis, setPrenomsSaisis] = useState('');
+  const [nomSaisi, setNomSaisi] = useState('');
 
   // React vide les champs non contrôlés après chaque envoi. Le formulaire est
   // donc remonté avec ce que le serveur vient de nous rendre : une année
@@ -94,6 +97,7 @@ export function FormulairePersonne({
             name="prenoms"
             maxLength={160}
             defaultValue={depart.prenoms}
+            onChange={(event) => setPrenomsSaisis(event.currentTarget.value)}
             aide="Tous les prénoms de l’acte, dans l’ordre."
           />
           <Champ
@@ -101,9 +105,12 @@ export function FormulairePersonne({
             name="nom"
             maxLength={120}
             defaultValue={depart.nom}
+            onChange={(event) => setNomSaisi(event.currentTarget.value)}
             aide="Le nom porté à la fin de sa vie."
           />
         </div>
+
+        <DoublonsPossibles prenoms={prenomsSaisis} nom={nomSaisi} personnes={personnes} />
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Champ
@@ -230,6 +237,54 @@ export function FormulairePersonne({
         </BoutonEnvoi>
       </div>
     </form>
+  );
+}
+
+/**
+ * Un homonyme est un signal, jamais une consigne de fusion. Les années de vie
+ * et le lieu, quand on les connaît, donnent à la famille de quoi trancher.
+ */
+function DoublonsPossibles({
+  prenoms,
+  nom,
+  personnes,
+}: {
+  prenoms: string;
+  nom: string;
+  personnes: OptionPersonne[];
+}) {
+  const candidats = useMemo(() => {
+    const nomNormalise = sansAccent(nom.trim());
+    if (nomNormalise.length < 3) return [];
+
+    const termes = [nomNormalise, sansAccent(prenoms.trim())].filter((terme) => terme.length >= 2);
+    return personnes
+      .filter((personne) => {
+        const identite = sansAccent(personne.nomComplet);
+        return termes.every((terme) => identite.includes(terme));
+      })
+      .slice(0, 5);
+  }, [nom, personnes, prenoms]);
+
+  if (candidats.length === 0) return null;
+
+  return (
+    <aside className="rounded-[var(--rayon-petit)] border border-accent/35 bg-accent-clair px-3 py-2.5 text-sm">
+      <p className="font-medium text-encre">Vérifiez ces personnes avant de créer une nouvelle fiche</p>
+      <p className="mt-1 text-encre-douce">
+        Elles ont un nom proche. Ce sont peut-être des homonymes : aucun lien ne sera créé ou fusionné automatiquement.
+      </p>
+      <ul className="mt-2 flex flex-col gap-1">
+        {candidats.map((personne) => (
+          <li key={personne.id}>
+            <Link href={`/personne/${personne.id}`} className="lien-discret">
+              {personne.nomComplet}
+              <span className="text-encre-douce"> — {personne.repere}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </aside>
   );
 }
 
