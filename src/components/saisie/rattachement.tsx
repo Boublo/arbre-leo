@@ -51,6 +51,7 @@ export function Rattachement({
   return (
     <div className="flex flex-col gap-6">
       <Bloc
+        id="parents"
         legende="Ses parents"
         aide="Facultatif. Choisissez une union déjà enregistrée, ou désignez un père et une mère : l’union sera créée si elle manque."
       >
@@ -166,10 +167,7 @@ export function Rattachement({
         aide="Pour un enfant pas encore dans l’arbre, utilisez « Ajouter un enfant » sur la fiche du parent : les deux parents seront préremplis si le couple est connu. Ce bloc sert à rattacher des personnes déjà saisies."
       >
         {liens && liens.foyers.some((f) => f.enfants.length > 0) && (
-          <DejaLa
-            titre="Enfants déjà rattachés"
-            personnes={liens.foyers.flatMap((f) => f.enfants)}
-          />
+          <EnfantsDejaLa foyers={liens.foyers} />
         )}
 
         {liens && liens.foyers.length > 0 && (
@@ -198,6 +196,61 @@ export function Rattachement({
           exclus={[...moi, pereId, mereId, conjointId].filter(Boolean)}
         />
       </Bloc>
+    </div>
+  );
+}
+
+/** Enfants déjà rattachés : affichage + option de détachement explicite. */
+function EnfantsDejaLa({
+  foyers,
+}: {
+  foyers: { id: string; conjoint: OptionPersonne | null; enfants: OptionPersonne[] }[];
+}) {
+  const lignes = foyers.flatMap((foyer) =>
+    foyer.enfants.map((enfant) => ({
+      enfant,
+      foyer,
+    }))
+  );
+  if (lignes.length === 0) return null;
+
+  return (
+    <div className="rounded-[var(--rayon-petit)] border border-bordure bg-fond-doux px-3 py-2.5">
+      <h3 className="text-xs font-medium uppercase tracking-wider text-encre-tres-douce">
+        Enfants déjà rattachés
+      </h3>
+      <ul className="mt-1.5 flex flex-col gap-2">
+        {lignes.map(({ enfant, foyer }) => (
+          <li key={`${foyer.id}-${enfant.id}`} className="text-sm text-encre">
+            <label className="flex cursor-pointer items-baseline gap-2.5">
+              <input
+                type="checkbox"
+                name="detacherEnfants"
+                value={enfant.id}
+                className="h-4 w-4 shrink-0 self-center accent-[var(--accent)]"
+              />
+              <span>
+                <Link href={`/personne/${enfant.id}`} className="lien-discret">
+                  {enfant.nomComplet}
+                </Link>
+                <span className="text-xs text-encre-douce"> — {enfant.repere}</span>
+                <span className="text-xs text-encre-tres-douce">
+                  {' '}
+                  ·{' '}
+                  {foyer.conjoint
+                    ? `foyer avec ${foyer.conjoint.nomComplet}`
+                    : 'foyer sans autre parent'}
+                </span>
+              </span>
+            </label>
+            <span className="sr-only">Retirer {enfant.nomComplet} de ce foyer</span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-xs text-encre-douce">
+        Cochez puis enregistrez pour retirer un enfant de ce foyer uniquement — sa fiche reste
+        dans l’arbre.
+      </p>
     </div>
   );
 }

@@ -13,6 +13,7 @@ import {
   chargerValeursPersonne,
   compterLiensRompus,
   lireDroitsSaisie,
+  type OptionPersonne,
 } from '@/components/saisie/donnees';
 
 /**
@@ -42,8 +43,21 @@ function nomComplet(prenoms: string, nom: string): string {
   return [prenoms, nom].filter(Boolean).join(' ') || 'cette personne';
 }
 
-export default async function PageModifierPersonne({ params }: PageProps<'/personne/[id]/modifier'>) {
+function premier(valeur: string | string[] | undefined): string {
+  return (Array.isArray(valeur) ? valeur[0] : valeur) ?? '';
+}
+
+/** Un rattachement suggéré par l’adresse n’est retenu que s’il désigne quelqu’un. */
+function connu(id: string, personnes: OptionPersonne[]): string {
+  return personnes.some((p) => p.id === id) ? id : '';
+}
+
+export default async function PageModifierPersonne({
+  params,
+  searchParams,
+}: PageProps<'/personne/[id]/modifier'>) {
   const { id } = await params;
+  const parametres = await searchParams;
   const droits = await lireDroitsSaisie();
 
   if (!droits.utilisateurId) redirect(`/connexion?suite=/personne/${id}/modifier`);
@@ -60,6 +74,7 @@ export default async function PageModifierPersonne({ params }: PageProps<'/perso
   ]);
 
   const nom = nomComplet(valeurs.prenoms, valeurs.nom);
+  const enfantSuggere = connu(premier(parametres.enfant), personnes);
 
   return (
     <>
@@ -80,7 +95,7 @@ export default async function PageModifierPersonne({ params }: PageProps<'/perso
           {droits.peutContribuer ? (
             <FormulairePersonne
               mode="modification"
-              valeurs={valeurs}
+              valeurs={{ ...valeurs, enfants: enfantSuggere ? [enfantSuggere] : [] }}
               personnes={personnes}
               unions={unions}
               lieux={lieux}
