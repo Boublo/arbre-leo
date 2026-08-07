@@ -16,10 +16,18 @@ import {
   type GrapheSerialise,
   type PersonneRecherche,
 } from '@/lib/arbre-graphe';
-import { disposerArbre, LIBELLE_MODE, PROFONDEUR_ECLATE_DEFAUT, type ModeArbre } from '@/lib/layout-arbre';
 import {
+  disposerArbre,
+  filtrerDispositionEclate,
+  LIBELLE_MODE,
+  PROFONDEUR_ECLATE_DEFAUT,
+  type FiltreBrancheEclate,
+  type ModeArbre,
+} from '@/lib/layout-arbre';
+import {
+  lireFiltreBrancheEclateInitial,
   lireProfondeurEclateInitiale,
-  ReglageProfondeurEclate,
+  ReglagesModeEclate,
 } from '@/components/arbre/reglage-profondeur-eclate';
 import { urlImpressionArbre } from '@/lib/arbre-impression';
 
@@ -86,9 +94,11 @@ export function EcranArbre({
   }, [mode]);
 
   const [profondeurEclate, setProfondeurEclate] = useState(PROFONDEUR_ECLATE_DEFAUT);
+  const [filtreBrancheEclate, setFiltreBrancheEclate] = useState<FiltreBrancheEclate>('tous');
 
   useEffect(() => {
     setProfondeurEclate(lireProfondeurEclateInitiale());
+    setFiltreBrancheEclate(lireFiltreBrancheEclateInitial());
   }, []);
 
   useEffect(() => {
@@ -99,11 +109,19 @@ export function EcranArbre({
     }
   }, [profondeurEclate]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('arbre-filtre-branche-eclate', filtreBrancheEclate);
+    } catch {
+      /* localStorage indisponible */
+    }
+  }, [filtreBrancheEclate]);
+
   useRafraichirPhotosArbre(graphe, setGraphe);
 
   const donnees = useMemo(() => reconstruireGraphe(graphe), [graphe]);
 
-  const disposition = useMemo(
+  const dispositionBrute = useMemo(
     () =>
       disposerArbre(
         donnees,
@@ -113,6 +131,14 @@ export function EcranArbre({
       ),
     [donnees, focusId, mode, profondeurEclate]
   );
+
+  const disposition = useMemo(() => {
+    if (mode !== 'eclate' || filtreBrancheEclate === 'tous') return dispositionBrute;
+    return filtrerDispositionEclate(dispositionBrute, filtreBrancheEclate, focusId);
+  }, [dispositionBrute, mode, filtreBrancheEclate, focusId]);
+
+  const cleRecadrageEclate =
+    mode === 'eclate' ? `${profondeurEclate}-${filtreBrancheEclate}-${disposition.noeuds.length}` : '';
 
   const focus = donnees.personnes.get(focusId) ?? null;
 
@@ -245,9 +271,11 @@ export function EcranArbre({
             {LIBELLE_MODE.famille.titre} » pour lire une branche.
           </p>
           <div className="mt-2 flex justify-center sm:justify-start">
-            <ReglageProfondeurEclate
-              valeur={profondeurEclate}
-              onChange={setProfondeurEclate}
+            <ReglagesModeEclate
+              profondeur={profondeurEclate}
+              onProfondeur={setProfondeurEclate}
+              filtreBranche={filtreBrancheEclate}
+              onFiltreBranche={setFiltreBrancheEclate}
               nombrePersonnes={disposition.noeuds.length}
             />
           </div>
@@ -287,6 +315,7 @@ export function EcranArbre({
             guideTermine={guideTermine}
             etapeGuide={etapeGuide}
             noeudSuggestion={noeudSuggestion}
+            cleRecadrageEclate={cleRecadrageEclate}
           />
         </div>
 

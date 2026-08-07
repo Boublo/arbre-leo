@@ -106,6 +106,55 @@ export type OptionsDisposition = {
   profondeurEclate?: number;
 };
 
+/** Filtre par branche en mode « Tout ». */
+export type FiltreBrancheEclate = 'tous' | 'paternelle' | 'maternelle';
+
+/**
+ * Masque les personnes d'un autre côté (cousins, ancêtres lointains…) tout en
+ * gardant la personne choisie et les fiches « communes ».
+ */
+export function filtrerDispositionEclate(
+  disposition: Disposition,
+  filtre: FiltreBrancheEclate,
+  racineId: string
+): Disposition {
+  if (filtre === 'tous') return disposition;
+
+  const ids = new Set(
+    disposition.noeuds
+      .filter(
+        (n) =>
+          n.personneId === racineId || n.cote === filtre || n.cote === 'commune'
+      )
+      .map((n) => n.personneId)
+  );
+
+  const noeuds = disposition.noeuds.filter((n) => ids.has(n.personneId));
+  const liens = disposition.liens.filter(
+    (l) => ids.has(l.enfantId) && ids.has(l.parentId)
+  );
+  const unions = disposition.unions.filter(
+    (u) => ids.has(u.aId) && ids.has(u.bId)
+  );
+  const rangMax = Math.max(...noeuds.map((n) => n.rang), 0);
+
+  return {
+    ...disposition,
+    noeuds,
+    liens,
+    unions,
+    rangMax,
+    largeur: recalculerEtendueEclate(noeuds, 'x'),
+    hauteur: recalculerEtendueEclate(noeuds, 'y'),
+  };
+}
+
+function recalculerEtendueEclate(noeuds: NoeudArbre[], axe: 'x' | 'y'): number {
+  if (noeuds.length === 0) return 0;
+  const vals = noeuds.map((n) => n[axe]);
+  return Math.max(...vals) - Math.min(...vals);
+}
+
 export function disposerArbre(
   donnees: DonneesArbre,
   racineId: string,
