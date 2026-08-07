@@ -1,5 +1,15 @@
 # Journal d’exécution
 
+## Lot MAP-CONTEXT-001 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Rendre utile le lien « Voir sur la carte » d’une fiche personne. |
+| Correction | `/carte?personne=…` limite les points, compteurs, déplacements et flux aux événements où la personne est explicitement présente. Un bandeau nomme le parcours et offre un retour vers la carte complète. Aucun lieu n’est choisi arbitrairement. |
+| Données | Le filtre est dérivé uniquement des données cartographiques déjà chargées sous RLS ; ni requête, ni écriture, ni permission supplémentaire. |
+| Vérifications | `npm.cmd run typecheck`, `npm.cmd run lint` et contrôle des différences passent. |
+| Rollback | Retirer `personneInitiale` de `EcranCarte` et l’analyse du paramètre `personne` dans la route carte. |
+
 ## Lot UX-MEDIA-002 — 8 août 2026
 
 | Champ | Détail |

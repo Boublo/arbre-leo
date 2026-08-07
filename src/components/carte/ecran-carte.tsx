@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { select } from 'd3-selection';
 import { zoom, zoomIdentity, type ZoomBehavior } from 'd3-zoom';
 import { CurseurPeriode } from '@/components/carte/curseur-periode';
@@ -13,7 +14,7 @@ import {
   versEcran,
   type Transformation,
 } from '@/components/carte/projection';
-import type { DonneesCarte, LieuSitue } from '@/components/carte/types-carte';
+import type { DonneesCarte, LieuSitue, PersonneLiee } from '@/components/carte/types-carte';
 import { COULEUR_COTE, LIBELLES_COTE } from '@/components/carte/vocabulaire';
 import type { Cote } from '@/lib/branches';
 
@@ -49,10 +50,13 @@ type PointCarte = {
 export function EcranCarte({
   donnees,
   lieuInitialId = null,
+  personneInitiale = null,
 }: {
   donnees: DonneesCarte;
   /** Lien profond ?lieu=… : ouvre directement le panneau du lieu demandé. */
   lieuInitialId?: string | null;
+  /** Lien profond ?personne=… : limite la lecture à son parcours connu. */
+  personneInitiale?: PersonneLiee | null;
 }) {
   const [debut, setDebut] = useState(donnees.anneeMin);
   const [fin, setFin] = useState(donnees.anneeMax);
@@ -75,6 +79,14 @@ export function EcranCarte({
     transformationRef.current = transformation;
   }, [transformation]);
 
+  const lieuxVisibles = useMemo(
+    () =>
+      personneInitiale
+        ? donnees.lieux.filter((lieu) => lieu.personnes.some((personne) => personne.id === personneInitiale.id))
+        : donnees.lieux,
+    [donnees.lieux, personneInitiale],
+  );
+
   // --- Mesure du cadre -------------------------------------------------------
 
   useEffect(() => {
@@ -91,8 +103,8 @@ export function EcranCarte({
   }, []);
 
   const cadre = useMemo(
-    () => calculerCadre(donnees.lieux, taille.largeur, taille.hauteur),
-    [donnees.lieux, taille.largeur, taille.hauteur]
+    () => calculerCadre(lieuxVisibles, taille.largeur, taille.hauteur),
+    [lieuxVisibles, taille.largeur, taille.hauteur]
   );
 
   const pret = cadre.largeur > 60 && cadre.hauteur > 60;
@@ -185,15 +197,30 @@ export function EcranCarte({
   // --- Points ----------------------------------------------------------------
 
   const sommet = useMemo(
-    () => donnees.lieux.reduce((maximum, lieu) => Math.max(maximum, lieu.evenements.length), 1),
-    [donnees.lieux]
+    () =>
+      lieuxVisibles.reduce(
+        (maximum, lieu) =>
+          Math.max(
+            maximum,
+            personneInitiale
+              ? lieu.evenements.filter((evenement) =>
+                  evenement.personnes.some((personne) => personne.id === personneInitiale.id),
+                ).length
+              : lieu.evenements.length,
+          ),
+        1,
+      ),
+    [lieuxVisibles, personneInitiale],
   );
 
   const points = useMemo<PointCarte[]>(() => {
-    return donnees.lieux.map((lieu) => {
+    return lieuxVisibles.map((lieu) => {
       const nombre = lieu.evenements.filter(
         (evenement) =>
-          evenement.annee !== null && evenement.annee >= debut && evenement.annee <= fin
+          evenement.annee !== null &&
+          evenement.annee >= debut &&
+          evenement.annee <= fin &&
+          (!personneInitiale || evenement.personnes.some((personne) => personne.id === personneInitiale.id))
       ).length;
       const position = versEcran(cadre, transformation, lieu.longitude, lieu.latitude);
       return {
@@ -205,7 +232,7 @@ export function EcranCarte({
         rayon: nombre > 0 ? rayonDe(nombre, sommet) : RAYON_ENDORMI,
       };
     });
-  }, [donnees.lieux, cadre, transformation, debut, fin, sommet]);
+  }, [lieuxVisibles, cadre, transformation, debut, fin, sommet, personneInitiale]);
 
   const nbActifs = points.filter((point) => point.actif).length;
 
@@ -250,6 +277,7 @@ export function EcranCarte({
     >();
 
     for (const pas of donnees.deplacements) {
+      if (personneInitiale && pas.personneId !== personneInitiale.id) continue;
       if (pas.annee < debut || pas.annee > fin) continue;
       if (!parLieu.has(pas.deId) || !parLieu.has(pas.versId)) continue;
 
@@ -284,7 +312,7 @@ export function EcranCarte({
         },
       ];
     });
-  }, [points, donnees.deplacements, montrerDeplacements, debut, fin]);
+  }, [points, donnees.deplacements, montrerDeplacements, debut, fin, personneInitiale]);
 
   // --- Flux : naissance → décès ---------------------------------------------
 
@@ -294,6 +322,7 @@ export function EcranCarte({
     const parLieu = new Map(points.map((point) => [point.lieu.id, point]));
 
     return donnees.flux.flatMap((vie) => {
+      if (personneInitiale && vie.personneId !== personneInitiale.id) return [];
       // La vie doit chevaucher la période affichée pour valoir la peine.
       if (vie.anneeDeces < debut || vie.anneeNaissance > fin) return [];
 
@@ -313,13 +342,13 @@ export function EcranCarte({
         },
       ];
     });
-  }, [points, donnees.flux, montrerFlux, debut, fin]);
+  }, [points, donnees.flux, montrerFlux, debut, fin, personneInitiale]);
 
   // --- Sélection -------------------------------------------------------------
 
   const selection = useMemo(
-    () => donnees.lieux.find((lieu) => lieu.id === selectionId) ?? null,
-    [donnees.lieux, selectionId]
+    () => lieuxVisibles.find((lieu) => lieu.id === selectionId) ?? null,
+    [lieuxVisibles, selectionId]
   );
 
   // L'étiquette flottante ne suit que le survol : la sélection, elle, ouvre
@@ -339,13 +368,19 @@ export function EcranCarte({
     [points, niveauLegende]
   );
 
-  if (donnees.lieux.length === 0) {
+  if (lieuxVisibles.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center p-8 text-center">
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
         <p className="max-w-md text-encre-douce">
-          Aucun lieu de la base ne porte encore de coordonnées : la carte reste vide
-          tant que les latitudes et longitudes n’ont pas été renseignées.
+          {personneInitiale
+            ? `Aucun lieu situé n’est encore rattaché à ${personneInitiale.nom}.`
+            : 'Aucun lieu de la base ne porte encore de coordonnées : la carte reste vide tant que les latitudes et longitudes n’ont pas été renseignées.'}
         </p>
+        {personneInitiale && (
+          <Link href="/carte" className="lien-discret text-sm">
+            Voir toute la carte familiale
+          </Link>
+        )}
       </div>
     );
   }
@@ -353,6 +388,14 @@ export function EcranCarte({
   return (
     <div className="relative flex min-h-0 flex-1 overflow-hidden">
       <div ref={conteneurRef} className="relative min-w-0 flex-1">
+        {personneInitiale && (
+          <p className="carte pointer-events-auto absolute left-4 top-4 z-30 hidden max-w-xs px-3 py-2 text-xs text-encre-douce sm:block">
+            Parcours de <span className="font-medium text-encre">{personneInitiale.nom}</span>{' '}
+            <Link href="/carte" className="lien-discret">
+              Voir toute la carte
+            </Link>
+          </p>
+        )}
         <svg
           ref={svgRef}
           width={cadre.largeur}
@@ -413,7 +456,7 @@ export function EcranCarte({
                 ))}
               </defs>
 
-              <FondCarte cadre={cadre} transformation={transformation} lieux={donnees.lieux} />
+              <FondCarte cadre={cadre} transformation={transformation} lieux={lieuxVisibles} />
 
               {/* Les vies entières passent sous les déplacements pour laisser
                   lisible ce qui compte davantage à un moment donné. */}
@@ -547,7 +590,11 @@ export function EcranCarte({
         )}
 
         {/* --- Légende des couleurs et des symboles --------------------- */}
-        <div className="carte pointer-events-none absolute left-4 top-4 hidden max-w-xs p-3 text-xs text-encre-douce sm:block">
+        <div
+          className={`carte pointer-events-none absolute left-4 hidden max-w-xs p-3 text-xs text-encre-douce sm:block ${
+            personneInitiale ? 'top-16' : 'top-4'
+          }`}
+        >
           <LegendeCouleurs nbActifs={nbActifs} debut={debut} fin={fin} />
         </div>
 
@@ -587,7 +634,7 @@ export function EcranCarte({
                 />
                 Tracer les vies&nbsp;: de la naissance au décès
                 <span className="text-encre-tres-douce">
-                  ({donnees.flux.length})
+                  ({personneInitiale ? donnees.flux.filter((flux) => flux.personneId === personneInitiale.id).length : donnees.flux.length})
                 </span>
               </label>
             </div>

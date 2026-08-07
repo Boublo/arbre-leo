@@ -526,7 +526,17 @@ export default async function PageCarte({ searchParams }: PageProps<'/carte'>) {
   const { carte, nbLieux, manquants, nbEvenementsSansLieuSitue } = await chargerCarte();
   const nbSitues = carte.lieux.length;
   const lieuDemande = premier(parametres.lieu);
-  const lieuInitialId = carte.lieux.some((lieu) => lieu.id === lieuDemande) ? lieuDemande : null;
+  const personneDemandee = premier(parametres.personne);
+  const personneInitiale = carte.lieux
+    .flatMap((lieu) => lieu.personnes)
+    .find((personne) => personne.id === personneDemandee);
+  const lieuInitialId = carte.lieux.some(
+    (lieu) =>
+      lieu.id === lieuDemande &&
+      (!personneInitiale || lieu.personnes.some((personne) => personne.id === personneInitiale.id)),
+  )
+    ? lieuDemande
+    : null;
 
   return (
     <>
@@ -542,9 +552,10 @@ export default async function PageCarte({ searchParams }: PageProps<'/carte'>) {
         </div>
 
         <EcranCarte
-          key={lieuInitialId ?? 'carte'}
+          key={`${lieuInitialId ?? 'carte'}-${personneInitiale?.id ?? 'famille'}`}
           donnees={carte}
           lieuInitialId={lieuInitialId}
+          personneInitiale={personneInitiale ?? null}
         />
 
         <footer className="shrink-0 border-t border-bordure px-4 py-2.5 text-xs text-encre-douce">
