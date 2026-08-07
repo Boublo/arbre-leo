@@ -10,6 +10,8 @@ export const LIBELLE_TYPE_NOTIFICATION: Record<TypeNotification, string> = {
   nouvelle_photo: 'Photo',
   nouvelle_personne: 'Nouvelle fiche',
   demande_portrait_carte: 'Portrait carte',
+  portrait_carte_accepte: 'Portrait accepté',
+  portrait_carte_refuse: 'Portrait écarté',
 };
 
 export const ICONE_TYPE_NOTIFICATION: Record<TypeNotification, string> = {
@@ -22,6 +24,8 @@ export const ICONE_TYPE_NOTIFICATION: Record<TypeNotification, string> = {
   nouvelle_photo: '🖼',
   nouvelle_personne: '🌿',
   demande_portrait_carte: '🪪',
+  portrait_carte_accepte: '✓',
+  portrait_carte_refuse: '✕',
 };
 
 export type NotificationAffichee = {

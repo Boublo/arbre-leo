@@ -5,7 +5,7 @@ import {
   type CommentaireFiche,
   type MediaFiche,
 } from '@/components/personne/donnees';
-import type { Commentaire, Media, Membre, StatutModeration } from '@/lib/types-base';
+import type { Commentaire, Media, Membre, StatutDemandePortrait, StatutModeration } from '@/lib/types-base';
 
 const BUCKET_MEDIAS = 'arbre-medias';
 const DUREE_LIEN_SIGNE = 3600;
@@ -26,7 +26,10 @@ export type PhotoDetail = {
   personneId: string;
   nomPersonne: string;
   estPortraitCarte: boolean;
-  demandePortraitEnAttente: boolean;
+  demandePortrait?: {
+    statut: StatutDemandePortrait;
+    motifRefus: string | null;
+  };
   commentaires: CommentaireFiche[];
 };
 
@@ -83,12 +86,13 @@ export async function chargerPhotoPersonne(
     .from(BUCKET_MEDIAS)
     .createSignedUrl(media.chemin, DUREE_LIEN_SIGNE);
 
-  const { data: demandeEnAttente } = await supabase
+  const { data: demandePortrait } = await supabase
     .from('demandes_portrait_carte')
-    .select('id')
+    .select('statut, motif_refus')
     .eq('personne_id', personneId)
     .eq('media_id', mediaId)
-    .eq('statut', 'en_attente')
+    .order('cree_le', { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   const m = media as Media;
@@ -118,7 +122,12 @@ export async function chargerPhotoPersonne(
     personneId,
     nomPersonne: personne.nom_complet?.trim() || personne.prenoms || personne.nom || 'Sans nom',
     estPortraitCarte: personne.photo_id === mediaId,
-    demandePortraitEnAttente: demandeEnAttente !== null,
+    demandePortrait: demandePortrait
+      ? {
+          statut: demandePortrait.statut as StatutDemandePortrait,
+          motifRefus: demandePortrait.motif_refus,
+        }
+      : undefined,
     commentaires: assemblerFil(commentaires, nomAuteur),
   };
 }

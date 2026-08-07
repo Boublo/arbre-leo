@@ -33,7 +33,7 @@ export default async function PagePhoto({ params }: ParamsPhoto) {
   ]);
   if (!photo) notFound();
 
-  const { media, nomPersonne, estPortraitCarte, demandePortraitEnAttente, commentaires } = photo;
+  const { media, nomPersonne, estPortraitCarte, demandePortrait, commentaires } = photo;
   const titre = media.titre ?? `${LIBELLE_MEDIA[media.type]} sans titre`;
   const legende = [media.date, media.lieu, media.role].filter(Boolean).join(' · ');
 
@@ -93,7 +93,7 @@ export default async function PagePhoto({ params }: ParamsPhoto) {
               personneId={id}
               mediaId={mediaId}
               dejaPortrait={estPortraitCarte}
-              demandeEnAttente={demandePortraitEnAttente}
+              demandePortrait={demandePortrait}
               estAdmin={droits.estAdmin}
             />
           </div>

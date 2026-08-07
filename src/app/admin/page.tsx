@@ -157,13 +157,63 @@ export default async function PageAdmin() {
     idsPersonnesPortrait.length > 0
       ? supabase
           .from('personnes')
-          .select('id, nom_complet, prenoms, nom')
+          .select('id, nom_complet, prenoms, nom, photo_id')
           .in('id', idsPersonnesPortrait)
-      : Promise.resolve({ data: [] as { id: string; nom_complet: string | null; prenoms: string | null; nom: string | null }[] }),
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            nom_complet: string | null;
+            prenoms: string | null;
+            nom: string | null;
+            photo_id: string | null;
+          }[],
+        }),
     idsMediasPortrait.length > 0
-      ? supabase.from('medias').select('id, titre').in('id', idsMediasPortrait)
-      : Promise.resolve({ data: [] as { id: string; titre: string | null }[] }),
+      ? supabase.from('medias').select('id, titre, chemin').in('id', idsMediasPortrait)
+      : Promise.resolve({ data: [] as { id: string; titre: string | null; chemin: string }[] }),
   ]);
+
+  const personnesPortraitData = personnesPortraitRes.data ?? [];
+  const mediasDemandes = mediasPortraitRes.data ?? [];
+  const idsPortraitsActuels = [
+    ...new Set(
+      personnesPortraitData
+        .map((p) => p.photo_id)
+        .filter((id): id is string => typeof id === 'string' && !idsMediasPortrait.includes(id))
+    ),
+  ];
+
+  const portraitsActuelsRes =
+    idsPortraitsActuels.length > 0
+      ? await supabase.from('medias').select('id, chemin').in('id', idsPortraitsActuels)
+      : { data: [] as { id: string; chemin: string }[] };
+
+  const cheminParMedia = new Map<string, string>();
+  for (const m of [...mediasDemandes, ...(portraitsActuelsRes.data ?? [])]) {
+    cheminParMedia.set(m.id, m.chemin);
+  }
+
+  const urlsSignees =
+    cheminParMedia.size > 0
+      ? await supabase.storage
+          .from('arbre-medias')
+          .createSignedUrls([...cheminParMedia.values()], 3600)
+      : { data: [] as { path: string | null; signedUrl: string | null }[] };
+
+  const urlParChemin = new Map<string, string>();
+  for (const entree of urlsSignees.data ?? []) {
+    if (entree.path && entree.signedUrl) urlParChemin.set(entree.path, entree.signedUrl);
+  }
+
+  function urlMedia(mediaId: string | null | undefined): string | null {
+    if (!mediaId) return null;
+    const chemin = cheminParMedia.get(mediaId);
+    return chemin ? (urlParChemin.get(chemin) ?? null) : null;
+  }
+
+  const photoIdParPersonne = new Map(
+    personnesPortraitData.map((p) => [p.id, p.photo_id] as const)
+  );
 
   const nomsPersonnes = new Map(
     (personnesPortraitRes.data ?? []).map((p) => [
@@ -184,6 +234,8 @@ export default async function PageAdmin() {
     titrePhoto: titresMedias.get(d.media_id) ?? null,
     demandeur: nomsDemandeurs.get(d.demandeur_id) ?? 'Un membre',
     creeLe: d.cree_le,
+    urlPhoto: urlMedia(d.media_id),
+    urlPortraitActuel: urlMedia(photoIdParPersonne.get(d.personne_id)),
   }));
 
   const erreurChargement =

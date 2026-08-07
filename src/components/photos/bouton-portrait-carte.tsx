@@ -3,19 +3,20 @@
 import { useState, useTransition } from 'react';
 import { choisirPortraitCarte } from '@/app/actions/photos';
 import { Alerte } from '@/components/ui/champs';
+import type { StatutDemandePortrait } from '@/lib/types-base';
 
 /** Pose une photo de l’album sur la carte de l’arbre, ou dépose une demande. */
 export function BoutonPortraitCarte({
   personneId,
   mediaId,
   dejaPortrait,
-  demandeEnAttente,
+  demandePortrait,
   estAdmin,
 }: {
   personneId: string;
   mediaId: string;
   dejaPortrait: boolean;
-  demandeEnAttente?: boolean;
+  demandePortrait?: { statut: StatutDemandePortrait; motifRefus: string | null };
   estAdmin?: boolean;
 }) {
   const [pending, start] = useTransition();
@@ -30,11 +31,19 @@ export function BoutonPortraitCarte({
     );
   }
 
-  if (demandeEnAttente) {
+  if (demandePortrait?.statut === 'en_attente') {
     return (
       <p className="rounded-[var(--rayon-petit)] border border-bordure bg-fond-doux px-3 py-2 text-sm text-encre-douce">
         Une demande est en attente : un administrateur examinera cette photo pour la carte de
         l’arbre.
+      </p>
+    );
+  }
+
+  if (demandePortrait?.statut === 'acceptee') {
+    return (
+      <p className="rounded-[var(--rayon-petit)] border border-bordure bg-fond-doux px-3 py-2 text-sm text-encre-douce">
+        Cette photo a été acceptée pour la carte, mais une autre image y figure actuellement.
       </p>
     );
   }
@@ -49,6 +58,13 @@ export function BoutonPortraitCarte({
 
   return (
     <div className="flex flex-col gap-2">
+      {demandePortrait?.statut === 'refusee' && (
+        <Alerte ton="erreur">
+          Demande écartée
+          {demandePortrait.motifRefus ? ` : ${demandePortrait.motifRefus}` : '.'} Vous pouvez en
+          déposer une nouvelle.
+        </Alerte>
+      )}
       {!estAdmin && (
         <p className="text-sm text-encre-douce">
           L’album se gère librement ; poser une photo sur la carte de l’arbre demande
