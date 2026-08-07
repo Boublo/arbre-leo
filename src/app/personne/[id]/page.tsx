@@ -17,7 +17,7 @@ import { RecitsQuiLaMentionnent } from '@/components/personne/recits';
 import { FaitsPersonne } from '@/components/personne/faits';
 import { CommentairesPersonne } from '@/components/personne/commentaires';
 import { BarreDeSaisie } from '@/components/saisie/lien-ajout';
-import { lireDroitsSaisie } from '@/components/saisie/donnees';
+import { lireDroitsSaisie, peutDeposerPhotoAlbum } from '@/components/saisie/donnees';
 import { BarreParente } from '@/components/portrait/barre-parente';
 import { SectionMiniArbre } from '@/components/portrait/section-mini-arbre';
 import { NavigationContextuelle } from '@/components/decouverte/navigation-contextuelle';
@@ -54,11 +54,12 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
   // La fiche vient de plusieurs tables ; l'arbre entier sert au contexte
   // (parenté immédiate, tirage d'un membre au hasard). Les deux appels sont
   // indépendants, on les mène en parallèle.
-  const [fiche, donneesArbre, recits, droits] = await Promise.all([
+  const [fiche, donneesArbre, recits, droits, peutDeposerPhotos] = await Promise.all([
     chargerFiche(id),
     chargerArbre(),
     chargerRecitsPourPersonne(id),
     lireDroitsSaisie(),
+    peutDeposerPhotoAlbum(id),
   ]);
 
   if (!fiche) notFound();
@@ -140,7 +141,7 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
                 evenements={fiche.evenements}
                 faits={fiche.faits}
                 personneId={fiche.personne.id}
-                peutDeposer={droits.peutContribuer}
+                peutDeposer={peutDeposerPhotos}
                 photoCarteId={fiche.personne.photo_id}
               />
             }

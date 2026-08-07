@@ -218,6 +218,119 @@ export async function rattacherPersonne(
 }
 
 // ---------------------------------------------------------------------------
+// Portraits de la carte de l'arbre
+// ---------------------------------------------------------------------------
+
+const schemaDemandePortrait = z.object({ demandeId: z.uuid('Demande introuvable.') });
+
+/** Accepte une demande : la photo devient le portrait affiché sur la carte. */
+export async function validerDemandePortrait(
+  _precedent: EtatAdmin,
+  donnees: FormData
+): Promise<EtatAdmin> {
+  const { supabase, moi } = await exigerAdmin();
+
+  const analyse = schemaDemandePortrait.safeParse({ demandeId: donnees.get('demandeId') });
+  if (!analyse.success) {
+    return { erreur: analyse.error.issues[0]?.message ?? 'Demande incomplète.' };
+  }
+
+  const { data: demande } = await supabase
+    .from('demandes_portrait_carte')
+    .select('id, personne_id, media_id, statut')
+    .eq('id', analyse.data.demandeId)
+    .maybeSingle();
+
+  if (!demande || demande.statut !== 'en_attente') {
+    return { erreur: 'Cette demande n’est plus en attente.' };
+  }
+
+  const maintenant = new Date().toISOString();
+
+  const { error: erreurPersonne } = await supabase
+    .from('personnes')
+    .update({ photo_id: demande.media_id, modifie_par: moi.id })
+    .eq('id', demande.personne_id);
+  if (erreurPersonne) return { erreur: traduireErreurBase(erreurPersonne) };
+
+  await supabase
+    .from('medias_personnes')
+    .update({ role: 'portrait' })
+    .eq('media_id', demande.media_id)
+    .eq('personne_id', demande.personne_id);
+
+  const { error: erreurDemande } = await supabase
+    .from('demandes_portrait_carte')
+    .update({
+      statut: 'acceptee',
+      traite_par: moi.id,
+      traite_le: maintenant,
+      motif_refus: null,
+    })
+    .eq('id', demande.id);
+
+  if (erreurDemande) return { erreur: traduireErreurBase(erreurDemande) };
+
+  await supabase
+    .from('demandes_portrait_carte')
+    .update({
+      statut: 'refusee',
+      traite_par: moi.id,
+      traite_le: maintenant,
+      motif_refus: 'Une autre photo a été choisie pour la carte.',
+    })
+    .eq('personne_id', demande.personne_id)
+    .eq('statut', 'en_attente')
+    .neq('id', demande.id);
+
+  rafraichir();
+  revalidatePath('/arbre');
+  revalidatePath(`/personne/${demande.personne_id}`);
+  return { message: 'Portrait de la carte validé.' };
+}
+
+const schemaRefusPortrait = z.object({
+  demandeId: z.uuid('Demande introuvable.'),
+  motif: z
+    .string()
+    .trim()
+    .min(3, 'Indiquez un motif.')
+    .max(500, 'Motif trop long.'),
+});
+
+/** Écarte une demande de portrait pour la carte. */
+export async function refuserDemandePortrait(
+  _precedent: EtatAdmin,
+  donnees: FormData
+): Promise<EtatAdmin> {
+  const { supabase, moi } = await exigerAdmin();
+
+  const analyse = schemaRefusPortrait.safeParse({
+    demandeId: donnees.get('demandeId'),
+    motif: donnees.get('motif'),
+  });
+  if (!analyse.success) {
+    return { erreur: analyse.error.issues[0]?.message ?? 'Demande incomplète.' };
+  }
+
+  const { error } = await supabase
+    .from('demandes_portrait_carte')
+    .update({
+      statut: 'refusee',
+      traite_par: moi.id,
+      traite_le: new Date().toISOString(),
+      motif_refus: analyse.data.motif,
+    })
+    .eq('id', analyse.data.demandeId)
+    .eq('statut', 'en_attente');
+
+  if (error) return { erreur: traduireErreurBase(error) };
+
+  rafraichir();
+  return { message: 'Demande de portrait écartée.' };
+}
+
+// ---------------------------------------------------------------------------
 // Outils
 // ---------------------------------------------------------------------------
 

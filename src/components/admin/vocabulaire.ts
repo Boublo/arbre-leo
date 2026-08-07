@@ -16,6 +16,17 @@ export type DemandeAdmin = Pick<
   'id' | 'email' | 'nom_affiche' | 'lien_famille' | 'message_demande' | 'motif_refus' | 'cree_le'
 >;
 
+/** Demande de portrait pour la carte de l'arbre. */
+export type DemandePortraitAdmin = {
+  id: string;
+  personneId: string;
+  nomPersonne: string;
+  mediaId: string;
+  titrePhoto: string | null;
+  demandeur: string;
+  creeLe: string;
+};
+
 export type MembreAdmin = Pick<
   Membre,
   'id' | 'email' | 'nom_affiche' | 'role' | 'statut' | 'personne_id' | 'lien_famille' | 'valide_le' | 'cree_le'

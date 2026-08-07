@@ -26,6 +26,7 @@ export type PhotoDetail = {
   personneId: string;
   nomPersonne: string;
   estPortraitCarte: boolean;
+  demandePortraitEnAttente: boolean;
   commentaires: CommentaireFiche[];
 };
 
@@ -82,6 +83,14 @@ export async function chargerPhotoPersonne(
     .from(BUCKET_MEDIAS)
     .createSignedUrl(media.chemin, DUREE_LIEN_SIGNE);
 
+  const { data: demandeEnAttente } = await supabase
+    .from('demandes_portrait_carte')
+    .select('id')
+    .eq('personne_id', personneId)
+    .eq('media_id', mediaId)
+    .eq('statut', 'en_attente')
+    .maybeSingle();
+
   const m = media as Media;
   const fiche: MediaFiche = {
     id: m.id,
@@ -109,6 +118,7 @@ export async function chargerPhotoPersonne(
     personneId,
     nomPersonne: personne.nom_complet?.trim() || personne.prenoms || personne.nom || 'Sans nom',
     estPortraitCarte: personne.photo_id === mediaId,
+    demandePortraitEnAttente: demandeEnAttente !== null,
     commentaires: assemblerFil(commentaires, nomAuteur),
   };
 }

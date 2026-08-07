@@ -7,7 +7,7 @@ import { LIBELLE_MEDIA } from '@/components/personne/vocabulaire';
 import { FormulaireCommentairePhoto } from '@/components/photos/formulaire-commentaire-photo';
 import { BoutonPortraitCarte } from '@/components/photos/bouton-portrait-carte';
 import { chargerPhotoPersonne } from '@/components/photos/donnees';
-import { lireDroitsSaisie } from '@/components/saisie/donnees';
+import { lireDroitsSaisie, peutDeposerPhotoAlbum } from '@/components/saisie/donnees';
 import type { CommentaireFiche } from '@/components/personne/donnees';
 
 export const dynamic = 'force-dynamic';
@@ -26,13 +26,14 @@ export async function generateMetadata({ params }: ParamsPhoto): Promise<Metadat
 
 export default async function PagePhoto({ params }: ParamsPhoto) {
   const { id, mediaId } = await params;
-  const [photo, droits] = await Promise.all([
+  const [photo, droits, peutDeposer] = await Promise.all([
     chargerPhotoPersonne(id, mediaId),
     lireDroitsSaisie(),
+    peutDeposerPhotoAlbum(id),
   ]);
   if (!photo) notFound();
 
-  const { media, nomPersonne, estPortraitCarte, commentaires } = photo;
+  const { media, nomPersonne, estPortraitCarte, demandePortraitEnAttente, commentaires } = photo;
   const titre = media.titre ?? `${LIBELLE_MEDIA[media.type]} sans titre`;
   const legende = [media.date, media.lieu, media.role].filter(Boolean).join(' · ');
 
@@ -86,12 +87,14 @@ export default async function PagePhoto({ params }: ParamsPhoto) {
           <p className="mt-4 text-sm leading-relaxed text-encre-douce">{media.description}</p>
         )}
 
-        {droits.peutContribuer && media.estImage && (
+        {peutDeposer && media.estImage && (
           <div className="mt-6">
             <BoutonPortraitCarte
               personneId={id}
               mediaId={mediaId}
               dejaPortrait={estPortraitCarte}
+              demandeEnAttente={demandePortraitEnAttente}
+              estAdmin={droits.estAdmin}
             />
           </div>
         )}
