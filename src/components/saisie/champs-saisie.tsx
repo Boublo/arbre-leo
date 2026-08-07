@@ -60,16 +60,18 @@ export function CaseACocher({
 
 /** Un groupe de champs, encadré et nommé : la saisie est longue, elle se lit par blocs. */
 export function Bloc({
+  id,
   legende,
   aide,
   children,
 }: {
+  id?: string;
   legende: string;
   aide?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <fieldset className="flex flex-col gap-4 rounded-[var(--rayon)] border border-bordure p-4">
+    <fieldset id={id} className="flex flex-col gap-4 rounded-[var(--rayon)] border border-bordure p-4">
       <legend className="px-1.5 text-sm font-medium text-encre">{legende}</legend>
       {aide && <p className="-mt-1 text-xs text-encre-douce">{aide}</p>}
       {children}

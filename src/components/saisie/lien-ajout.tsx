@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { lireDroitsSaisie } from '@/components/saisie/donnees';
+import { chargerParentsPourNouvelEnfant, lireDroitsSaisie } from '@/components/saisie/donnees';
+import { construireUrlNouvelEnfant } from '@/lib/url-nouvel-enfant';
 import type { Sexe } from '@/lib/types-base';
 
 /**
@@ -25,9 +26,8 @@ export async function BarreDeSaisie({
   const droits = await lireDroitsSaisie();
   if (!droits.peutContribuer) return null;
 
-  // Le rôle de parent dépend du sexe connu : sans lui, on n’a rien à préremplir
-  // et l’on s’en tient au lien nu.
-  const cote = sexe === 'M' ? 'pere' : sexe === 'F' ? 'mere' : null;
+  const { pereId, mereId } = await chargerParentsPourNouvelEnfant(personneId, sexe);
+  const urlNouvelEnfant = construireUrlNouvelEnfant(pereId, mereId);
 
   return (
     <section className="carte flex flex-wrap items-center gap-x-4 gap-y-3 p-4">
@@ -43,11 +43,12 @@ export async function BarreDeSaisie({
       </p>
 
       <span className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-        {cote && (
-          <Link href={`/personne/nouvelle?${cote}=${personneId}`} className="lien-discret">
-            Ajouter un enfant de {nomComplet}
-          </Link>
-        )}
+        <Link href={urlNouvelEnfant} className="lien-discret">
+          Ajouter un enfant de {nomComplet}
+        </Link>
+        <Link href={`/personne/${personneId}/modifier#enfants`} className="lien-discret">
+          Rattacher un enfant déjà dans l’arbre
+        </Link>
         <Link href={`/personne/${personneId}/modifier`} className="lien-discret">
           Corriger cette fiche
         </Link>

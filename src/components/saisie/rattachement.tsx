@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Bloc, Selecteur } from '@/components/saisie/champs-saisie';
+import { Bloc, CaseACocher, Selecteur } from '@/components/saisie/champs-saisie';
 import { ChoixPersonne, ChoixPersonnesMultiple } from '@/components/saisie/choix-personne';
 import { NATURES_FILIATION } from '@/lib/saisie-personne';
 import type { LiensExistants, OptionPersonne, OptionUnion } from '@/components/saisie/donnees';
@@ -56,6 +56,14 @@ export function Rattachement({
       >
         {liens && liens.parents.length > 0 && (
           <DejaLa titre="Parents déjà enregistrés" personnes={liens.parents} />
+        )}
+
+        {liens && liens.parents.length > 0 && (
+          <CaseACocher
+            name="detacherParents"
+            label="Retirer le rattachement aux parents enregistrés"
+            aide="À cocher seulement si cette personne n’est plus rattachée à ce couple. Sinon, laissez décoché : les parents restent inchangés même si les champs ci-dessus sont vides."
+          />
         )}
 
         <fieldset className="flex flex-col gap-2">
@@ -153,8 +161,9 @@ export function Rattachement({
       </Bloc>
 
       <Bloc
+        id="enfants"
         legende="Ses enfants déjà dans l’arbre"
-        aide="Facultatif, et réservé aux personnes déjà saisies. Pour un enfant qui n’y figure pas encore, enregistrez d’abord cette fiche, puis ajoutez-le depuis la sienne."
+        aide="Pour un enfant pas encore dans l’arbre, utilisez « Ajouter un enfant » sur la fiche du parent : les deux parents seront préremplis si le couple est connu. Ce bloc sert à rattacher des personnes déjà saisies."
       >
         {liens && liens.foyers.some((f) => f.enfants.length > 0) && (
           <DejaLa
@@ -167,7 +176,7 @@ export function Rattachement({
           <Selecteur
             label="Dans quel foyer les inscrire"
             name="foyerEnfants"
-            defaultValue=""
+            defaultValue={liens.foyers.length === 1 ? liens.foyers[0].id : ''}
             aide="Un enfant appartient à une union, pas à une personne seule : c’est ainsi que se retrouvent ses frères et sœurs."
           >
             <option value="">
