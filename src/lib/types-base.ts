@@ -289,7 +289,9 @@ export type TypeNotification =
   | 'nouveau_souvenir'
   | 'nouvelle_photo'
   | 'nouvelle_personne'
-  | 'demande_portrait_carte';
+  | 'demande_portrait_carte'
+  | 'portrait_carte_accepte'
+  | 'portrait_carte_refuse';
 
 export type StatutDemandePortrait = 'en_attente' | 'acceptee' | 'refusee';
 

@@ -285,7 +285,9 @@ export async function validerDemandePortrait(
 
   rafraichir();
   revalidatePath('/arbre');
+  revalidatePath('/arbre/imprimer');
   revalidatePath(`/personne/${demande.personne_id}`);
+  revalidatePath(`/personne/${demande.personne_id}/photo/${demande.media_id}`);
   return { message: 'Portrait de la carte validé.' };
 }
 
@@ -313,6 +315,12 @@ export async function refuserDemandePortrait(
     return { erreur: analyse.error.issues[0]?.message ?? 'Demande incomplète.' };
   }
 
+  const { data: demande } = await supabase
+    .from('demandes_portrait_carte')
+    .select('personne_id, media_id')
+    .eq('id', analyse.data.demandeId)
+    .maybeSingle();
+
   const { error } = await supabase
     .from('demandes_portrait_carte')
     .update({
@@ -327,6 +335,11 @@ export async function refuserDemandePortrait(
   if (error) return { erreur: traduireErreurBase(error) };
 
   rafraichir();
+  if (demande) {
+    revalidatePath('/arbre/imprimer');
+    revalidatePath(`/personne/${demande.personne_id}`);
+    revalidatePath(`/personne/${demande.personne_id}/photo/${demande.media_id}`);
+  }
   return { message: 'Demande de portrait écartée.' };
 }
 

@@ -50,30 +50,59 @@ function CarteDemandePortrait({ demande }: { demande: DemandePortraitAdmin }) {
 
   return (
     <article className="carte flex flex-col gap-4 px-5 py-4">
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
-        <div>
-          <p className="font-medium text-encre">
-            <Link href={`/personne/${demande.personneId}`} className="lien-discret">
-              {demande.nomPersonne}
+      <div className="flex flex-col gap-4 sm:flex-row">
+        <div className="flex shrink-0 gap-3">
+          <figure className="flex flex-col gap-1">
+            <img
+              src={demande.urlPhoto ?? undefined}
+              alt={demande.titrePhoto ?? 'Photo demandée'}
+              className="h-28 w-28 rounded-[var(--rayon-petit)] border border-bordure object-cover bg-fond-doux"
+            />
+            <figcaption className="text-center text-[10px] text-encre-tres-douce">
+              Demandée
+            </figcaption>
+          </figure>
+          {demande.urlPortraitActuel && (
+            <figure className="flex flex-col gap-1">
+              <img
+                src={demande.urlPortraitActuel}
+                alt="Portrait actuel sur la carte"
+                className="h-28 w-28 rounded-[var(--rayon-petit)] border border-bordure object-cover bg-fond-doux opacity-80"
+              />
+              <figcaption className="text-center text-[10px] text-encre-tres-douce">
+                Sur la carte
+              </figcaption>
+            </figure>
+          )}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+            <div>
+              <p className="font-medium text-encre">
+                <Link href={`/personne/${demande.personneId}`} className="lien-discret">
+                  {demande.nomPersonne}
+                </Link>
+              </p>
+              <p className="text-sm text-encre-douce">
+                {demande.titrePhoto ?? 'Photo sans titre'} · demandé par {demande.demandeur}
+              </p>
+            </div>
+            <time className="text-xs text-encre-tres-douce" dateTime={demande.creeLe}>
+              {formaterHorodatage(demande.creeLe)}
+            </time>
+          </div>
+
+          <p className="mt-2 text-sm text-encre-douce">
+            <Link
+              href={`/personne/${demande.personneId}/photo/${demande.mediaId}`}
+              className="lien-discret"
+            >
+              Voir la photo dans l’album →
             </Link>
           </p>
-          <p className="text-sm text-encre-douce">
-            {demande.titrePhoto ?? 'Photo sans titre'} · demandé par {demande.demandeur}
-          </p>
         </div>
-        <time className="text-xs text-encre-tres-douce" dateTime={demande.creeLe}>
-          {formaterHorodatage(demande.creeLe)}
-        </time>
       </div>
-
-      <p className="text-sm text-encre-douce">
-        <Link
-          href={`/personne/${demande.personneId}/photo/${demande.mediaId}`}
-          className="lien-discret"
-        >
-          Voir la photo dans l’album →
-        </Link>
-      </p>
 
       {(etatValider.message || etatValider.erreur) && (
         <Alerte ton={etatValider.erreur ? 'erreur' : 'succes'}>

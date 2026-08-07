@@ -6,7 +6,7 @@ import { ArbreImprimable } from '@/components/arbre/arbre-imprimable';
 import { ConseilsImpressionArbre } from '@/components/arbre/conseils-impression-arbre';
 import { OptionsImpressionArbre } from '@/components/arbre/options-impression-arbre';
 import { SelecteurPersonneImpression } from '@/components/arbre/selecteur-personne-impression';
-import { chargerArbre, derniersEnfants, personneOuDefaut } from '@/lib/arbre';
+import { chargerArbre, derniersEnfants, personneOuDefaut, signerPhotosPersonnes } from '@/lib/arbre';
 import { conseilsImpression } from '@/lib/arbre-impression-conseils';
 import { filtrerDisposition, parserOptionsImpression, urlOptionsImpression } from '@/lib/arbre-impression';
 import { versPersonneRecherche } from '@/lib/arbre-graphe';
@@ -48,7 +48,7 @@ export default async function PageArbreImprimer({
     decoupage: typeof params.decoupage === 'string' ? params.decoupage : undefined,
   });
 
-  const donnees = await chargerArbre();
+  const donnees = await chargerArbre({ signerPhotosPour: 'aucun' });
   if (donnees.personnes.size === 0) notFound();
 
   const focus = personneOuDefaut(
@@ -59,6 +59,19 @@ export default async function PageArbreImprimer({
 
   if (!params.personne) {
     redirect(urlOptionsImpression({ personne: focus.id, mode }, options));
+  }
+
+  const disposition = filtrerDisposition(
+    disposerArbre(donnees, focus.id, mode),
+    options.profondeur,
+    focus.id
+  );
+
+  if (options.avecPhotos) {
+    await signerPhotosPersonnes(
+      donnees.personnes,
+      new Set(disposition.noeuds.map((n) => n.personneId))
+    );
   }
 
   const dateImpression = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' }).format(
@@ -73,11 +86,6 @@ export default async function PageArbreImprimer({
 
   const formatPage = options.format === 'portrait' ? 'portrait' : 'landscape';
 
-  const disposition = filtrerDisposition(
-    disposerArbre(donnees, focus.id, mode),
-    options.profondeur,
-    focus.id
-  );
   const conseils = conseilsImpression(disposition, options, focus.id, mode);
   const recherchePersonnes = [...donnees.personnes.values()].map(versPersonneRecherche);
   const suggestions = derniersEnfants(donnees).map(versPersonneRecherche);
@@ -96,7 +104,7 @@ export default async function PageArbreImprimer({
         <Link href={`/arbre?personne=${focus.id}`} className="imprimer-lien-retour">
           ← Revenir à l’arbre
         </Link>
-        <ActionsImpressionArbre />
+        <ActionsImpressionArbre nomFichier={nomFichier} />
       </div>
 
       <div className="arbre-impr-barre-reglages no-imprimer">
@@ -139,38 +147,6 @@ export default async function PageArbreImprimer({
           L’arbre de la famille — {focus.nomComplet} — imprimé le {dateImpression}
         </footer>
       </article>
-
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-(function(){
-  var btnPrint=document.querySelector('[data-imprimer]');
-  if(btnPrint)btnPrint.addEventListener('click',function(){window.print();});
-  var btnSvg=document.querySelector('[data-telecharger-svg]');
-  if(btnSvg)btnSvg.addEventListener('click',function(){
-    var svgs=document.querySelectorAll('.arbre-impr-svg');
-    if(!svgs.length)return;
-    var base='arbre-${nomFichier}';
-    function telecharger(svg,index){
-      var clone=svg.cloneNode(true);
-      clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
-      var src=new XMLSerializer().serializeToString(clone);
-      var blob=new Blob([src],{type:'image/svg+xml;charset=utf-8'});
-      var url=URL.createObjectURL(blob);
-      var a=document.createElement('a');
-      a.href=url;
-      a.download=base+(svgs.length>1?'-part-'+(index+1):'')+'.svg';
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-    svgs.forEach(function(svg,i){
-      window.setTimeout(function(){telecharger(svg,i);},i*300);
-    });
-  });
-})();
-          `.trim(),
-        }}
-      />
     </div>
   );
 }

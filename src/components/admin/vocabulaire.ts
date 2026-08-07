@@ -25,6 +25,8 @@ export type DemandePortraitAdmin = {
   titrePhoto: string | null;
   demandeur: string;
   creeLe: string;
+  urlPhoto: string | null;
+  urlPortraitActuel: string | null;
 };
 
 export type MembreAdmin = Pick<
