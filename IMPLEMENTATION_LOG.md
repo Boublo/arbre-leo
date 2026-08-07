@@ -16,6 +16,7 @@
 | Garde-fous de graphe | `QLT-009` (filiation vers une union absente) et `QLT-010` (cycle parent-enfant) sont désormais détectés par `src/lib/coherence.ts`, affichés dans l’administration et couverts par le jeu fictif. |
 | Vérifications | `npm run typecheck` et `npm run lint` passent après ce lot ; le script fictif reste à exécuter dans le CI doté de `tsx`. |
 | Résumé partageable | `resumerQualite` produit un état sans identité familiale : comptes, couverture naissance / preuve forte, occurrences par règle et statut. L’administration affiche le compteur de preuves fortes. |
+| Relance de recherche | `QLT-007` réemploie le seuil commun de 60 jours, remonte les demandes sans réponse dans l’administration et renvoie vers `/recherches`. Aucun chantier n’est modifié automatiquement. |
 
 +## Lot ROADMAP-001 — 7 août 2026
 

@@ -1,4 +1,5 @@
 import type { DonneesArbre, PersonneArbre } from '@/lib/arbre';
+import { joursDepuis, SEUIL_RELANCE } from '@/lib/relance-chantier';
 
 /**
  * Détection déterministe d’incohérences — même esprit que `scripts/diagnostic.mjs`,
@@ -13,6 +14,7 @@ export type RegleQualite =
   | 'QLT-003'
   | 'QLT-004'
   | 'QLT-005'
+  | 'QLT-007'
   | 'QLT-009'
   | 'QLT-010';
 
@@ -23,6 +25,7 @@ export type Anomalie = {
   titre: string;
   detail: string;
   personneIds: string[];
+  lien?: { href: string; libelle: string };
 };
 
 export type DoublonPotentiel = {
@@ -62,6 +65,53 @@ export type ResumeQualite = {
   }>;
   statut: 'sain' | 'a_revoir' | 'bloquant';
 };
+
+export type ChantierQualite = {
+  id: string;
+  statut: string;
+  demande_le: string | null;
+  reponse_le: string | null;
+};
+
+/**
+ * Les demandes dépassant le délai de relance sont des signaux de suivi, pas
+ * des erreurs généalogiques. L'identité du chantier reste sur la page dédiée.
+ */
+export function analyserChantiersEnAttente(
+  chantiers: ChantierQualite[],
+  maintenant: number = Date.now()
+): Anomalie[] {
+  return chantiers.flatMap((chantier) => {
+    const attente = joursDepuis(chantier.demande_le, maintenant);
+    if (
+      chantier.statut !== 'en_attente_reponse' ||
+      chantier.reponse_le ||
+      attente === null ||
+      attente < SEUIL_RELANCE
+    ) {
+      return [];
+    }
+    return [{
+      id: `relance-chantier:${chantier.id}`,
+      regleId: 'QLT-007',
+      severite: 'attention',
+      titre: 'Recherche sans réponse à relancer',
+      detail: `Une demande attend une réponse depuis ${attente} jours.`,
+      personneIds: [],
+      lien: { href: '/recherches', libelle: 'Voir les recherches' },
+    }];
+  });
+}
+
+export function completerRapportCoherence(
+  rapport: RapportCoherence,
+  supplementaires: Anomalie[]
+): RapportCoherence {
+  return {
+    ...rapport,
+    anomalies: [...rapport.anomalies, ...supplementaires].sort(comparerAnomalies),
+  };
+}
 
 const AGE_PARENT_MIN = 12;
 const AGE_PARENT_MAX = 60;
@@ -268,14 +318,7 @@ export function analyserCoherence(donnees: DonneesArbre): RapportCoherence {
     });
   }
 
-  const ordre: Record<SeveriteAnomalie, number> = {
-    critique: 0,
-    attention: 1,
-    info: 2,
-  };
-  anomalies.sort(
-    (a, b) => ordre[a.severite] - ordre[b.severite] || a.titre.localeCompare(b.titre, 'fr')
-  );
+  anomalies.sort(comparerAnomalies);
   doublons.sort((a, b) => b.personneIds.length - a.personneIds.length);
 
   return {
@@ -293,6 +336,16 @@ export function analyserCoherence(donnees: DonneesArbre): RapportCoherence {
       preuveActeOuAnom: avecPreuveActeOuAnom,
     },
   };
+}
+
+const ORDRE_SEVERITE: Record<SeveriteAnomalie, number> = {
+  critique: 0,
+  attention: 1,
+  info: 2,
+};
+
+function comparerAnomalies(a: Anomalie, b: Anomalie): number {
+  return ORDRE_SEVERITE[a.severite] - ORDRE_SEVERITE[b.severite] || a.titre.localeCompare(b.titre, 'fr');
 }
 
 /**

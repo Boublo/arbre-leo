@@ -16,7 +16,7 @@ import type {
   MembreAdmin,
 } from '@/components/admin/vocabulaire';
 import { chargerArbre } from '@/lib/arbre';
-import { analyserCoherence } from '@/lib/coherence';
+import { analyserChantiersEnAttente, analyserCoherence, completerRapportCoherence } from '@/lib/coherence';
 import { exigerAdmin } from './garde';
 
 /**
@@ -48,6 +48,7 @@ export default async function PageAdmin() {
     souvenirsRes,
     photosRes,
     portraitsRes,
+    chantiersRes,
     arbre,
   ] = await Promise.all([
     supabase
@@ -82,10 +83,18 @@ export default async function PageAdmin() {
       .eq('statut', 'en_attente')
       .order('cree_le', { ascending: true }),
 
+    supabase
+      .from('chantiers_recherche')
+      .select('id, statut, demande_le, reponse_le')
+      .eq('statut', 'en_attente_reponse'),
+
     chargerArbre({ signerPhotosPour: 'aucun' }),
   ]);
 
-  const rapport = analyserCoherence(arbre);
+  const rapport = completerRapportCoherence(
+    analyserCoherence(arbre),
+    analyserChantiersEnAttente(chantiersRes.data ?? [])
+  );
 
   const membres = membresRes.data ?? [];
 

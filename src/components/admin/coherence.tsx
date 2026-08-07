@@ -144,6 +144,16 @@ function LigneAnomalie({ anomalie }: { anomalie: Anomalie }) {
             </Link>
           </li>
         ))}
+        {anomalie.lien && (
+          <li>
+            <Link
+              href={anomalie.lien.href}
+              className="text-sm font-medium text-accent underline-offset-4 hover:underline"
+            >
+              {anomalie.lien.libelle}
+            </Link>
+          </li>
+        )}
       </ul>
     </article>
   );

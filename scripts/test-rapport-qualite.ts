@@ -6,7 +6,12 @@
  * Les noms, dates et identifiants ci-dessous sont inventés. Ce test vérifie
  * que les alertes restent de simples signaux lisibles, jamais des corrections.
  */
-import { analyserCoherence, resumerQualite } from '../src/lib/coherence';
+import {
+  analyserChantiersEnAttente,
+  analyserCoherence,
+  completerRapportCoherence,
+  resumerQualite,
+} from '../src/lib/coherence';
 import type { DonneesArbre, PersonneArbre } from '../src/lib/arbre';
 
 function personne(
@@ -90,7 +95,17 @@ const donnees: DonneesArbre = {
   ]),
 };
 
-const rapport = analyserCoherence(donnees);
+const rapport = completerRapportCoherence(
+  analyserCoherence(donnees),
+  analyserChantiersEnAttente(
+    [
+      { id: 'relance', statut: 'en_attente_reponse', demande_le: '2026-05-01', reponse_le: null },
+      { id: 'recent', statut: 'en_attente_reponse', demande_le: '2026-07-20', reponse_le: null },
+      { id: 'clos', statut: 'aboutie', demande_le: '2026-01-01', reponse_le: '2026-01-15' },
+    ],
+    Date.parse('2026-08-07T12:00:00Z')
+  )
+);
 const titres = new Set(rapport.anomalies.map((anomalie) => anomalie.titre));
 const regles = new Set(rapport.anomalies.map((anomalie) => anomalie.regleId));
 
@@ -102,11 +117,12 @@ for (const titre of [
   'Doublon potentiel',
   'Filiation rattachée à une union absente',
   'Cycle de filiation détecté',
+  'Recherche sans réponse à relancer',
 ]) {
   if (!titres.has(titre)) throw new Error(`Alerte attendue absente : ${titre}`);
 }
 
-for (const regle of ['QLT-001', 'QLT-002', 'QLT-003', 'QLT-004', 'QLT-005', 'QLT-009', 'QLT-010'] as const) {
+for (const regle of ['QLT-001', 'QLT-002', 'QLT-003', 'QLT-004', 'QLT-005', 'QLT-007', 'QLT-009', 'QLT-010'] as const) {
   if (!regles.has(regle)) throw new Error(`Règle attendue absente : ${regle}`);
 }
 
