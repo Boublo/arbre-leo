@@ -1,18 +1,16 @@
 'use server';
 
-import { chargerArbre } from '@/lib/arbre';
+import { chargerGrapheArbreFocus } from '@/lib/arbre-contexte-fiche';
 import { serialiserGraphe, type GrapheSerialise } from '@/lib/arbre-graphe';
 
 /**
- * Recharge le graphe complet pour l'écran /arbre.
+ * Recharge le sous-graphe autour du focus pour l'écran /arbre.
  *
- * Historiquement nommé « sous-graphe » : un BFS tronquait l'ascendance.
- * On charge désormais tout l'arbre (mis en cache requête via `chargerArbre`)
- * puis on le sérialise. `focusId` sert uniquement à valider que la personne
- * existe encore.
+ * Ascendance et descendance complètes + voisinage latéral (BFS). La palette
+ * de recherche utilise un index léger séparé (`chargerPersonnesRechercheArbre`).
  */
 export async function chargerGrapheArbre(focusId: string): Promise<GrapheSerialise> {
-  const donnees = await chargerArbre({ signerPhotosPour: 'aucun' });
+  const donnees = await chargerGrapheArbreFocus(focusId);
   if (!donnees.personnes.has(focusId)) {
     return serialiserGraphe({
       personnes: new Map(),

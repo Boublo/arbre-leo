@@ -3,13 +3,21 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   ARBRE_VIDE,
   assemblerDonneesArbre,
+  derniersEnfants,
+  personneOuDefaut,
   type DonneesArbre,
   type EntreesAssemblerArbre,
   type OptionsChargementArbre,
 } from '@/lib/arbre';
-import { PROFONDEUR_CONTEXTE_FICHE } from '@/lib/arbre-graphe';
+import {
+  PROFONDEUR_CONTEXTE_FICHE,
+  PROFONDEUR_SOUS_GRAPHE_ARBRE,
+  type PersonneRecherche,
+} from '@/lib/arbre-graphe';
+import { PRENOM_RACINE } from '@/lib/branches';
 import { creerClientServeur } from '@/lib/supabase/server';
-import type { BaseDeDonnees } from '@/lib/types-base';
+import { personneEstVivante } from '@/lib/vivant';
+import type { BaseDeDonnees, Sexe } from '@/lib/types-base';
 
 /**
  * Chargement ciblé pour les fiches personne (audit v1.2 — B3).
@@ -309,4 +317,266 @@ const chargerDonneesResumeBrancheEnCache = cache(
  */
 export async function chargerDonneesResumeBranche(personneId: string): Promise<DonneesArbre> {
   return chargerDonneesResumeBrancheEnCache(personneId);
+}
+
+// ---------------------------------------------------------------------------
+// /arbre — sous-graphe focus + recherche légère (audit v1.3 B5)
+// ---------------------------------------------------------------------------
+
+function remonterIdsAdj(
+  depart: string,
+  table: Map<string, string[]>,
+  profondeurMax = 40
+): Set<string> {
+  const vus = new Set<string>();
+  let frontiere = [depart];
+
+  while (frontiere.length > 0 && vus.size < profondeurMax) {
+    const suivante: string[] = [];
+    for (const id of frontiere) {
+      for (const voisin of table.get(id) ?? []) {
+        if (vus.has(voisin)) continue;
+        vus.add(voisin);
+        suivante.push(voisin);
+      }
+    }
+    if (suivante.length === 0) break;
+    frontiere = suivante;
+  }
+
+  return vus;
+}
+
+function collecterIdsSousGrapheDepuisAdjacence(adj: Adjacence, racineId: string): Set<string> {
+  const ids = new Set<string>([racineId]);
+
+  for (const id of remonterIdsAdj(racineId, adj.parents)) ids.add(id);
+  for (const id of remonterIdsAdj(racineId, adj.enfants)) ids.add(id);
+
+  let frontiere = [racineId];
+  for (let profondeur = 0; profondeur < PROFONDEUR_SOUS_GRAPHE_ARBRE; profondeur++) {
+    const suivante: string[] = [];
+    for (const id of frontiere) {
+      for (const voisinId of voisinsAdjacence(adj, id)) {
+        if (ids.has(voisinId)) continue;
+        ids.add(voisinId);
+        suivante.push(voisinId);
+      }
+    }
+    if (suivante.length === 0) break;
+    frontiere = suivante;
+  }
+
+  return ids;
+}
+
+const chargerGrapheArbreFocusEnCache = cache(
+  async (focusId: string): Promise<DonneesArbre> => {
+    const supabase = await creerClientServeur();
+
+    const { data: existe, error: erreurExiste } = await supabase
+      .from('personnes')
+      .select('id')
+      .eq('id', focusId)
+      .maybeSingle();
+    if (erreurExiste) throw new Error(erreurExiste.message);
+    if (!existe) return ARBRE_VIDE;
+
+    const { unions, filiations } = await chargerLignesAdjacence(supabase);
+    const adj = construireAdjacence(unions, filiations);
+    const ids = collecterIdsSousGrapheDepuisAdjacence(adj, focusId);
+
+    return chargerArbrePourIds(supabase, ids, adj, { signerPhotosPour: 'aucun' });
+  }
+);
+
+/** Sous-graphe autour du focus pour l'écran /arbre (ascendance complète incluse). */
+export async function chargerGrapheArbreFocus(focusId: string): Promise<DonneesArbre> {
+  return chargerGrapheArbreFocusEnCache(focusId);
+}
+
+type LignePersonneRecherche = {
+  id: string;
+  prenoms: string | null;
+  nom: string | null;
+  nom_complet: string | null;
+  surnom: string | null;
+  sexe: Sexe;
+  presume_vivant: boolean | null;
+};
+
+type LigneEvenementRecherche = {
+  personne_id: string | null;
+  type: string;
+  annee: number | null;
+  mois: number | null;
+  jour: number | null;
+};
+
+function versRechercheDepuisLignes(
+  lignes: LignePersonneRecherche[],
+  evenements: LigneEvenementRecherche[]
+): PersonneRecherche[] {
+  const parPersonne = new Map<string, LigneEvenementRecherche[]>();
+  for (const e of evenements) {
+    if (!e.personne_id) continue;
+    const liste = parPersonne.get(e.personne_id) ?? [];
+    liste.push(e);
+    parPersonne.set(e.personne_id, liste);
+  }
+
+  return lignes.map((p) => {
+    const evts = parPersonne.get(p.id) ?? [];
+    const naissance = evts.find((e) => e.type === 'naissance');
+    const deces = evts.find((e) => e.type === 'deces');
+    const resume = (e: LigneEvenementRecherche | undefined) =>
+      e
+        ? {
+            annee: e.annee,
+            mois: e.mois,
+            jour: e.jour,
+            texte: e.annee ? String(e.annee) : '',
+            lieu: null,
+            lieuCourt: null,
+            lieuId: null,
+          }
+        : null;
+
+    return {
+      id: p.id,
+      nomComplet: p.nom_complet?.trim() || p.prenoms || p.nom || 'Inconnu',
+      surnom: p.surnom,
+      sexe: p.sexe,
+      naissance: resume(naissance),
+      deces: resume(deces),
+      presumeVivant: personneEstVivante(p.presume_vivant ?? false, {
+        typesEvenements: evts.map((e) => e.type),
+      }),
+    };
+  });
+}
+
+const chargerPersonnesRechercheArbreEnCache = cache(async (): Promise<PersonneRecherche[]> => {
+  const supabase = await creerClientServeur();
+  const [personnesRes, evenementsRes] = await Promise.all([
+    supabase
+      .from('personnes')
+      .select('id, prenoms, nom, nom_complet, surnom, sexe, presume_vivant'),
+    supabase
+      .from('evenements')
+      .select('personne_id, type, annee, mois, jour')
+      .in('type', ['naissance', 'deces']),
+  ]);
+
+  const erreur = personnesRes.error ?? evenementsRes.error;
+  if (erreur) throw new Error(`Recherche arbre impossible : ${erreur.message}`);
+
+  return versRechercheDepuisLignes(
+    personnesRes.data ?? [],
+    evenementsRes.data ?? []
+  );
+});
+
+/** Index léger pour la palette de recherche sur /arbre (toute la base, sans graphe). */
+export async function chargerPersonnesRechercheArbre(): Promise<PersonneRecherche[]> {
+  return chargerPersonnesRechercheArbreEnCache();
+}
+
+const chargerDerniersEnfantsIdsEnCache = cache(async (): Promise<string[]> => {
+  const supabase = await creerClientServeur();
+  const { unions, filiations } = await chargerLignesAdjacence(supabase);
+  const adj = construireAdjacence(unions, filiations);
+  const parents = new Set(adj.enfants.keys());
+
+  const recherche = await chargerPersonnesRechercheArbreEnCache();
+  const feuilles = recherche
+    .filter((p) => !parents.has(p.id) && p.naissance?.annee)
+    .sort((a, b) => (b.naissance?.annee ?? 0) - (a.naissance?.annee ?? 0))
+    .slice(0, 12)
+    .map((p) => p.id);
+
+  return feuilles;
+});
+
+export async function chargerDerniersEnfantsIds(): Promise<string[]> {
+  return chargerDerniersEnfantsIdsEnCache();
+}
+
+function normaliserPrenom(texte: string): string {
+  return texte
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/[''`’]/g, "'");
+}
+
+/** Résout le focus initial sans charger tout le graphe. */
+export function resoudreFocusArbre(
+  recherche: PersonneRecherche[],
+  demande?: string
+): string | null {
+  if (recherche.length === 0) return null;
+
+  const donneesLegere: DonneesArbre = {
+    personnes: new Map(
+      recherche.map((p) => [
+        p.id,
+        {
+          id: p.id,
+          codeGedcom: null,
+          prenoms: null,
+          nom: null,
+          nomComplet: p.nomComplet,
+          surnom: p.surnom,
+          sexe: p.sexe,
+          branches: [],
+          niveauxPreuve: [],
+          presumeVivant: p.presumeVivant,
+          notes: null,
+          photoId: null,
+          photoUrl: null,
+          naissance: p.naissance,
+          deces: p.deces,
+          inhumation: null,
+          profession: null,
+          unions: [],
+          issuDe: null,
+          descendanceIncomplete: false,
+        },
+      ])
+    ),
+    unions: new Map(),
+    parents: new Map(),
+    enfants: new Map(),
+  };
+
+  if (demande && donneesLegere.personnes.has(demande)) {
+    return personneOuDefaut(donneesLegere, demande)?.id ?? null;
+  }
+
+  const idConfigure = process.env.NEXT_PUBLIC_PERSONNE_RACINE?.trim();
+  if (idConfigure && donneesLegere.personnes.has(idConfigure)) {
+    return idConfigure;
+  }
+
+  const cible = normaliserPrenom(PRENOM_RACINE);
+  if (cible && cible !== "l'enfant") {
+    for (const personne of recherche) {
+      const prenom = personne.nomComplet.split(/\s+/)[0]?.trim();
+      if (prenom && normaliserPrenom(prenom) === cible) return personne.id;
+    }
+  }
+
+  const feuilles = recherche
+    .filter((p) => p.naissance?.annee)
+    .sort((a, b) => (b.naissance?.annee ?? 0) - (a.naissance?.annee ?? 0));
+  return feuilles[0]?.id ?? recherche[0]?.id ?? null;
+}
+
+/** Derniers-nés pour les suggestions, à partir du graphe focus ou de l'index léger. */
+export function derniersEnfantsIdsDepuisDonnees(
+  donnees: DonneesArbre,
+  combien = 12
+): string[] {
+  return derniersEnfants(donnees, combien).map((p) => p.id);
 }

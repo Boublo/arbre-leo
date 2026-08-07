@@ -36,6 +36,15 @@ const enTetesSecurite = [
 ];
 
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+        pathname: '/storage/v1/object/sign/**',
+      },
+    ],
+  },
   async headers() {
     return [
       {

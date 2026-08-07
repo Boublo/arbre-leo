@@ -130,6 +130,103 @@ export function extraireSousGraphe(
   return { personnes, unions, parents, enfants };
 }
 
+/** Remonte toute la lignée parentale (sans limite de profondeur). */
+function remonterIds(
+  depart: string,
+  table: Map<string, string[]>,
+  profondeurMax = 40
+): Set<string> {
+  const vus = new Set<string>();
+  let frontiere = [depart];
+
+  while (frontiere.length > 0 && vus.size < profondeurMax) {
+    const suivante: string[] = [];
+    for (const id of frontiere) {
+      for (const voisin of table.get(id) ?? []) {
+        if (vus.has(voisin)) continue;
+        vus.add(voisin);
+        suivante.push(voisin);
+      }
+    }
+    if (suivante.length === 0) break;
+    frontiere = suivante;
+  }
+
+  return vus;
+}
+
+/**
+ * Identifiants utiles à l'écran /arbre : ascendance et descendance complètes
+ * (chaînes non tronquées) + voisinage latéral BFS (fratrie, cousins, conjoints).
+ *
+ * Contrairement à `extraireSousGraphe` seul, ne coupe pas une lignée au 4ᵉ saut.
+ */
+export function collecterIdsSousGrapheArbre(
+  donnees: DonneesArbre,
+  racineId: string,
+  profondeurLaterale = PROFONDEUR_SOUS_GRAPHE_ARBRE
+): Set<string> {
+  const ids = new Set<string>([racineId]);
+
+  for (const id of remonterIds(racineId, donnees.parents)) ids.add(id);
+  for (const id of remonterIds(racineId, donnees.enfants)) ids.add(id);
+
+  const lateral = extraireSousGraphe(donnees, racineId, profondeurLaterale);
+  for (const id of lateral.personnes.keys()) ids.add(id);
+
+  return ids;
+}
+
+/**
+ * Sous-graphe pour /arbre : ascendance/descendance complètes + voisinage latéral.
+ */
+export function extraireSousGraphePourArbre(
+  donnees: DonneesArbre,
+  racineId: string,
+  profondeurLaterale = PROFONDEUR_SOUS_GRAPHE_ARBRE
+): DonneesArbre {
+  const ids = collecterIdsSousGrapheArbre(donnees, racineId, profondeurLaterale);
+  if (!donnees.personnes.has(racineId) && ids.size === 1) {
+    return {
+      personnes: new Map(),
+      unions: new Map(),
+      parents: new Map(),
+      enfants: new Map(),
+    };
+  }
+
+  const personnes = new Map<string, PersonneArbre>();
+  for (const id of ids) {
+    const personne = donnees.personnes.get(id);
+    if (personne) personnes.set(id, personne);
+  }
+
+  const unions = new Map<string, UnionArbre>();
+  for (const union of donnees.unions.values()) {
+    const aVisible = union.conjointA ? ids.has(union.conjointA) : false;
+    const bVisible = union.conjointB ? ids.has(union.conjointB) : false;
+    const enfantsVisibles = union.enfants.filter((enfantId) => ids.has(enfantId));
+    if (!aVisible && !bVisible && enfantsVisibles.length === 0) continue;
+    unions.set(union.id, {
+      ...union,
+      conjointA: aVisible ? union.conjointA : null,
+      conjointB: bVisible ? union.conjointB : null,
+      enfants: enfantsVisibles,
+    });
+  }
+
+  const parents = new Map<string, string[]>();
+  const enfants = new Map<string, string[]>();
+  for (const id of ids) {
+    const listeParents = (donnees.parents.get(id) ?? []).filter((parentId) => ids.has(parentId));
+    if (listeParents.length > 0) parents.set(id, listeParents);
+    const listeEnfants = (donnees.enfants.get(id) ?? []).filter((enfantId) => ids.has(enfantId));
+    if (listeEnfants.length > 0) enfants.set(id, listeEnfants);
+  }
+
+  return { personnes, unions, parents, enfants };
+}
+
 export type GrapheSerialise = {
   personnes: PersonneArbre[];
   unions: UnionArbre[];
