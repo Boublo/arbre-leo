@@ -8,26 +8,19 @@
  * indications parlent du tactile plutôt que de la molette ou du clavier.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { guideDejaVu } from '@/components/arbre/guide-arbre';
+import { ecrireStockage, lireStockage, subscribeStockageLocal } from '@/lib/stockage-client';
 
 const CLE_BANDEAU_VU = 'arbre-bandeau-aide-v1';
 const DUREE_AVANT_FERMETURE = 8000;
 
 function bandeauDejaVu(): boolean {
-  try {
-    return localStorage.getItem(CLE_BANDEAU_VU) === '1';
-  } catch {
-    return true;
-  }
+  return lireStockage(CLE_BANDEAU_VU) === '1';
 }
 
 function marquerBandeauVu() {
-  try {
-    localStorage.setItem(CLE_BANDEAU_VU, '1');
-  } catch {
-    /* localStorage indisponible */
-  }
+  ecrireStockage(CLE_BANDEAU_VU, '1');
 }
 
 export function BandeauAide({
@@ -39,37 +32,43 @@ export function BandeauAide({
   masquer?: boolean;
   guideTermine?: boolean;
 }) {
-  const [visible, setVisible] = useState(false);
-  const [signalAuMontage, setSignalAuMontage] = useState(signalActivite);
+  const bandeauVu = useSyncExternalStore(
+    subscribeStockageLocal,
+    bandeauDejaVu,
+    () => true,
+  );
+  const guideVu = useSyncExternalStore(subscribeStockageLocal, guideDejaVu, () => true);
+  const peutAfficher = !masquer && guideVu && !bandeauVu;
+  const [fermeLocalement, setFermeLocalement] = useState(false);
+  const signalInitial = useRef(signalActivite);
 
   useEffect(() => {
-    if (masquer || bandeauDejaVu() || !guideDejaVu()) {
-      setVisible(false);
-      return;
-    }
-    setVisible(true);
-  }, [masquer, guideTermine]);
-
-  if (visible && signalActivite !== signalAuMontage) {
-    setSignalAuMontage(signalActivite);
+    if (!peutAfficher || fermeLocalement) return;
+    if (signalActivite === signalInitial.current) return;
     marquerBandeauVu();
-    setVisible(false);
-  }
+    setFermeLocalement(true);
+  }, [signalActivite, peutAfficher, fermeLocalement]);
 
   useEffect(() => {
-    if (!visible) return;
+    if (!peutAfficher || fermeLocalement) return;
     const id = window.setTimeout(() => {
       marquerBandeauVu();
-      setVisible(false);
+      setFermeLocalement(true);
     }, DUREE_AVANT_FERMETURE);
     return () => window.clearTimeout(id);
-  }, [visible]);
+  }, [peutAfficher, fermeLocalement, guideTermine]);
 
-  if (!visible || masquer) return null;
+  useEffect(() => {
+    if (peutAfficher) setFermeLocalement(false);
+  }, [peutAfficher]);
+
+  const visible = peutAfficher && !fermeLocalement;
+
+  if (!visible) return null;
 
   function fermer() {
     marquerBandeauVu();
-    setVisible(false);
+    setFermeLocalement(true);
   }
 
   return (

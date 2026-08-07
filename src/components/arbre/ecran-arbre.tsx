@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore, useTransition } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { VueArbre } from '@/components/arbre/vue-arbre';
 import { BarreOutilsArbre } from '@/components/arbre/barre-outils-arbre';
@@ -8,7 +8,6 @@ import { FichePersonne } from '@/components/arbre/fiche-personne';
 import { PanneauMobile } from '@/components/interactions/panneau-mobile';
 import { PaletteCommandes } from '@/components/arbre/palette-commandes';
 import { GuideArbre, guideDejaVu } from '@/components/arbre/guide-arbre';
-import { useRafraichirPhotosArbre } from '@/components/arbre/use-rafraichir-photos-arbre';
 import { chargerGrapheArbre } from '@/app/actions/arbre';
 import {
   anneesDeVie,
@@ -24,27 +23,17 @@ import {
   type FiltreBrancheEclate,
   type ModeArbre,
 } from '@/lib/layout-arbre';
-import {
-  lireFiltreBrancheEclateInitial,
-  lireMasquerLiensLointainsInitial,
-  lireProfondeurEclateInitiale,
-  ReglagesModeEclate,
-} from '@/components/arbre/reglage-profondeur-eclate';
+import { ReglagesModeEclate } from '@/components/arbre/reglage-profondeur-eclate';
 import { urlImpressionArbre, profondeurEclateVersImpression } from '@/lib/arbre-impression';
-
-const CLE_MODE_ARBRE = 'arbre-mode';
-const MODES_ARBRE: ModeArbre[] = ['ascendance', 'famille', 'descendance', 'eclate'];
-
-function lireModeInitial(): ModeArbre {
-  if (typeof window === 'undefined') return 'ascendance';
-  try {
-    const sauve = localStorage.getItem(CLE_MODE_ARBRE);
-    if (sauve && MODES_ARBRE.includes(sauve as ModeArbre)) return sauve as ModeArbre;
-  } catch {
-    /* localStorage indisponible */
-  }
-  return 'ascendance';
-}
+import {
+  CLE_MODE_ARBRE,
+  lireFiltreBrancheEclateClient,
+  lireMasquerLiensLointainsClient,
+  lireModeArbreClient,
+  lireProfondeurEclateClient,
+} from '@/lib/preferences-arbre-client';
+import { ecrireStockage, subscribeStockageLocal } from '@/lib/stockage-client';
+import { useRafraichirPhotosArbre } from '@/components/arbre/use-rafraichir-photos-arbre';
 
 export function EcranArbre({
   graphe: grapheInitial,
@@ -63,71 +52,56 @@ export function EcranArbre({
   const chemin = usePathname();
 
   const [graphe, setGraphe] = useState(grapheInitial);
+  const [grapheServeur, setGrapheServeur] = useState(grapheInitial);
   const [focusId, setFocusId] = useState(focusInitial);
-  const [mode, setMode] = useState<ModeArbre>('ascendance');
+  const mode = useSyncExternalStore(
+    subscribeStockageLocal,
+    lireModeArbreClient,
+    () => 'ascendance' as ModeArbre,
+  );
+  const setMode = useCallback((prochain: ModeArbre) => {
+    ecrireStockage(CLE_MODE_ARBRE, prochain);
+  }, []);
   const [selectionId, setSelectionId] = useState<string | null>(null);
   const [paletteOuverte, setPaletteOuverte] = useState(false);
-  const [guideOuvert, setGuideOuvert] = useState(false);
-  const [guideTermine, setGuideTermine] = useState(false);
+  const guideVuStockage = useSyncExternalStore(subscribeStockageLocal, guideDejaVu, () => true);
+  const [guideForceOuvert, setGuideForceOuvert] = useState(false);
+  const [guideForceFerme, setGuideForceFerme] = useState(false);
+  const guideOuvert = guideForceOuvert || (!guideVuStockage && !guideForceFerme);
+  const guideTermine = guideVuStockage || guideForceFerme;
   const [etapeGuide, setEtapeGuide] = useState<string | null>(null);
   const [chargementFocus, startTransition] = useTransition();
 
-  useEffect(() => {
+  if (grapheInitial !== grapheServeur) {
+    setGrapheServeur(grapheInitial);
     setGraphe(grapheInitial);
-  }, [grapheInitial]);
+  }
 
-  useEffect(() => {
-    if (!guideDejaVu()) {
-      setMode('ascendance');
-      setGuideOuvert(true);
-    } else {
-      setMode(lireModeInitial());
-      setGuideTermine(true);
-    }
+  const profondeurEclate = useSyncExternalStore(
+    subscribeStockageLocal,
+    lireProfondeurEclateClient,
+    () => PROFONDEUR_ECLATE_DEFAUT
+  );
+  const filtreBrancheEclate = useSyncExternalStore(
+    subscribeStockageLocal,
+    lireFiltreBrancheEclateClient,
+    () => 'tous' as FiltreBrancheEclate
+  );
+  const masquerLiensLointains = useSyncExternalStore(
+    subscribeStockageLocal,
+    lireMasquerLiensLointainsClient,
+    () => false
+  );
+  const setProfondeurEclate = useCallback((niveau: number) => {
+    ecrireStockage('arbre-profdondeur-eclate', String(niveau));
   }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(CLE_MODE_ARBRE, mode);
-    } catch {
-      /* localStorage indisponible */
-    }
-  }, [mode]);
-
-  const [profondeurEclate, setProfondeurEclate] = useState(PROFONDEUR_ECLATE_DEFAUT);
-  const [filtreBrancheEclate, setFiltreBrancheEclate] = useState<FiltreBrancheEclate>('tous');
-  const [masquerLiensLointains, setMasquerLiensLointains] = useState(false);
+  const setFiltreBrancheEclate = useCallback((filtre: FiltreBrancheEclate) => {
+    ecrireStockage('arbre-filtre-branche-eclate', filtre);
+  }, []);
+  const setMasquerLiensLointains = useCallback((masquer: boolean) => {
+    ecrireStockage('arbre-masquer-liens-lointains-eclate', masquer ? '1' : '0');
+  }, []);
   const [banniereEclateOuverte, setBanniereEclateOuverte] = useState(false);
-
-  useEffect(() => {
-    setProfondeurEclate(lireProfondeurEclateInitiale());
-    setFiltreBrancheEclate(lireFiltreBrancheEclateInitial());
-    setMasquerLiensLointains(lireMasquerLiensLointainsInitial());
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('arbre-profdondeur-eclate', String(profondeurEclate));
-    } catch {
-      /* localStorage indisponible */
-    }
-  }, [profondeurEclate]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('arbre-filtre-branche-eclate', filtreBrancheEclate);
-    } catch {
-      /* localStorage indisponible */
-    }
-  }, [filtreBrancheEclate]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('arbre-masquer-liens-lointains-eclate', masquerLiensLointains ? '1' : '0');
-    } catch {
-      /* localStorage indisponible */
-    }
-  }, [masquerLiensLointains]);
 
   useRafraichirPhotosArbre(graphe, setGraphe);
 
@@ -207,18 +181,18 @@ export function EcranArbre({
   const surEtapeGuide = useCallback((etapeId: string) => {
     setEtapeGuide(etapeId);
     if (etapeId === 'modes' || etapeId === 'bienvenue') {
-      setMode('ascendance');
+      ecrireStockage(CLE_MODE_ARBRE, 'ascendance');
     }
   }, []);
 
   const fermerGuide = useCallback(() => {
-    setGuideOuvert(false);
+    setGuideForceFerme(true);
+    setGuideForceOuvert(false);
     setEtapeGuide(null);
-    setGuideTermine(true);
   }, []);
 
   const ouvrirGuide = useCallback(() => {
-    setGuideOuvert(true);
+    setGuideForceOuvert(true);
   }, []);
 
   useEffect(() => {

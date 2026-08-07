@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import type { EvenementFiche, FaitFiche, MediaFiche } from '@/components/personne/donnees';
 import { VisionneusePhoto } from '@/components/photos/visionneuse-photo';
@@ -15,9 +15,27 @@ import {
   type OptionsChronologie,
   type VueAlbum,
 } from '@/components/personne/album/utilitaires-album';
+import { ecrireStockage, lireStockage, subscribeStockageLocal } from '@/lib/stockage-client';
 
 const CLE_VUE = 'arbre-album-vue';
 const CLE_OPTIONS = 'arbre-album-options-chrono';
+
+function lireVueAlbum(): VueAlbum {
+  const vueStockee = lireStockage(CLE_VUE);
+  return vueStockee === 'organisation' ? 'organisation' : 'chronologie';
+}
+
+function lireOptionsChronologie(): OptionsChronologie {
+  try {
+    const optionsStockees = lireStockage(CLE_OPTIONS);
+    if (optionsStockees) {
+      return { ...OPTIONS_CHRONOLOGIE_DEFAUT, ...JSON.parse(optionsStockees) };
+    }
+  } catch {
+    /* lecture locale impossible */
+  }
+  return OPTIONS_CHRONOLOGIE_DEFAUT;
+}
 
 /**
  * Album modulable : chronologie narrative ou grille classique par année.
@@ -40,51 +58,31 @@ export function AlbumPersonne({
   peutDeposer?: boolean;
   photoCarteId?: string | null;
 }) {
-  const [vue, setVue] = useState<VueAlbum>('chronologie');
-  const [options, setOptions] = useState<OptionsChronologie>(OPTIONS_CHRONOLOGIE_DEFAUT);
+  const vue = useSyncExternalStore(
+    subscribeStockageLocal,
+    lireVueAlbum,
+    () => 'chronologie' as VueAlbum,
+  );
+  const options = useSyncExternalStore(
+    subscribeStockageLocal,
+    lireOptionsChronologie,
+    () => OPTIONS_CHRONOLOGIE_DEFAUT,
+  );
   const [filtre, setFiltre] = useState<FiltreOrganisation>('tout');
   const [agrandie, setAgrandie] = useState<MediaFiche | null>(null);
-  const [pret, setPret] = useState(false);
-
-  useEffect(() => {
-    try {
-      const vueStockee = localStorage.getItem(CLE_VUE);
-      if (vueStockee === 'chronologie' || vueStockee === 'organisation') setVue(vueStockee);
-      const optionsStockees = localStorage.getItem(CLE_OPTIONS);
-      if (optionsStockees) setOptions({ ...OPTIONS_CHRONOLOGIE_DEFAUT, ...JSON.parse(optionsStockees) });
-    } catch {
-      /* lecture locale impossible */
-    }
-    setPret(true);
-  }, []);
 
   const changerVue = useCallback((prochaine: VueAlbum) => {
-    setVue(prochaine);
-    try {
-      localStorage.setItem(CLE_VUE, prochaine);
-    } catch {
-      /* écriture locale impossible */
-    }
+    ecrireStockage(CLE_VUE, prochaine);
   }, []);
 
   const basculerOption = useCallback((cle: keyof OptionsChronologie) => {
-    setOptions((courantes) => {
-      const suivantes = { ...courantes, [cle]: !courantes[cle] };
-      try {
-        localStorage.setItem(CLE_OPTIONS, JSON.stringify(suivantes));
-      } catch {
-        /* écriture locale impossible */
-      }
-      return suivantes;
-    });
+    const courantes = lireOptionsChronologie();
+    const suivantes = { ...courantes, [cle]: !courantes[cle] };
+    ecrireStockage(CLE_OPTIONS, JSON.stringify(suivantes));
   }, []);
 
   const images = useMemo(() => medias.filter((m) => m.estImage && m.url), [medias]);
   const photosSansDate = useMemo(() => images.filter((m) => m.annee === null).length, [images]);
-
-  if (!pret) {
-    return <div className="h-24 animate-pulse rounded-[var(--rayon)] bg-fond-doux" aria-hidden />;
-  }
 
   return (
     <div className="flex flex-col gap-5">

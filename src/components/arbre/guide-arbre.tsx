@@ -224,9 +224,12 @@ export function guideDejaVu(): boolean {
   }
 }
 
+import { notifierStockageLocal } from '@/lib/stockage-client';
+
 export function marquerGuideVu() {
   try {
     localStorage.setItem(CLE_GUIDE_VU, '1');
+    notifierStockageLocal();
   } catch {
     /* localStorage indisponible */
   }
