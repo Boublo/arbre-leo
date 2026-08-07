@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {
   dateMariageLisible,
   libelleCouple,
+  urlAjoutEnfant,
   type UnionSansEnfant,
 } from '@/lib/unions-sans-enfant';
 import { brancheLisible } from '@/components/recherches/vocabulaire';
@@ -16,9 +17,11 @@ import { brancheLisible } from '@/components/recherches/vocabulaire';
 export function UnionsSansEnfant({
   unions,
   onOuvrirChantier,
+  peutContribuer = false,
 }: {
   unions: UnionSansEnfant[];
   onOuvrirChantier?: (union: UnionSansEnfant) => void;
+  peutContribuer?: boolean;
 }) {
   if (unions.length === 0) return null;
 
@@ -83,17 +86,29 @@ export function UnionsSansEnfant({
                 )}
               </div>
 
-              {onOuvrirChantier && (
-                <button
-                  type="button"
-                  onClick={() => onOuvrirChantier(union)}
-                  className="shrink-0 rounded-[var(--rayon-petit)] border border-bordure-forte px-2 py-1 text-xs text-encre-douce
-                             transition hover:border-accent hover:text-accent"
-                >
-                  Ouvrir un chantier
-                  <span className="sr-only"> pour {libelleCouple(union)}</span>
-                </button>
-              )}
+              <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+                {peutContribuer && urlAjoutEnfant(union) && (
+                  <Link
+                    href={urlAjoutEnfant(union)!}
+                    className="rounded-[var(--rayon-petit)] border border-bordure-forte px-2 py-1 text-xs text-encre-douce
+                               transition hover:border-accent hover:text-accent"
+                  >
+                    Ajouter un enfant
+                    <span className="sr-only"> à {libelleCouple(union)}</span>
+                  </Link>
+                )}
+                {onOuvrirChantier && (
+                  <button
+                    type="button"
+                    onClick={() => onOuvrirChantier(union)}
+                    className="rounded-[var(--rayon-petit)] border border-bordure-forte px-2 py-1 text-xs text-encre-douce
+                               transition hover:border-accent hover:text-accent"
+                  >
+                    Ouvrir un chantier
+                    <span className="sr-only"> pour {libelleCouple(union)}</span>
+                  </button>
+                )}
+              </div>
             </li>
           );
         })}

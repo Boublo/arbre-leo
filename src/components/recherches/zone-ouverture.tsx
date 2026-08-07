@@ -95,7 +95,7 @@ export function ZoneOuverture({
   if (!peutContribuer) {
     return (
       <div className="flex flex-col gap-3 lg:max-w-lg">
-        <UnionsSansEnfant unions={unionsSansEnfant} />
+        <UnionsSansEnfant unions={unionsSansEnfant} peutContribuer={peutContribuer} />
         <PistesAOuvrir pistes={pistes} />
         <p className="text-sm text-encre-tres-douce">
           Votre compte est en lecture seule. Demandez à un administrateur de la famille de vous
@@ -244,7 +244,11 @@ export function ZoneOuverture({
       </section>
 
       <div className="flex flex-col gap-4">
-        <UnionsSansEnfant unions={unionsSansEnfant} onOuvrirChantier={amorcerDepuisUnion} />
+        <UnionsSansEnfant
+          unions={unionsSansEnfant}
+          onOuvrirChantier={amorcerDepuisUnion}
+          peutContribuer={peutContribuer}
+        />
         <PistesAOuvrir pistes={pistes} onOuvrir={amorcerDepuisPiste} />
       </div>
     </div>

@@ -114,33 +114,50 @@ export default async function PageRecherches() {
             qui attendent leur preuve.
           </p>
 
-          {chantiers.length > 0 && (
+          {(chantiers.length > 0 || unionsSansEnfant.length > 0) && (
             <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-encre-douce">
-              <span>
-                {chantiers.length} chantier{chantiers.length > 1 ? 's' : ''}
-              </span>
-              <span aria-hidden className="text-encre-tres-douce">
-                ·
-              </span>
-              <span>
-                {enAttente.length} en attente d’une réponse
-              </span>
-              {aRelancer.length > 0 && (
+              {unionsSansEnfant.length > 0 && (
                 <>
+                  <a href="#unions-sans-enfant" className="lien-discret">
+                    {unionsSansEnfant.length} couple{unionsSansEnfant.length > 1 ? 's' : ''} sans
+                    descendance connue
+                  </a>
+                  {chantiers.length > 0 && (
+                    <span aria-hidden className="text-encre-tres-douce">
+                      ·
+                    </span>
+                  )}
+                </>
+              )}
+              {chantiers.length > 0 && (
+                <>
+                  <span>
+                    {chantiers.length} chantier{chantiers.length > 1 ? 's' : ''}
+                  </span>
                   <span aria-hidden className="text-encre-tres-douce">
                     ·
                   </span>
-                  <span className="font-medium text-alerte">
-                    {aRelancer.length} à relancer, sans réponse depuis plus de deux mois
+                  <span>
+                    {enAttente.length} en attente d’une réponse
+                  </span>
+                  {aRelancer.length > 0 && (
+                    <>
+                      <span aria-hidden className="text-encre-tres-douce">
+                        ·
+                      </span>
+                      <span className="font-medium text-alerte">
+                        {aRelancer.length} à relancer, sans réponse depuis plus de deux mois
+                      </span>
+                    </>
+                  )}
+                  <span aria-hidden className="text-encre-tres-douce">
+                    ·
+                  </span>
+                  <span>
+                    {abouties.length} aboutie{abouties.length > 1 ? 's' : ''}
                   </span>
                 </>
               )}
-              <span aria-hidden className="text-encre-tres-douce">
-                ·
-              </span>
-              <span>
-                {abouties.length} aboutie{abouties.length > 1 ? 's' : ''}
-              </span>
             </p>
           )}
         </header>

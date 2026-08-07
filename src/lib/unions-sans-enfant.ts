@@ -145,6 +145,18 @@ export function libelleCouple(union: UnionSansEnfant): string {
   return 'Couple sans nom';
 }
 
+/**
+ * Lien vers le formulaire d'ajout, parents pré-remplis selon la convention
+ * de l'application (conjoint_a = père, conjoint_b = mère).
+ */
+export function urlAjoutEnfant(union: UnionSansEnfant): string | null {
+  const params = new URLSearchParams();
+  if (union.conjointA) params.set('pere', union.conjointA.id);
+  if (union.conjointB) params.set('mere', union.conjointB.id);
+  if ([...params.keys()].length === 0) return null;
+  return `/personne/nouvelle?${params}`;
+}
+
 /** Date de mariage formatée si connue. */
 export function dateMariageLisible(union: UnionSansEnfant): string | null {
   const { mariage } = union;
