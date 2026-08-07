@@ -1,40 +1,64 @@
 'use client';
 
 import Link from 'next/link';
+import type { ChoixFamille, ChoixTheme } from '@/lib/recits';
+
+export type FiltreRecitsActif =
+  | { type: 'tous' }
+  | { type: 'famille'; valeur: string }
+  | { type: 'theme'; valeur: string };
 
 /**
- * Sélecteur de famille pour la liste des récits.
- *
- * Une puce par patronyme, plus une « Toutes » qui rend la sélection à zéro.
- * L'état actif est marqué en fond plein — jamais par la seule couleur, le
- * `aria-current` fait foi pour un lecteur d'écran. Les liens portent la seule
- * information dont ils ont besoin : le patronyme choisi passe en `?famille=`.
+ * Sélecteur familles + thèmes pour la liste des récits (audit B8).
  */
 export function SelecteurFamille({
-  choix,
+  familles,
+  themes,
   actif,
 }: {
-  choix: readonly { patronyme: string; nombre: number }[];
-  actif: string | null;
+  familles: readonly ChoixFamille[];
+  themes: readonly ChoixTheme[];
+  actif: FiltreRecitsActif;
 }) {
+  const totalFamilles = familles.reduce((n, c) => n + c.nombre, 0);
+
   return (
-    <nav aria-label="Choisir une famille" className="flex flex-wrap gap-2">
-      <Puce
-        href="/recits"
-        libelle="Toutes les familles"
-        nombre={choix.reduce((n, c) => n + c.nombre, 0)}
-        actif={actif === null}
-      />
-      {choix.map((c) => (
+    <div className="flex flex-col gap-4">
+      <nav aria-label="Choisir une famille" className="flex flex-wrap gap-2">
         <Puce
-          key={c.patronyme}
-          href={`/recits?famille=${encodeURIComponent(c.patronyme)}`}
-          libelle={c.patronyme}
-          nombre={c.nombre}
-          actif={actif === c.patronyme}
+          href="/recits"
+          libelle="Toutes les familles"
+          nombre={totalFamilles}
+          actif={actif.type === 'tous'}
         />
-      ))}
-    </nav>
+        {familles.map((c) => (
+          <Puce
+            key={c.patronyme}
+            href={`/recits?famille=${encodeURIComponent(c.patronyme)}`}
+            libelle={c.patronyme}
+            nombre={c.nombre}
+            actif={actif.type === 'famille' && actif.valeur === c.patronyme}
+          />
+        ))}
+      </nav>
+
+      {themes.length > 0 && (
+        <nav aria-label="Choisir un thème" className="flex flex-wrap gap-2">
+          <span className="w-full text-xs uppercase tracking-wider text-encre-tres-douce">
+            Thèmes
+          </span>
+          {themes.map((c) => (
+            <Puce
+              key={c.theme}
+              href={`/recits?theme=${encodeURIComponent(c.theme)}`}
+              libelle={c.theme}
+              nombre={c.nombre}
+              actif={actif.type === 'theme' && actif.valeur === c.theme}
+            />
+          ))}
+        </nav>
+      )}
+    </div>
   );
 }
 

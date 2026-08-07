@@ -5,7 +5,11 @@ import { Navigation } from '@/components/navigation';
 import { BarreScroll } from '@/components/interactions/barre-scroll';
 import { RaccourciAccueil } from '@/components/interactions/raccourci-accueil';
 import { Vignette } from '@/components/portrait/vignette';
-import { RenduMarkdown } from '@/components/recits/rendu-markdown';
+import {
+  extraireSommaire,
+  RenduMarkdown,
+  TableDesMatieres,
+} from '@/components/recits/rendu-markdown';
 import { epinglerRecit, supprimerRecit } from '@/app/actions/recits';
 import {
   chargerRecit,
@@ -34,12 +38,21 @@ export default async function PageRecit({ params }: PageProps<'/recits/[id]'>) {
   const [recit, droits] = await Promise.all([chargerRecit(id), lireDroits()]);
   if (!recit) notFound();
 
-  const voisins = await chargerVoisins(recit.id, recit.patronyme);
+  const voisins = await chargerVoisins(recit.id, {
+    patronyme: recit.patronyme,
+    theme: recit.theme,
+  });
   const peutReprendre =
     droits.estAdmin ||
     (droits.utilisateurId !== null && droits.utilisateurId === recit.auteurId);
 
-  const famille = recit.patronyme ?? recit.theme;
+  const etiquette = recit.patronyme ?? recit.theme;
+  const sommaire = extraireSommaire(recit.corps);
+  const lienRetour = recit.patronyme
+    ? `/recits?famille=${encodeURIComponent(recit.patronyme)}`
+    : recit.theme
+      ? `/recits?theme=${encodeURIComponent(recit.theme)}`
+      : '/recits';
 
   return (
     <>
@@ -48,18 +61,17 @@ export default async function PageRecit({ params }: PageProps<'/recits/[id]'>) {
       <Navigation />
 
       <main id="contenu-principal" className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6">
-        <p className="mb-4">
-          <Link
-            href={
-              recit.patronyme
-                ? `/recits?famille=${encodeURIComponent(recit.patronyme)}`
-                : '/recits'
-            }
-            className="lien-discret text-sm"
-          >
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <Link href={lienRetour} className="lien-discret text-sm">
             ← Revenir aux récits
           </Link>
-        </p>
+          <Link
+            href={`/recits/${recit.id}/imprimer`}
+            className="text-sm text-encre-douce transition hover:text-accent"
+          >
+            Version imprimable →
+          </Link>
+        </div>
 
         <article className="flex flex-col gap-6">
           <header className="flex flex-col gap-3">
@@ -79,19 +91,17 @@ export default async function PageRecit({ params }: PageProps<'/recits/[id]'>) {
             <h1 className="text-4xl leading-tight">{recit.titre}</h1>
 
             {recit.chapeau && (
-              <p className="text-xl italic leading-relaxed text-encre-douce">
-                {recit.chapeau}
-              </p>
+              <p className="text-xl italic leading-relaxed text-encre-douce">{recit.chapeau}</p>
             )}
 
-            {(famille || recit.periode) && (
+            {(etiquette || recit.periode) && (
               <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-b border-bordure py-3 text-sm text-encre-douce">
-                {famille && (
+                {etiquette && (
                   <span>
                     <span className="text-xs uppercase tracking-wider text-encre-tres-douce">
-                      Famille ·{' '}
+                      {recit.patronyme ? 'Famille' : 'Thème'} ·{' '}
                     </span>
-                    {famille}
+                    {etiquette}
                   </span>
                 )}
                 {recit.periode && (
@@ -105,6 +115,8 @@ export default async function PageRecit({ params }: PageProps<'/recits/[id]'>) {
               </div>
             )}
           </header>
+
+          <TableDesMatieres entrees={sommaire} />
 
           <RenduMarkdown texte={recit.corps} />
 
@@ -129,8 +141,9 @@ export default async function PageRecit({ params }: PageProps<'/recits/[id]'>) {
           )}
 
           {(voisins.precedent || voisins.suivant) && (
-            <VoisinsMemeFamille
-              patronyme={recit.patronyme}
+            <VoisinsProches
+              etiquette={etiquette}
+              estThematique={Boolean(recit.theme && !recit.patronyme)}
               precedent={voisins.precedent}
               suivant={voisins.suivant}
             />
@@ -145,18 +158,28 @@ export default async function PageRecit({ params }: PageProps<'/recits/[id]'>) {
   );
 }
 
-function VoisinsMemeFamille({
-  patronyme,
+function VoisinsProches({
+  etiquette,
+  estThematique,
   precedent,
   suivant,
 }: {
-  patronyme: string | null;
+  etiquette: string | null;
+  estThematique: boolean;
   precedent: RecitResume | null;
   suivant: RecitResume | null;
 }) {
+  const libelle = estThematique
+    ? etiquette
+      ? `du thème « ${etiquette} »`
+      : 'thématiques'
+    : etiquette
+      ? `de la famille ${etiquette}`
+      : 'proches';
+
   return (
     <nav
-      aria-label={`Autres récits ${patronyme ? `de la famille ${patronyme}` : 'proches'}`}
+      aria-label={`Autres récits ${libelle}`}
       className="grid gap-3 border-t border-bordure pt-4 sm:grid-cols-2"
     >
       {precedent ? (

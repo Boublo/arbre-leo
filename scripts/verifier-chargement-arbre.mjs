@@ -1,9 +1,7 @@
 #!/usr/bin/env node
 /**
- * Garde-fou : /arbre doit charger le graphe COMPLET côté client.
- *
- * Un sous-graphe BFS (profondeur 4) tronque l'ascendance profonde et casse
- * le layout — régression observée août 2026 (Mathias, 5+ générations).
+ * Garde-fou : /arbre charge un sous-graphe focus (ascendance complète + BFS),
+ * pas un BFS seul qui tronque la lignée profonde.
  *
  * Les portraits sont signés côté client pour les nœuds visibles seulement
  * (voir useRafraichirPhotosArbre), pas en bloc au chargement serveur.
@@ -27,36 +25,38 @@ const page = lire('src/app/arbre/page.tsx');
 const action = lire('src/app/actions/arbre.ts');
 const ecran = lire('src/components/arbre/ecran-arbre.tsx');
 const photos = lire('src/components/arbre/use-rafraichir-photos-arbre.ts');
+const graphe = lire('src/lib/arbre-graphe.ts');
 
-if (page.includes('extraireSousGraphe')) {
+if (page.includes('extraireSousGraphe(') && !page.includes('extraireSousGraphePourArbre')) {
   erreurs.push(
-    'page.tsx : extraireSousGraphe ne doit pas être utilisé — ascendance tronquée'
+    'page.tsx : extraireSousGraphe seul tronque l’ascendance — utiliser chargerGrapheArbreFocus'
   );
+}
+if (!page.includes('chargerGrapheArbreFocus')) {
+  erreurs.push('page.tsx : chargerGrapheArbreFocus pour le graphe autour du focus');
+}
+if (!page.includes('chargerPersonnesRechercheArbre')) {
+  erreurs.push('page.tsx : chargerPersonnesRechercheArbre pour la palette de recherche');
 }
 if (!/serialiserGraphe\s*\(\s*donnees\s*\)/.test(page)) {
-  erreurs.push(
-    'page.tsx : le graphe client doit être serialiserGraphe(donnees), pas un sous-graphe'
-  );
-}
-if (!page.includes("signerPhotosPour: 'aucun'")) {
-  erreurs.push(
-    "page.tsx : chargerArbre({ signerPhotosPour: 'aucun' }) pour éviter de signer toutes les photos au SSR"
-  );
+  erreurs.push('page.tsx : le graphe client doit être serialiserGraphe(donnees)');
 }
 
-if (action.includes('extraireSousGraphe')) {
+if (action.includes('extraireSousGraphe(') && !action.includes('extraireSousGraphePourArbre')) {
   erreurs.push(
-    'actions/arbre.ts : chargerGrapheArbre ne doit pas extraire un sous-graphe'
+    'actions/arbre.ts : extraireSousGraphe seul tronque l’ascendance — utiliser chargerGrapheArbreFocus'
   );
+}
+if (!action.includes('chargerGrapheArbreFocus')) {
+  erreurs.push('actions/arbre.ts : chargerGrapheArbreFocus pour recharger le focus');
 }
 if (!/serialiserGraphe\s*\(\s*donnees\s*\)/.test(action)) {
-  erreurs.push(
-    'actions/arbre.ts : chargerGrapheArbre doit renvoyer serialiserGraphe(donnees)'
-  );
+  erreurs.push('actions/arbre.ts : chargerGrapheArbre doit renvoyer serialiserGraphe(donnees)');
 }
-if (!action.includes("signerPhotosPour: 'aucun'")) {
+
+if (!graphe.includes('extraireSousGraphePourArbre')) {
   erreurs.push(
-    "actions/arbre.ts : chargerGrapheArbre doit charger sans signatures photo serveur"
+    'arbre-graphe.ts : extraireSousGraphePourArbre doit préserver ascendance et descendance complètes'
   );
 }
 
@@ -66,9 +66,7 @@ if (!ecran.includes('useRafraichirPhotosArbre(graphe, setGraphe, idsPhotosVisibl
   );
 }
 if (!photos.includes('idsVisibles')) {
-  erreurs.push(
-    'use-rafraichir-photos-arbre.ts : signature limitée aux personnes visibles'
-  );
+  erreurs.push('use-rafraichir-photos-arbre.ts : signature limitée aux personnes visibles');
 }
 
 if (erreurs.length > 0) {
@@ -77,4 +75,6 @@ if (erreurs.length > 0) {
   process.exit(1);
 }
 
-console.log('OK — chargement arbre : graphe complet côté client, photos signées à la demande.');
+console.log(
+  'OK — chargement arbre : sous-graphe focus (ascendance complète), recherche légère, photos lazy.'
+);

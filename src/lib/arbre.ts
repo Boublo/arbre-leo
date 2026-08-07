@@ -141,7 +141,189 @@ type LigneEvenement = Pick<
   | 'type'
   | 'detail'
   | 'lieu_id'
-> & { lieux: { libelle: string } | null };
+> & { lieux: { libelle: string } | null; personne_id?: string | null; union_id?: string | null };
+
+type LignePersonne = {
+  id: string;
+  code_gedcom: string | null;
+  prenoms: string | null;
+  nom: string | null;
+  nom_complet: string | null;
+  surnom: string | null;
+  sexe: Sexe;
+  branches: string[] | null;
+  niveaux_preuve: NiveauPreuve[] | null;
+  presume_vivant: boolean | null;
+  notes: string | null;
+  photo_id: string | null;
+};
+
+type LigneUnion = { id: string; conjoint_a: string | null; conjoint_b: string | null };
+type LigneFiliation = { union_id: string; enfant_id: string };
+
+export type EntreesAssemblerArbre = {
+  lignesPersonnes: LignePersonne[];
+  lignesUnions: LigneUnion[];
+  lignesFiliations: LigneFiliation[];
+  lignesEvenements: LigneEvenement[];
+  options?: OptionsChargementArbre;
+  supabase?: SupabaseClient<BaseDeDonnees, 'arbre'>;
+};
+
+/** Assemble un `DonneesArbre` à partir de lignes déjà chargées en base. */
+export async function assemblerDonneesArbre(
+  entrees: EntreesAssemblerArbre
+): Promise<DonneesArbre> {
+  const {
+    lignesPersonnes,
+    lignesUnions,
+    lignesFiliations,
+    lignesEvenements,
+    options = {},
+    supabase: clientFourni,
+  } = entrees;
+  const signerPhotosPour = options.signerPhotosPour ?? 'tous';
+  const supabase = clientFourni ?? (await creerClientServeur());
+
+  const photoIds = [
+    ...new Set(
+      lignesPersonnes.map((p) => p.photo_id).filter((id): id is string => typeof id === 'string')
+    ),
+  ];
+
+  const mediasRes =
+    photoIds.length > 0 && signerPhotosPour !== 'aucun'
+      ? await supabase.from('medias').select('id, chemin').eq('type', 'photo').in('id', photoIds)
+      : { data: [] as { id: string; chemin: string }[], error: null };
+
+  if (mediasRes.error) {
+    throw new Error(`Chargement des médias impossible : ${mediasRes.error.message}`);
+  }
+
+  const cheminParMedia = new Map((mediasRes.data ?? []).map((m) => [m.id, m.chemin]));
+  const idsASigner =
+    signerPhotosPour === 'tous'
+      ? new Set(lignesPersonnes.map((p) => p.id))
+      : signerPhotosPour === 'aucun'
+        ? new Set<string>()
+        : signerPhotosPour;
+
+  const cheminsAsigner = [
+    ...new Set(
+      lignesPersonnes
+        .filter((p) => idsASigner.has(p.id))
+        .map((p) => (p.photo_id ? cheminParMedia.get(p.photo_id) : null))
+        .filter((c): c is string => typeof c === 'string')
+    ),
+  ];
+  const urlParChemin = new Map<string, string>();
+  if (cheminsAsigner.length > 0) {
+    const { data: urlsSignees } = await supabase.storage
+      .from('arbre-medias')
+      .createSignedUrls(cheminsAsigner, 3600);
+    for (const s of urlsSignees ?? []) {
+      if (s.path && s.signedUrl) urlParChemin.set(s.path, s.signedUrl);
+    }
+  }
+
+  const parPersonne = new Map<string, LigneEvenement[]>();
+  const parUnion = new Map<string, LigneEvenement[]>();
+  for (const e of lignesEvenements) {
+    if (e.personne_id) {
+      const liste = parPersonne.get(e.personne_id) ?? [];
+      liste.push(e);
+      parPersonne.set(e.personne_id, liste);
+    } else if (e.union_id) {
+      const liste = parUnion.get(e.union_id) ?? [];
+      liste.push(e);
+      parUnion.set(e.union_id, liste);
+    }
+  }
+
+  const unions = new Map<string, UnionArbre>();
+  for (const u of lignesUnions) {
+    const evts = parUnion.get(u.id) ?? [];
+    unions.set(u.id, {
+      id: u.id,
+      conjointA: u.conjoint_a,
+      conjointB: u.conjoint_b,
+      enfants: [],
+      mariage: resumer(evts.find((e) => e.type === 'mariage')),
+    });
+  }
+
+  const parents = new Map<string, string[]>();
+  const enfants = new Map<string, string[]>();
+  const issuDe = new Map<string, string>();
+
+  for (const f of lignesFiliations) {
+    const union = unions.get(f.union_id);
+    if (!union) continue;
+
+    union.enfants.push(f.enfant_id);
+    issuDe.set(f.enfant_id, f.union_id);
+
+    const pere = union.conjointA;
+    const mere = union.conjointB;
+    const listeParents = parents.get(f.enfant_id) ?? [];
+    for (const p of [pere, mere]) {
+      if (!p) continue;
+      listeParents.push(p);
+      const listeEnfants = enfants.get(p) ?? [];
+      listeEnfants.push(f.enfant_id);
+      enfants.set(p, listeEnfants);
+    }
+    parents.set(f.enfant_id, listeParents);
+  }
+
+  const unionsParPersonne = new Map<string, string[]>();
+  for (const u of unions.values()) {
+    for (const conjoint of [u.conjointA, u.conjointB]) {
+      if (!conjoint) continue;
+      const liste = unionsParPersonne.get(conjoint) ?? [];
+      liste.push(u.id);
+      unionsParPersonne.set(conjoint, liste);
+    }
+  }
+
+  const personnes = new Map<string, PersonneArbre>();
+  for (const p of lignesPersonnes) {
+    const evts = parPersonne.get(p.id) ?? [];
+    const profession = evts.find((e) => e.type === 'profession');
+
+    const chemin = p.photo_id ? cheminParMedia.get(p.photo_id) : null;
+    personnes.set(p.id, {
+      id: p.id,
+      codeGedcom: p.code_gedcom,
+      prenoms: p.prenoms,
+      nom: p.nom,
+      nomComplet: p.nom_complet?.trim() || p.prenoms || p.nom || 'Inconnu',
+      surnom: p.surnom,
+      sexe: p.sexe,
+      branches: p.branches ?? [],
+      niveauxPreuve: p.niveaux_preuve ?? [],
+      presumeVivant: personneEstVivante(p.presume_vivant ?? false, {
+        typesEvenements: evts.map((e) => e.type),
+      }),
+      notes: p.notes,
+      photoId: p.photo_id,
+      photoUrl: chemin ? urlParChemin.get(chemin) ?? null : null,
+      naissance: resumer(evts.find((e) => e.type === 'naissance')),
+      deces: resumer(evts.find((e) => e.type === 'deces')),
+      inhumation: resumer(evts.find((e) => e.type === 'inhumation')),
+      profession: profession?.detail ?? null,
+      unions: unionsParPersonne.get(p.id) ?? [],
+      issuDe: issuDe.get(p.id) ?? null,
+      descendanceIncomplete: false,
+    });
+  }
+
+  for (const personne of personnes.values()) {
+    personne.descendanceIncomplete = descendanceParaitIncomplete(personne, personnes, unions);
+  }
+
+  return { personnes, unions, parents, enfants };
+}
 
 function resumer(e: LigneEvenement | undefined): EvenementResume | null {
   if (!e) return null;
@@ -266,8 +448,6 @@ async function chargerArbreInterne(
   supabase: SupabaseClient<BaseDeDonnees, 'arbre'>,
   options: OptionsChargementArbre = {}
 ): Promise<DonneesArbre> {
-  const signerPhotosPour = options.signerPhotosPour ?? 'tous';
-
   const [personnesRes, unionsRes, filiationsRes, evenementsRes] = await Promise.all([
     supabase
       .from('personnes')
@@ -280,157 +460,18 @@ async function chargerArbreInterne(
       .in('type', TYPES_RESUME),
   ]);
 
-  const photoIds = [
-    ...new Set(
-      (personnesRes.data ?? [])
-        .map((p) => p.photo_id)
-        .filter((id): id is string => typeof id === 'string')
-    ),
-  ];
-
-  const mediasRes =
-    photoIds.length > 0 && signerPhotosPour !== 'aucun'
-      ? await supabase.from('medias').select('id, chemin').eq('type', 'photo').in('id', photoIds)
-      : { data: [] as { id: string; chemin: string }[], error: null };
-
   const erreur =
-    personnesRes.error ??
-    unionsRes.error ??
-    filiationsRes.error ??
-    evenementsRes.error ??
-    mediasRes.error;
+    personnesRes.error ?? unionsRes.error ?? filiationsRes.error ?? evenementsRes.error;
   if (erreur) throw new Error(`Chargement de l'arbre impossible : ${erreur.message}`);
 
-  const cheminParMedia = new Map((mediasRes.data ?? []).map((m) => [m.id, m.chemin]));
-  const idsASigner =
-    signerPhotosPour === 'tous'
-      ? new Set((personnesRes.data ?? []).map((p) => p.id))
-      : signerPhotosPour === 'aucun'
-        ? new Set<string>()
-        : signerPhotosPour;
-
-  const cheminsAsigner = [
-    ...new Set(
-      (personnesRes.data ?? [])
-        .filter((p) => idsASigner.has(p.id))
-        .map((p) => (p.photo_id ? cheminParMedia.get(p.photo_id) : null))
-        .filter((c): c is string => typeof c === 'string')
-    ),
-  ];
-  const urlParChemin = new Map<string, string>();
-  if (cheminsAsigner.length > 0) {
-    const { data: urlsSignees } = await supabase.storage
-      .from('arbre-medias')
-      .createSignedUrls(cheminsAsigner, 3600);
-    for (const s of urlsSignees ?? []) {
-      if (s.path && s.signedUrl) urlParChemin.set(s.path, s.signedUrl);
-    }
-  }
-
-  // Les événements sont indexés par personne puis par type : une même personne
-  // peut avoir plusieurs professions ou résidences successives.
-  const parPersonne = new Map<string, LigneEvenement[]>();
-  const parUnion = new Map<string, LigneEvenement[]>();
-  for (const e of (evenementsRes.data ?? []) as unknown as (LigneEvenement & {
-    personne_id: string | null;
-    union_id: string | null;
-  })[]) {
-    if (e.personne_id) {
-      const liste = parPersonne.get(e.personne_id) ?? [];
-      liste.push(e);
-      parPersonne.set(e.personne_id, liste);
-    } else if (e.union_id) {
-      const liste = parUnion.get(e.union_id) ?? [];
-      liste.push(e);
-      parUnion.set(e.union_id, liste);
-    }
-  }
-
-  const unions = new Map<string, UnionArbre>();
-  for (const u of unionsRes.data ?? []) {
-    const evts = parUnion.get(u.id) ?? [];
-    unions.set(u.id, {
-      id: u.id,
-      conjointA: u.conjoint_a,
-      conjointB: u.conjoint_b,
-      enfants: [],
-      mariage: resumer(evts.find((e) => e.type === 'mariage')),
-    });
-  }
-
-  const parents = new Map<string, string[]>();
-  const enfants = new Map<string, string[]>();
-  const issuDe = new Map<string, string>();
-
-  for (const f of filiationsRes.data ?? []) {
-    const union = unions.get(f.union_id);
-    if (!union) continue;
-
-    union.enfants.push(f.enfant_id);
-    issuDe.set(f.enfant_id, f.union_id);
-
-    const pere = union.conjointA;
-    const mere = union.conjointB;
-    const listeParents = parents.get(f.enfant_id) ?? [];
-    for (const p of [pere, mere]) {
-      if (!p) continue;
-      listeParents.push(p);
-      const listeEnfants = enfants.get(p) ?? [];
-      listeEnfants.push(f.enfant_id);
-      enfants.set(p, listeEnfants);
-    }
-    parents.set(f.enfant_id, listeParents);
-  }
-
-  const unionsParPersonne = new Map<string, string[]>();
-  for (const u of unions.values()) {
-    for (const conjoint of [u.conjointA, u.conjointB]) {
-      if (!conjoint) continue;
-      const liste = unionsParPersonne.get(conjoint) ?? [];
-      liste.push(u.id);
-      unionsParPersonne.set(conjoint, liste);
-    }
-  }
-
-  const personnes = new Map<string, PersonneArbre>();
-  for (const p of personnesRes.data ?? []) {
-    const evts = parPersonne.get(p.id) ?? [];
-    const profession = evts.find((e) => e.type === 'profession');
-
-    const chemin = p.photo_id ? cheminParMedia.get(p.photo_id) : null;
-    personnes.set(p.id, {
-      id: p.id,
-      codeGedcom: p.code_gedcom,
-      prenoms: p.prenoms,
-      nom: p.nom,
-      nomComplet: p.nom_complet?.trim() || p.prenoms || p.nom || 'Inconnu',
-      surnom: p.surnom,
-      sexe: p.sexe,
-      branches: p.branches ?? [],
-      niveauxPreuve: p.niveaux_preuve ?? [],
-      presumeVivant: personneEstVivante(p.presume_vivant, { typesEvenements: evts.map((e) => e.type) }),
-      notes: p.notes,
-      photoId: p.photo_id,
-      photoUrl: chemin ? urlParChemin.get(chemin) ?? null : null,
-      naissance: resumer(evts.find((e) => e.type === 'naissance')),
-      deces: resumer(evts.find((e) => e.type === 'deces')),
-      inhumation: resumer(evts.find((e) => e.type === 'inhumation')),
-      profession: profession?.detail ?? null,
-      unions: unionsParPersonne.get(p.id) ?? [],
-      issuDe: issuDe.get(p.id) ?? null,
-      // Repose sur les unions et les naissances : renseigné en second passage,
-      // une fois toutes les personnes construites.
-      descendanceIncomplete: false,
-    });
-  }
-
-  // Second passage : maintenant que toutes les personnes existent, on peut
-  // regarder les conjoints d'un couple pour déduire une branche à compléter.
-  for (const personne of personnes.values()) {
-    personne.descendanceIncomplete = descendanceParaitIncomplete(personne, personnes, unions);
-  }
-
-  return { personnes, unions, parents, enfants };
+  return assemblerDonneesArbre({
+    lignesPersonnes: personnesRes.data ?? [],
+    lignesUnions: unionsRes.data ?? [],
+    lignesFiliations: filiationsRes.data ?? [],
+    lignesEvenements: (evenementsRes.data ?? []) as unknown as LigneEvenement[],
+    options,
+    supabase,
+  });
 }
 
 // ---------------------------------------------------------------------------

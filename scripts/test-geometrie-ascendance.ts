@@ -10,6 +10,7 @@ import type { DonneesArbre, PersonneArbre } from '../src/lib/arbre';
 import { disposerArbre, HAUTEUR_NOEUD } from '../src/lib/layout-arbre';
 import {
   extraireSousGraphe,
+  extraireSousGraphePourArbre,
   PROFONDEUR_SOUS_GRAPHE_ARBRE,
 } from '../src/lib/arbre-graphe';
 
@@ -97,12 +98,21 @@ if (kRecadrer < SEUIL_K_LISIBLE) {
   erreurs.push(`k recadrer ${kRecadrer} < seuil lisible ${SEUIL_K_LISIBLE}`);
 }
 
-// Piège sous-graphe : profondeur BFS 4 ne suffit pas pour 5 sauts parentaux
-const sousGraphe = extraireSousGraphe(donnees, 'g0', PROFONDEUR_SOUS_GRAPHE_ARBRE);
-const dispositionTronquee = disposerArbre(sousGraphe, 'g0', 'ascendance');
+// Piège sous-graphe BFS seul : profondeur 4 ne suffit pas pour 5 sauts parentaux
+const sousGrapheBfs = extraireSousGraphe(donnees, 'g0', PROFONDEUR_SOUS_GRAPHE_ARBRE);
+const dispositionTronquee = disposerArbre(sousGrapheBfs, 'g0', 'ascendance');
 if (dispositionTronquee.rangMax >= disposition.rangMax) {
   erreurs.push(
-    'Le sous-graphe BFS ne tronque pas la chaîne — le test garde-fou est invalide'
+    'Le sous-graphe BFS seul ne tronque pas la chaîne — le test garde-fou est invalide'
+  );
+}
+
+// Sous-graphe /arbre : ascendance complète préservée
+const sousGrapheArbre = extraireSousGraphePourArbre(donnees, 'g0');
+const dispositionArbre = disposerArbre(sousGrapheArbre, 'g0', 'ascendance');
+if (dispositionArbre.rangMax < GENERATIONS) {
+  erreurs.push(
+    `extraireSousGraphePourArbre rangMax = ${dispositionArbre.rangMax}, attendu ≥ ${GENERATIONS}`
   );
 }
 
@@ -127,5 +137,8 @@ console.log('OK — test ascendance profonde (layout réel) :');
 console.log(`  • ${disposition.noeuds.length} nœuds, rangMax = ${disposition.rangMax}`);
 console.log(
   `  • sous-graphe BFS(${PROFONDEUR_SOUS_GRAPHE_ARBRE}) → rangMax = ${dispositionTronquee.rangMax} (tronqué)`
+);
+console.log(
+  `  • extraireSousGraphePourArbre → rangMax = ${dispositionArbre.rangMax} (ascendance complète)`
 );
 console.log(`  • k recadrer = ${kRecadrer}, k fit-all simulé = ${kFitAll.toFixed(3)}`);

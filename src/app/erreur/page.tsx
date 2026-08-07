@@ -13,7 +13,9 @@ export default async function PageErreur({ searchParams }: PageProps<'/erreur'>)
       ? 'Vous n’avez pas l’autorisation d’accéder à cette page.'
       : code === 'session'
         ? 'Votre session a expiré. Reconnectez-vous pour continuer.'
-        : 'Une erreur est survenue.';
+        : code === 'fiche'
+          ? 'La fiche n’a pas pu être chargée. La connexion ou la base de données a peut-être faibli — réessayez dans un instant.'
+          : 'Une erreur est survenue.';
 
   return (
     <main

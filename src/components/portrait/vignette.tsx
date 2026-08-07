@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { coteDesBranches, LIBELLE_COTE, TON_COTE } from '@/lib/branches';
+import { PhotoSignee } from '@/components/photos/photo-signee';
 import {
   anneesCourtes,
   formaterAnneesDeVie,
@@ -35,10 +36,11 @@ export function Vignette({
     >
       <span className="relative mt-0.5 h-10 w-10 shrink-0 overflow-hidden rounded-[var(--rayon-petit)] bg-fond-doux">
         {photoUrl ? (
-          /* eslint-disable-next-line @next/next/no-img-element -- URL signée temporaire */
-          <img
+          <PhotoSignee
             src={photoUrl}
             alt=""
+            width={40}
+            height={40}
             className="h-full w-full object-cover"
           />
         ) : (
@@ -96,12 +98,12 @@ export function VignetteRiche({ personne }: { personne: PortraitEnrichi }) {
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-fond-doux">
         {personne.photoUrl ? (
-          /* eslint-disable-next-line @next/next/no-img-element -- URL signée temporaire : hors du cache de l'optimiseur d'images. */
-          <img
+          <PhotoSignee
             src={personne.photoUrl}
             alt={`Portrait de ${personne.nomComplet}`}
-            loading="lazy"
-            className="h-full w-full object-cover"
+            fill
+            sizes="(max-width: 640px) 100vw, 280px"
+            className="object-cover"
           />
         ) : (
           <div

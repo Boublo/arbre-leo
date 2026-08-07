@@ -1,19 +1,26 @@
 import Link from 'next/link';
-import type { RecitResume } from '@/lib/recits';
+import { LIBELLE_COTE } from '@/lib/branches';
+import { coteDuRecit, type RecitResume } from '@/lib/recits';
+
+const LISERE_COTE = {
+  paternelle: 'border-l-paternelle',
+  maternelle: 'border-l-maternelle',
+  commune: 'border-l-commune',
+} as const;
 
 /**
  * Carte d'un récit dans la grille de liste.
  *
- * On y montre juste ce qu'il faut pour donner envie de cliquer : titre,
- * chapeau, période et famille en bandeau, auteur et nombre de personnes citées
- * en pied. Rien de la couleur ne porte à elle seule une information : la
- * famille est aussi écrite, l'épingle est dite en toutes lettres.
+ * Liseré de branche harmonisé avec la chronologie et les vignettes (audit B7).
  */
 export function CarteRecit({ recit }: { recit: RecitResume }) {
   const famille = recit.patronyme ?? recit.theme;
+  const cote = coteDuRecit(recit);
 
   return (
-    <article className="carte flex h-full flex-col gap-3 p-5 transition hover:shadow-forte">
+    <article
+      className={`carte flex h-full flex-col gap-3 border-l-4 p-5 transition hover:shadow-forte ${LISERE_COTE[cote]}`}
+    >
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         {recit.epingle && (
           <span className="rounded-full border border-or/50 bg-or/10 px-2 py-0.5 text-xs font-medium text-or">
@@ -30,6 +37,7 @@ export function CarteRecit({ recit }: { recit: RecitResume }) {
             {famille}
           </span>
         )}
+        <span className="sr-only">{LIBELLE_COTE[cote]}</span>
       </div>
 
       <h2 className="text-xl leading-tight">

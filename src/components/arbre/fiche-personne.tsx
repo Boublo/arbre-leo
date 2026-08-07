@@ -8,6 +8,7 @@ import type { ModeArbre } from '@/lib/layout-arbre';
 import { coteDesBranches, LIBELLE_COTE, TON_COTE } from '@/lib/branches';
 import { PREUVES, trierParFiabilite } from '@/lib/preuves';
 import { VisionneusePhoto } from '@/components/photos/visionneuse-photo';
+import { PhotoSignee } from '@/components/photos/photo-signee';
 
 /**
  * Le panneau qui s'ouvre au clic sur quelqu'un.
@@ -49,11 +50,12 @@ export function FichePersonne({
               className="group relative h-full w-full cursor-zoom-in"
               aria-label={`Agrandir le portrait de ${personne.nomComplet}`}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element -- URL signée temporaire */}
-              <img
+              <PhotoSignee
                 src={personne.photoUrl}
                 alt=""
-                className="h-full w-full object-cover"
+                fill
+                sizes="(max-width: 640px) 100vw, 400px"
+                className="object-cover"
               />
               <span
                 aria-hidden

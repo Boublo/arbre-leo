@@ -36,20 +36,35 @@ export default async function PageNouveauRecit({
   // Pré-remplissage à partir de `?famille=` : on arrive parfois ici depuis
   // l’état vide de la liste, avec une famille déjà en tête.
   const patronymeInitial = premier(parametres.famille);
-  const valeursInitiales = patronymeInitial && patronymes.includes(patronymeInitial)
-    ? {
-        id: '',
-        patronyme: patronymeInitial,
-        theme: null,
-        branche: null,
-        titre: '',
-        chapeau: null,
-        corps: '',
-        anneeDebut: null,
-        anneeFin: null,
-        personnes: [] as string[],
-      }
-    : undefined;
+  const themeInitial = premier(parametres.theme);
+  const valeursInitiales =
+    patronymeInitial && patronymes.includes(patronymeInitial)
+      ? {
+          id: '',
+          patronyme: patronymeInitial,
+          theme: null,
+          branche: null,
+          titre: '',
+          chapeau: null,
+          corps: '',
+          anneeDebut: null,
+          anneeFin: null,
+          personnes: [] as string[],
+        }
+      : themeInitial
+        ? {
+            id: '',
+            patronyme: null,
+            theme: themeInitial,
+            branche: null,
+            titre: '',
+            chapeau: null,
+            corps: '',
+            anneeDebut: null,
+            anneeFin: null,
+            personnes: [] as string[],
+          }
+        : undefined;
 
   return (
     <>

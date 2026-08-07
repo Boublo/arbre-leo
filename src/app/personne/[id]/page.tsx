@@ -25,7 +25,11 @@ import { BarreScroll } from '@/components/interactions/barre-scroll';
 import { RaccourciAccueil } from '@/components/interactions/raccourci-accueil';
 import { ResumeBrancheFiche } from '@/components/personne/resume-branche';
 import { personneEstVivante } from '@/lib/vivant';
-import { ARBRE_VIDE, chargerArbre } from '@/lib/arbre';
+import { ARBRE_VIDE } from '@/lib/arbre';
+import {
+  chargerContexteFiche,
+  chargerDonneesResumeBranche,
+} from '@/lib/arbre-contexte-fiche';
 import { chargerRecitsPourPersonne } from '@/lib/recits';
 import { resumerBranche } from '@/lib/resume-branche';
 
@@ -55,17 +59,19 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
   // La fiche vient de plusieurs tables ; l'arbre sert au contexte (parenté,
   // mini-arbre). Pas de signatures photo ici — elles figent la page et peuvent
   // faire expirer le rendu serveur sur Vercel.
-  const [fiche, donneesArbre, recits, droits, peutDeposerPhotos] = await Promise.all([
-    chargerFiche(id),
-    chargerArbre({ signerPhotosPour: 'aucun' }).catch(() => ARBRE_VIDE),
-    chargerRecitsPourPersonne(id),
-    lireDroitsSaisie(),
-    peutDeposerPhotoAlbum(id),
-  ]);
+  const [fiche, donneesArbre, donneesResumeBranche, recits, droits, peutDeposerPhotos] =
+    await Promise.all([
+      chargerFiche(id),
+      chargerContexteFiche(id).catch(() => ARBRE_VIDE),
+      chargerDonneesResumeBranche(id).catch(() => ARBRE_VIDE),
+      chargerRecitsPourPersonne(id).catch(() => []),
+      lireDroitsSaisie(),
+      peutDeposerPhotoAlbum(id).catch(() => false),
+    ]);
 
   if (!fiche) notFound();
 
-  const resumeBranche = resumerBranche(donneesArbre, id);
+  const resumeBranche = resumerBranche(donneesResumeBranche, id);
 
   const compteurs: Compteurs = {
     vue: fiche.evenements.length + fiche.sources.length + fiche.faits.length,

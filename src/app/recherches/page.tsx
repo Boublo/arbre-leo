@@ -11,6 +11,7 @@ import {
   type PisteVue,
 } from '@/components/recherches/vocabulaire';
 import { creerClientServeur } from '@/lib/supabase/server';
+import { listerUnionsSansEnfant } from '@/lib/unions-sans-enfant';
 
 export const metadata: Metadata = { title: 'Chantiers de recherche' };
 
@@ -21,11 +22,12 @@ export default async function PageRecherches() {
   const supabase = await creerClientServeur();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const [chantiersRes, personnesRes, membresRes, moiRes] = await Promise.all([
+  const [chantiersRes, personnesRes, membresRes, moiRes, unionsSansEnfant] = await Promise.all([
     supabase.from('chantiers_recherche').select('*'),
     supabase.from('personnes').select('id, nom_complet, prenoms, nom, branches, niveaux_preuve'),
     supabase.from('membres').select('id, nom_affiche').eq('statut', 'valide'),
     user ? supabase.from('membres').select('role').eq('id', user.id).maybeSingle() : null,
+    listerUnionsSansEnfant(supabase),
   ]);
 
   // Une table absente ou une politique plus stricte que prévu ne doit pas
@@ -112,33 +114,50 @@ export default async function PageRecherches() {
             qui attendent leur preuve.
           </p>
 
-          {chantiers.length > 0 && (
+          {(chantiers.length > 0 || unionsSansEnfant.length > 0) && (
             <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-encre-douce">
-              <span>
-                {chantiers.length} chantier{chantiers.length > 1 ? 's' : ''}
-              </span>
-              <span aria-hidden className="text-encre-tres-douce">
-                ·
-              </span>
-              <span>
-                {enAttente.length} en attente d’une réponse
-              </span>
-              {aRelancer.length > 0 && (
+              {unionsSansEnfant.length > 0 && (
                 <>
+                  <a href="#unions-sans-enfant" className="lien-discret">
+                    {unionsSansEnfant.length} couple{unionsSansEnfant.length > 1 ? 's' : ''} sans
+                    descendance connue
+                  </a>
+                  {chantiers.length > 0 && (
+                    <span aria-hidden className="text-encre-tres-douce">
+                      ·
+                    </span>
+                  )}
+                </>
+              )}
+              {chantiers.length > 0 && (
+                <>
+                  <span>
+                    {chantiers.length} chantier{chantiers.length > 1 ? 's' : ''}
+                  </span>
                   <span aria-hidden className="text-encre-tres-douce">
                     ·
                   </span>
-                  <span className="font-medium text-alerte">
-                    {aRelancer.length} à relancer, sans réponse depuis plus de deux mois
+                  <span>
+                    {enAttente.length} en attente d’une réponse
+                  </span>
+                  {aRelancer.length > 0 && (
+                    <>
+                      <span aria-hidden className="text-encre-tres-douce">
+                        ·
+                      </span>
+                      <span className="font-medium text-alerte">
+                        {aRelancer.length} à relancer, sans réponse depuis plus de deux mois
+                      </span>
+                    </>
+                  )}
+                  <span aria-hidden className="text-encre-tres-douce">
+                    ·
+                  </span>
+                  <span>
+                    {abouties.length} aboutie{abouties.length > 1 ? 's' : ''}
                   </span>
                 </>
               )}
-              <span aria-hidden className="text-encre-tres-douce">
-                ·
-              </span>
-              <span>
-                {abouties.length} aboutie{abouties.length > 1 ? 's' : ''}
-              </span>
             </p>
           )}
         </header>
@@ -156,6 +175,7 @@ export default async function PageRecherches() {
 
         <ZoneOuverture
           pistes={pistes}
+          unionsSansEnfant={unionsSansEnfant}
           personnes={personnes.map((p) => ({ id: p.id, nom: p.nom }))}
           membres={membres}
           peutContribuer={peutContribuer}

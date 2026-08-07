@@ -2,8 +2,13 @@ import { redirect } from 'next/navigation';
 import { Navigation } from '@/components/navigation';
 import { EcranArbreDynamique } from '@/components/arbre/ecran-arbre-dynamique';
 import { lireDroitsSaisie } from '@/components/saisie/donnees';
-import { chargerArbre, derniersEnfants, personneOuDefaut } from '@/lib/arbre';
-import { serialiserGraphe, versPersonneRecherche } from '@/lib/arbre-graphe';
+import {
+  chargerDerniersEnfantsIds,
+  chargerGrapheArbreFocus,
+  chargerPersonnesRechercheArbre,
+  resoudreFocusArbre,
+} from '@/lib/arbre-contexte-fiche';
+import { serialiserGraphe } from '@/lib/arbre-graphe';
 
 export const metadata = { title: 'L’arbre' };
 
@@ -13,12 +18,12 @@ export const dynamic = 'force-dynamic';
 export default async function PageArbre({ searchParams }: PageProps<'/arbre'>) {
   const { personne: focusDemande } = await searchParams;
 
-  const [donnees, droits] = await Promise.all([
-    chargerArbre({ signerPhotosPour: 'aucun' }),
+  const [recherchePersonnes, droits] = await Promise.all([
+    chargerPersonnesRechercheArbre(),
     lireDroitsSaisie(),
   ]);
 
-  if (donnees.personnes.size === 0) {
+  if (recherchePersonnes.length === 0) {
     return (
       <>
         <Navigation />
@@ -33,35 +38,50 @@ export default async function PageArbre({ searchParams }: PageProps<'/arbre'>) {
     );
   }
 
-  const focus = personneOuDefaut(
-    donnees,
+  const focusId = resoudreFocusArbre(
+    recherchePersonnes,
     typeof focusDemande === 'string' ? focusDemande : undefined
   );
 
-  const focusId = focus?.id ?? [...donnees.personnes.keys()][0]!;
-
-  if (!focusDemande && focus) {
-    redirect(`/arbre?personne=${focus.id}`);
+  if (!focusId) {
+    return (
+      <>
+        <Navigation />
+        <main id="contenu-principal" className="mx-auto flex max-w-lg flex-1 flex-col justify-center px-6 text-center">
+          <h1 className="text-2xl">L’arbre est encore vide</h1>
+        </main>
+      </>
+    );
   }
 
-  // Graphe complet côté client : le layout est instantané et l'ascendance
-  // a besoin de toute la chaîne des ancêtres (un sous-graphe BFS la tronque).
-  // Les notes sont omises du payload (voir serialiserGraphe).
+  if (!focusDemande) {
+    redirect(`/arbre?personne=${focusId}`);
+  }
+
+  const [donnees, derniersEnfantsIds] = await Promise.all([
+    chargerGrapheArbreFocus(focusId),
+    chargerDerniersEnfantsIds(),
+  ]);
+
+  // Sous-graphe autour du focus : ascendance complète + voisinage latéral.
+  // La recherche globale reste sur l'index léger `recherchePersonnes`.
   const graphe = serialiserGraphe(donnees);
-  const recherchePersonnes = [...donnees.personnes.values()].map(versPersonneRecherche);
 
   return (
     <>
       <Navigation compact />
-      <div className="relative z-0 flex min-h-0 flex-1 flex-col overflow-hidden h-[calc(100dvh-3.25rem)] max-h-[calc(100dvh-3.25rem)]">
+      <main
+        id="contenu-principal"
+        className="relative z-0 flex min-h-0 flex-1 flex-col overflow-hidden h-[calc(100dvh-3.25rem)] max-h-[calc(100dvh-3.25rem)]"
+      >
         <EcranArbreDynamique
           graphe={graphe}
           recherchePersonnes={recherchePersonnes}
           focusInitial={focusId}
-          derniersEnfants={derniersEnfants(donnees).map((p) => p.id)}
+          derniersEnfants={derniersEnfantsIds}
           peutDeposerPhoto={droits.peutContribuer}
         />
-      </div>
+      </main>
     </>
   );
 }

@@ -3,12 +3,20 @@ import { Navigation } from '@/components/navigation';
 import { BarreScroll } from '@/components/interactions/barre-scroll';
 import { RaccourciAccueil } from '@/components/interactions/raccourci-accueil';
 import { CarteRecit } from '@/components/recits/carte-recit';
-import { SelecteurFamille } from '@/components/recits/selecteur-famille';
-import { chargerChoixFamilles, chargerRecits, lireDroits } from '@/lib/recits';
+import {
+  SelecteurFamille,
+  type FiltreRecitsActif,
+} from '@/components/recits/selecteur-famille';
+import {
+  chargerChoixFamilles,
+  chargerChoixThemes,
+  chargerRecits,
+  lireDroits,
+  type FiltreRecitsListe,
+} from '@/lib/recits';
 
 export const metadata = { title: 'Récits de famille' };
 
-// Un récit qui vient d'être publié doit apparaître tout de suite.
 export const dynamic = 'force-dynamic';
 
 function premier(valeur: string | string[] | undefined): string | null {
@@ -17,20 +25,44 @@ function premier(valeur: string | string[] | undefined): string | null {
   return propre === '' ? null : propre;
 }
 
+function lireFiltre(
+  famille: string | null,
+  theme: string | null
+): { filtre: FiltreRecitsListe; actif: FiltreRecitsActif } {
+  if (theme) return { filtre: { type: 'theme', valeur: theme }, actif: { type: 'theme', valeur: theme } };
+  if (famille) return { filtre: { type: 'famille', valeur: famille }, actif: { type: 'famille', valeur: famille } };
+  return { filtre: { type: 'tous' }, actif: { type: 'tous' } };
+}
+
 export default async function PageRecits({ searchParams }: PageProps<'/recits'>) {
   const parametres = await searchParams;
   const famille = premier(parametres.famille);
+  const theme = premier(parametres.theme);
+  const { filtre, actif } = lireFiltre(famille, theme);
 
-  const [choix, recits, droits] = await Promise.all([
+  const [choixFamilles, choixThemes, recits, droits] = await Promise.all([
     chargerChoixFamilles(),
-    chargerRecits(famille),
+    chargerChoixThemes(),
+    chargerRecits(filtre),
     lireDroits(),
   ]);
 
-  // La sélection demandée peut désigner un patronyme sans aucun récit encore :
-  // on garde l'intention pour l'afficher, même absente du sélecteur.
-  const familleConnue = famille && choix.some((c) => c.patronyme === famille);
-  const familleActive = famille && !familleConnue ? [...choix, { patronyme: famille, nombre: 0 }] : choix;
+  const familleConnue = famille && choixFamilles.some((c) => c.patronyme === famille);
+  const famillesActives =
+    famille && !familleConnue
+      ? [...choixFamilles, { patronyme: famille, nombre: 0 }]
+      : choixFamilles;
+
+  const themeConnu = theme && choixThemes.some((c) => c.theme === theme);
+  const themesActifs =
+    theme && !themeConnu ? [...choixThemes, { theme, nombre: 0 }] : choixThemes;
+
+  const libelleFiltre =
+    actif.type === 'famille'
+      ? `la famille ${actif.valeur}`
+      : actif.type === 'theme'
+        ? `le thème « ${actif.valeur} »`
+        : null;
 
   return (
     <>
@@ -58,13 +90,18 @@ export default async function PageRecits({ searchParams }: PageProps<'/recits'>)
           )}
         </div>
 
-        <section className="mt-6" aria-label="Choix d’une famille">
-          <SelecteurFamille choix={familleActive} actif={famille} />
+        <section className="mt-6" aria-label="Filtrer les récits">
+          <SelecteurFamille familles={famillesActives} themes={themesActifs} actif={actif} />
         </section>
 
         <div className="mt-8">
           {recits.length === 0 ? (
-            <EtatVide famille={famille} peutEcrire={droits.peutContribuer} />
+            <EtatVide
+              libelleFiltre={libelleFiltre}
+              famille={famille}
+              theme={theme}
+              peutEcrire={droits.peutContribuer}
+            />
           ) : (
             <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {recits.map((recit) => (
@@ -81,26 +118,32 @@ export default async function PageRecits({ searchParams }: PageProps<'/recits'>)
 }
 
 function EtatVide({
+  libelleFiltre,
   famille,
+  theme,
   peutEcrire,
 }: {
+  libelleFiltre: string | null;
   famille: string | null;
+  theme: string | null;
   peutEcrire: boolean;
 }) {
-  const message = famille
-    ? `Cette famille n’a pas encore de récit. Le premier est à écrire.`
+  const message = libelleFiltre
+    ? `Aucun récit pour ${libelleFiltre} pour l’instant.`
     : `Aucun récit n’a encore été déposé. Le premier deviendra la matière du site.`;
+
+  const hrefNouveau = theme
+    ? `/recits/nouveau?theme=${encodeURIComponent(theme)}`
+    : famille
+      ? `/recits/nouveau?famille=${encodeURIComponent(famille)}`
+      : '/recits/nouveau';
 
   return (
     <section className="carte flex flex-col items-center gap-4 p-8 text-center">
       <p className="text-encre-douce">{message}</p>
       {peutEcrire ? (
         <Link
-          href={
-            famille
-              ? `/recits/nouveau?famille=${encodeURIComponent(famille)}`
-              : '/recits/nouveau'
-          }
+          href={hrefNouveau}
           className="rounded-[var(--rayon-petit)] bg-accent px-4 py-2 text-sm font-medium text-accent-contraste transition hover:brightness-110"
         >
           Écrire le premier récit
