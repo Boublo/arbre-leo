@@ -32,6 +32,7 @@ export async function BarreDeSaisie({
   const urlNouvelEnfant = construireUrlNouvelEnfant(pereId, mereId);
   const parentsFratrie = parentsPourFratrie(parents);
   const urlNouvelleFratrie = construireUrlNouvelEnfant(parentsFratrie.pereId, parentsFratrie.mereId);
+  const urlNouveauConjoint = `/personne/nouvelle?conjoint=${encodeURIComponent(personneId)}`;
 
   return (
     <section className="carte flex flex-wrap items-center gap-x-4 gap-y-3 p-4">
@@ -49,6 +50,9 @@ export async function BarreDeSaisie({
       <span className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
         <Link href={urlNouvelEnfant} className="lien-discret">
           Ajouter un enfant de {nomComplet}
+        </Link>
+        <Link href={urlNouveauConjoint} className="lien-discret">
+          Ajouter son conjoint ou sa conjointe
         </Link>
         {parentsFratrie.libelles.length > 0 && (
           <Link href={urlNouvelleFratrie} className="lien-discret">
