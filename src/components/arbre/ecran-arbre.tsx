@@ -28,10 +28,12 @@ import { urlImpressionArbre, profondeurEclateVersImpression } from '@/lib/arbre-
 import {
   CLE_MODE_ARBRE,
   lireFiltreBrancheEclateClient,
+  lireFondArbreClient,
   lireMasquerLiensLointainsClient,
   lireModeArbreClient,
   lireProfondeurEclateClient,
 } from '@/lib/preferences-arbre-client';
+import { CLE_FOND_ARBRE, type FondArbre } from '@/lib/fond-arbre';
 import { ecrireStockage, subscribeStockageLocal } from '@/lib/stockage-client';
 import { useRafraichirPhotosArbre } from '@/components/arbre/use-rafraichir-photos-arbre';
 
@@ -100,6 +102,14 @@ export function EcranArbre({
   }, []);
   const setMasquerLiensLointains = useCallback((masquer: boolean) => {
     ecrireStockage('arbre-masquer-liens-lointains-eclate', masquer ? '1' : '0');
+  }, []);
+  const fondArbre = useSyncExternalStore(
+    subscribeStockageLocal,
+    lireFondArbreClient,
+    () => 'points' as FondArbre
+  );
+  const setFondArbre = useCallback((fond: FondArbre) => {
+    ecrireStockage(CLE_FOND_ARBRE, fond);
   }, []);
   const [banniereEclateOuverte, setBanniereEclateOuverte] = useState(false);
 
@@ -263,6 +273,8 @@ export function EcranArbre({
         onChercher={() => setPaletteOuverte(true)}
         onOuvrirGuide={ouvrirGuide}
         lienImprimer={lienImprimer}
+        fondArbre={fondArbre}
+        onFondArbre={setFondArbre}
       />
 
       {mode === 'eclate' && (
@@ -340,6 +352,7 @@ export function EcranArbre({
             noeudSuggestion={noeudSuggestion}
             cleRecadrageEclate={cleRecadrageEclate}
             masquerLiensLointains={masquerLiensLointains}
+            fondArbre={fondArbre}
           />
         </div>
 

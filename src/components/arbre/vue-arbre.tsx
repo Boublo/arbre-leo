@@ -21,6 +21,7 @@ import { ReperesRang } from '@/components/arbre/reperes-rang';
 import { LiensArbre } from '@/components/arbre/liens-arbre';
 import { CarteNoeud } from '@/components/arbre/carte-noeud';
 import { FondAtmospherique } from '@/components/arbre/fond-atmospherique';
+import type { FondArbre } from '@/lib/fond-arbre';
 
 type EtatMenu = { personneId: string; x: number; y: number } | null;
 
@@ -74,6 +75,7 @@ export function VueArbre({
   noeudSuggestion = null,
   cleRecadrageEclate = '',
   masquerLiensLointains = false,
+  fondArbre = 'points',
 }: {
   donnees: DonneesArbre;
   disposition: Disposition;
@@ -88,8 +90,10 @@ export function VueArbre({
   /** Change quand les réglages du mode éclaté bougent — force un recadrage. */
   cleRecadrageEclate?: string;
   masquerLiensLointains?: boolean;
+  fondArbre?: FondArbre;
 }) {
   const [transform, setTransform] = useState({ x: 0, y: 0, k: 1 });
+  const [curseurFond, setCurseurFond] = useState<{ x: number; y: number } | null>(null);
   const [tailleVue, setTailleVue] = useState({ largeur: 0, hauteur: 0 });
   const [menu, setMenu] = useState<EtatMenu>(null);
   const [signalActivite, setSignalActivite] = useState(0);
@@ -388,8 +392,27 @@ export function VueArbre({
   );
 
   return (
-    <div ref={cadreRef} className="relative h-full w-full overflow-hidden">
-      <FondAtmospherique transform={transform} />
+    <div
+      ref={cadreRef}
+      className="relative h-full w-full overflow-hidden"
+      onPointerMove={(evenement) => {
+        if (fondArbre !== 'aurore') return;
+        const cadre = cadreRef.current;
+        if (!cadre) return;
+        const rect = cadre.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
+        setCurseurFond({
+          x: (evenement.clientX - rect.left) / rect.width,
+          y: (evenement.clientY - rect.top) / rect.height,
+        });
+      }}
+      onPointerLeave={() => setCurseurFond(null)}
+    >
+      <FondAtmospherique
+        transform={transform}
+        variante={fondArbre}
+        curseur={fondArbre === 'aurore' ? curseurFond : null}
+      />
 
       {/* Liserés de branche : rappel latéral, deux ans après avoir découvert
           l'arbre on ne se rappelle plus toujours quelle couleur est quel côté. */}

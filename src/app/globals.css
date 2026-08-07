@@ -291,6 +291,86 @@ p {
   animation-iteration-count: infinite;
 }
 
+@keyframes fond-arbre-aurore-1 {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translate(2%, -1.5%) scale(1.05);
+  }
+}
+
+@keyframes fond-arbre-aurore-2 {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translate(-2%, 1%) scale(1.04);
+  }
+}
+
+@keyframes fond-arbre-aurore-3 {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.75;
+  }
+}
+
+@keyframes fond-arbre-aurore-4 {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: translate(0, 0);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translate(1%, 2%);
+  }
+}
+
+.fond-arbre-aurore-1 {
+  animation: fond-arbre-aurore-1 22s ease-in-out infinite;
+  transform-origin: 18% 42%;
+}
+
+.fond-arbre-aurore-2 {
+  animation: fond-arbre-aurore-2 26s ease-in-out infinite;
+  animation-delay: -6s;
+  transform-origin: 82% 38%;
+}
+
+.fond-arbre-aurore-3 {
+  animation: fond-arbre-aurore-3 18s ease-in-out infinite;
+  animation-delay: -3s;
+}
+
+.fond-arbre-aurore-4 {
+  animation: fond-arbre-aurore-4 24s ease-in-out infinite;
+  animation-delay: -10s;
+  transform-origin: 48% 88%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fond-arbre-mote,
+  .fond-arbre-souffle,
+  .fond-arbre-petale,
+  .fond-arbre-aurore-1,
+  .fond-arbre-aurore-2,
+  .fond-arbre-aurore-3,
+  .fond-arbre-aurore-4 {
+    animation: none !important;
+  }
+}
+
 /* --- Éléments récurrents ------------------------------------------------- */
 
 @utility carte {
