@@ -1,5 +1,16 @@
 # Journal d’exécution
 
++## Lot ROADMAP-001 — 7 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Consolidation des audits de fiabilité, vision immersive, UX/UI, ajout intelligent et copilote conversationnel dans une feuille de route unique à valider. |
+| Fichier | `ROADMAP_MAITRESSE_A_VALIDER.md`. |
+| Décision | Inférence déterministe et validation humaine avant IA, OCR, migration ou écriture automatique ; premier prototype limité à l’ajout d’un frère ou d’une sœur. |
+| Vérifications | Modèle et workflow existants relus : personnes, unions, filiations, événements, sources, rattachements et validations serveur. Aucun accès ou changement de données familiales. |
+| Impact | Documentation uniquement ; aucune route, action, base, permission, dépendance ou donnée n’est modifiée. |
+| Reprise | Le document inclut les prérequis, les fichiers protégés, l’ordre de lecture, les contrôles, le rollback et les décisions restantes. |
+
 ## Lot EXP-UX-001 — 7 août 2026
 
 | Champ | Détail |

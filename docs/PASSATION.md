@@ -1,5 +1,11 @@
 # Passation — L'arbre de Léo
 
+> Pour reprendre les évolutions du produit, lire d’abord
+> [`ROADMAP_MAITRESSE_A_VALIDER.md`](../ROADMAP_MAITRESSE_A_VALIDER.md) : elle
+> consolide les audits, les dépendances, les limites de sécurité et l’ordre de
+> lecture pour un autre agent. Cette passation reste la référence pour la
+> recherche généalogique et le versement d’une pièce.
+
 Vous reprenez une enquête généalogique en cours. Cette page est faite pour être
 lue en dix minutes : elle dit où nous en sommes, ce qui reste à trouver, et
 surtout **comment verser proprement en base ce que vous découvrirez**.
