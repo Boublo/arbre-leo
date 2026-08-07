@@ -97,7 +97,7 @@ export function NavigationPlus({
         <div
           id={menuId}
           role="menu"
-          className="absolute left-0 top-full z-30 mt-1 min-w-[13rem] rounded-[var(--rayon)] border border-bordure bg-fond-carte py-1 shadow-[var(--ombre-forte)]"
+          className="absolute left-0 top-full z-50 mt-1 max-h-[min(70vh,calc(100dvh-5rem))] min-w-[13rem] overflow-y-auto rounded-[var(--rayon)] border border-bordure bg-fond-carte py-1 shadow-[var(--ombre-forte)]"
         >
           {groupes.map((groupe) => (
             <div key={groupe.id} role="group" aria-label={groupe.titre}>
