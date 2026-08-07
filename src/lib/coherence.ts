@@ -14,6 +14,7 @@ export type RegleQualite =
   | 'QLT-003'
   | 'QLT-004'
   | 'QLT-005'
+  | 'QLT-006'
   | 'QLT-007'
   | 'QLT-009'
   | 'QLT-010';
@@ -72,6 +73,57 @@ export type ChantierQualite = {
   demande_le: string | null;
   reponse_le: string | null;
 };
+
+export type FaitQualite = {
+  id: string;
+  annee_debut: number | null;
+};
+
+export type FaitPersonneQualite = {
+  fait_id: string;
+  personne_id: string;
+};
+
+const TOLERANCE_FAIT_APRES_DECES = 5;
+
+/**
+ * Signale les rattachements historiques incompatibles avec les bornes de vie
+ * connues. Une tolérance couvre les mentions posthumes et commémoratives.
+ */
+export function analyserFaitsHorsPeriode(
+  donnees: DonneesArbre,
+  faits: FaitQualite[],
+  rattachements: FaitPersonneQualite[]
+): Anomalie[] {
+  const faitsParId = new Map(faits.map((fait) => [fait.id, fait]));
+  const anomalies: Anomalie[] = [];
+
+  for (const rattachement of rattachements) {
+    const personne = donnees.personnes.get(rattachement.personne_id);
+    const fait = faitsParId.get(rattachement.fait_id);
+    if (!personne || !fait || fait.annee_debut === null) continue;
+    const annee = fait.annee_debut;
+
+    const naissance = personne.naissance?.annee;
+    const deces = personne.deces?.annee;
+    const avantNaissance = naissance !== null && naissance !== undefined && annee < naissance;
+    const apresDeces = deces !== null && deces !== undefined && annee > deces + TOLERANCE_FAIT_APRES_DECES;
+    if (!avantNaissance && !apresDeces) continue;
+
+    anomalies.push({
+      id: `fait-hors-periode:${fait.id}:${personne.id}`,
+      regleId: 'QLT-006',
+      severite: 'attention',
+      titre: 'Fait historique hors période de vie',
+      detail: avantNaissance
+        ? `Un fait daté de ${annee} précède la naissance connue.`
+        : `Un fait daté de ${annee} est postérieur de plus de ${TOLERANCE_FAIT_APRES_DECES} ans au décès connu.`,
+      personneIds: [personne.id],
+    });
+  }
+
+  return anomalies;
+}
 
 /**
  * Les demandes dépassant le délai de relance sont des signaux de suivi, pas

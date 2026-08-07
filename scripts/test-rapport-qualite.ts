@@ -9,6 +9,7 @@
 import {
   analyserChantiersEnAttente,
   analyserCoherence,
+  analyserFaitsHorsPeriode,
   completerRapportCoherence,
   resumerQualite,
 } from '../src/lib/coherence';
@@ -97,14 +98,29 @@ const donnees: DonneesArbre = {
 
 const rapport = completerRapportCoherence(
   analyserCoherence(donnees),
-  analyserChantiersEnAttente(
-    [
+  [
+    ...analyserChantiersEnAttente(
+      [
       { id: 'relance', statut: 'en_attente_reponse', demande_le: '2026-05-01', reponse_le: null },
       { id: 'recent', statut: 'en_attente_reponse', demande_le: '2026-07-20', reponse_le: null },
       { id: 'clos', statut: 'aboutie', demande_le: '2026-01-01', reponse_le: '2026-01-15' },
-    ],
-    Date.parse('2026-08-07T12:00:00Z')
-  )
+      ],
+      Date.parse('2026-08-07T12:00:00Z')
+    ),
+    ...analyserFaitsHorsPeriode(
+      donnees,
+      [
+        { id: 'avant-naissance', annee_debut: 1900 },
+        { id: 'apres-deces', annee_debut: 1977 },
+        { id: 'possible', annee_debut: 1975 },
+      ],
+      [
+        { fait_id: 'avant-naissance', personne_id: 'parent-tardif' },
+        { fait_id: 'apres-deces', personne_id: 'chronologie' },
+        { fait_id: 'possible', personne_id: 'chronologie' },
+      ]
+    ),
+  ]
 );
 const titres = new Set(rapport.anomalies.map((anomalie) => anomalie.titre));
 const regles = new Set(rapport.anomalies.map((anomalie) => anomalie.regleId));
@@ -118,11 +134,12 @@ for (const titre of [
   'Filiation rattachée à une union absente',
   'Cycle de filiation détecté',
   'Recherche sans réponse à relancer',
+  'Fait historique hors période de vie',
 ]) {
   if (!titres.has(titre)) throw new Error(`Alerte attendue absente : ${titre}`);
 }
 
-for (const regle of ['QLT-001', 'QLT-002', 'QLT-003', 'QLT-004', 'QLT-005', 'QLT-007', 'QLT-009', 'QLT-010'] as const) {
+for (const regle of ['QLT-001', 'QLT-002', 'QLT-003', 'QLT-004', 'QLT-005', 'QLT-006', 'QLT-007', 'QLT-009', 'QLT-010'] as const) {
   if (!regles.has(regle)) throw new Error(`Règle attendue absente : ${regle}`);
 }
 
