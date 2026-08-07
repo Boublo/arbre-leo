@@ -11,6 +11,8 @@
 | Suite | Faire valider les documents, créer une cible de test isolée, exécuter l’exercice de restauration et couvrir le contrat par un jeu de données fictif. |
 | Impact | Documentation uniquement ; aucune base, règle RLS, migration, dépendance, route ou donnée familiale n’est modifiée. |
 | Vérification Supabase | Projet principal actif. La branche isolée existante `e2e` est sans données, sans table `arbre` et en état `MIGRATIONS_FAILED` : aucun exercice n’y a été lancé. Une branche neuve sans données est préférable ; sa création est soumise à la confirmation de coût Supabase. |
+| Test synthétique | Ajout de `scripts/test-rapport-qualite.ts` : décès avant naissance, enfant avant parent, écart d’âge, isolement et doublon potentiel. Le jeu est entièrement fictif et vérifie l’absence de fusion automatique. |
+| Limite locale | L’exécution du nouveau script attend l’environnement CI / Node 22 : le binaire local `node_modules/.bin/tsx.cmd` est absent. Les contrôles TypeScript et lint restent validés localement. |
 
 +## Lot ROADMAP-001 — 7 août 2026
 
