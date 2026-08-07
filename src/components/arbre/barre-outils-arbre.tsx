@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { SelecteurPersonne } from '@/components/arbre/selecteur-personne';
+import { ChoixFondArbre } from '@/components/arbre/choix-fond-arbre';
 import { LIBELLE_MODE, type ModeArbre } from '@/lib/layout-arbre';
+import type { FondArbre } from '@/lib/fond-arbre';
 import type { PersonneRecherche } from '@/lib/arbre-graphe';
 import type { PersonneArbre } from '@/lib/arbre';
 
@@ -23,6 +25,8 @@ export function BarreOutilsArbre({
   onChercher,
   onOuvrirGuide,
   lienImprimer,
+  fondArbre,
+  onFondArbre,
 }: {
   focus: PersonneArbre;
   focusId: string;
@@ -34,6 +38,8 @@ export function BarreOutilsArbre({
   onChercher: () => void;
   onOuvrirGuide: () => void;
   lienImprimer: string;
+  fondArbre: FondArbre;
+  onFondArbre: (fond: FondArbre) => void;
 }) {
   const [deployee, setDeployee] = useState(false);
 
@@ -95,6 +101,8 @@ export function BarreOutilsArbre({
           </select>
         </label>
 
+        <ChoixFondArbre fond={fondArbre} onFond={onFondArbre} compact />
+
         {deployee && (
           <div className="flex flex-wrap gap-3 border-t border-bordure pt-2 text-xs">
             <Link href={`/chronologie?personne=${encodeURIComponent(focusId)}`} className="lien-discret">
@@ -145,6 +153,8 @@ export function BarreOutilsArbre({
             </button>
           ))}
         </div>
+
+        <ChoixFondArbre fond={fondArbre} onFond={onFondArbre} />
 
         <div className="ml-auto flex items-center gap-3 text-xs">
           <button

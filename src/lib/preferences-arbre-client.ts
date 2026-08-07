@@ -7,6 +7,7 @@ import {
   lireProfondeurEclateInitiale,
 } from '@/components/arbre/reglage-profondeur-eclate';
 import type { FiltreBrancheEclate, ModeArbre } from '@/lib/layout-arbre';
+import { CLE_FOND_ARBRE, lireFondArbreDepuisStockage } from '@/lib/fond-arbre';
 import { lireStockage } from '@/lib/stockage-client';
 
 export const CLE_MODE_ARBRE = 'arbre-mode';
@@ -33,4 +34,8 @@ export function lireFiltreBrancheEclateClient(): FiltreBrancheEclate {
 
 export function lireMasquerLiensLointainsClient(): boolean {
   return lireMasquerLiensLointainsInitial();
+}
+
+export function lireFondArbreClient() {
+  return lireFondArbreDepuisStockage(lireStockage);
 }
