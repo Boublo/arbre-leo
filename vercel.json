@@ -2,13 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "git": {
     "deploymentEnabled": {
-      "main": true
+      "main": true,
+      "*": false
     }
   },
-  "github": {
-    "silent": true
-  },
-  "ignoreCommand": "bash scripts/vercel-build-uniquement-main.sh",
   "crons": [
     {
       "path": "/api/cron/rappels-anniversaires",
