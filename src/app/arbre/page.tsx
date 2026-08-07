@@ -13,7 +13,10 @@ export const dynamic = 'force-dynamic';
 export default async function PageArbre({ searchParams }: PageProps<'/arbre'>) {
   const { personne: focusDemande } = await searchParams;
 
-  const [donnees, droits] = await Promise.all([chargerArbre(), lireDroitsSaisie()]);
+  const [donnees, droits] = await Promise.all([
+    chargerArbre({ signerPhotosPour: 'aucun' }),
+    lireDroitsSaisie(),
+  ]);
 
   if (donnees.personnes.size === 0) {
     return (

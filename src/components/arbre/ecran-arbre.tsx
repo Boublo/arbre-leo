@@ -103,8 +103,6 @@ export function EcranArbre({
   }, []);
   const [banniereEclateOuverte, setBanniereEclateOuverte] = useState(false);
 
-  useRafraichirPhotosArbre(graphe, setGraphe);
-
   const donnees = useMemo(() => reconstruireGraphe(graphe), [graphe]);
 
   const dispositionBrute = useMemo(
@@ -122,6 +120,15 @@ export function EcranArbre({
     if (mode !== 'eclate' || filtreBrancheEclate === 'tous') return dispositionBrute;
     return filtrerDispositionEclate(dispositionBrute, filtreBrancheEclate, focusId);
   }, [dispositionBrute, mode, filtreBrancheEclate, focusId]);
+
+  const idsPhotosVisibles = useMemo(() => {
+    const ids = new Set(disposition.noeuds.map((noeud) => noeud.personneId));
+    ids.add(focusId);
+    if (selectionId) ids.add(selectionId);
+    return [...ids];
+  }, [disposition.noeuds, focusId, selectionId]);
+
+  useRafraichirPhotosArbre(graphe, setGraphe, idsPhotosVisibles);
 
   const cleRecadrageEclate =
     mode === 'eclate'

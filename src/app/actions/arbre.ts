@@ -12,7 +12,7 @@ import { serialiserGraphe, type GrapheSerialise } from '@/lib/arbre-graphe';
  * existe encore.
  */
 export async function chargerGrapheArbre(focusId: string): Promise<GrapheSerialise> {
-  const donnees = await chargerArbre();
+  const donnees = await chargerArbre({ signerPhotosPour: 'aucun' });
   if (!donnees.personnes.has(focusId)) {
     return serialiserGraphe({
       personnes: new Map(),
