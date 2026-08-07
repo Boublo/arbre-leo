@@ -105,7 +105,7 @@ export function Tiroir({
 
   return (
     <div
-      className="fixed inset-0 z-40 flex"
+      className="fixed inset-0 z-[60] flex"
       role="presentation"
       onClick={(evt) => {
         // Fermer uniquement sur le voile, pas quand un clic remonte du panneau.

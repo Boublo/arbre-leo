@@ -74,7 +74,9 @@ export function NavigationPlus({
   const panneau = ouvert
     ? createPortal(
       <div
-        ref={menuRef}
+        ref={(el) => {
+          menuRef.current = el;
+        }}
         id={menuId}
         role="menu"
         style={{ top: position.top, left: position.left }}

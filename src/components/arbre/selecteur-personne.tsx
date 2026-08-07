@@ -67,7 +67,9 @@ export function SelecteurPersonne({
   const panneau = ouvert
     ? createPortal(
       <div
-        ref={menuRef}
+        ref={(el) => {
+          menuRef.current = el;
+        }}
         style={{ top: position.top, left: position.left }}
         className="fixed z-[55] w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-[var(--rayon)] border border-bordure bg-fond-carte shadow-[var(--ombre-forte)] sm:w-80"
       >
