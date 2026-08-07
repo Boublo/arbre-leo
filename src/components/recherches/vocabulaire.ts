@@ -1,5 +1,8 @@
 import type { StatutChantier } from '@/lib/types-base';
 import { BRANCHE_PATERNELLE, BRANCHE_MATERNELLE } from '@/lib/branches';
+import { joursDepuis, SEUIL_RELANCE } from '@/lib/relance-chantier';
+
+export { joursDepuis, SEUIL_RELANCE } from '@/lib/relance-chantier';
 
 /**
  * Le vocabulaire des chantiers, dit en clair.
@@ -115,19 +118,6 @@ export function brancheLisible(branche: string | null) {
  * Au-delà de deux mois, une mairie qui n'a pas répondu ne répondra plus d'elle-même :
  * la demande s'est perdue, ou elle attend une pièce qu'on n'a pas jointe.
  */
-export const SEUIL_RELANCE = 60;
-
-/**
- * Jours pleins écoulés depuis une date de la base (« 2026-03-12 »).
- * L'instant de référence est celui du rendu, sauf à en imposer un autre.
- */
-export function joursDepuis(date: string | null, maintenant: number = Date.now()): number | null {
-  if (!date) return null;
-  const debut = Date.parse(date.length <= 10 ? `${date}T12:00:00Z` : date);
-  if (Number.isNaN(debut)) return null;
-  return Math.max(0, Math.floor((maintenant - debut) / 86_400_000));
-}
-
 /** Délai qu'a mis un organisme à répondre, en jours. */
 export function joursEntre(debut: string | null, fin: string | null): number | null {
   if (!debut || !fin) return null;

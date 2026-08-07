@@ -51,6 +51,7 @@ export function CoherenceAdmin({ rapport }: { rapport: RapportCoherence }) {
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <CarteCompte libelle="Personnes" valeur={rapport.comptes.personnes} />
         <CarteCompte libelle="Avec naissance" valeur={rapport.comptes.avecNaissance} />
+        <CarteCompte libelle="Avec preuve forte" valeur={rapport.couverture.preuveActeOuAnom} />
         <CarteCompte libelle="Critiques" valeur={critiques.length} accent="erreur" />
         <CarteCompte libelle="Doublons" valeur={rapport.doublons.length} accent="alerte" />
       </ul>
@@ -127,6 +128,7 @@ function LigneAnomalie({ anomalie }: { anomalie: Anomalie }) {
           >
             {style.libelle}
           </span>
+          <span className="text-xs font-medium text-encre-tres-douce">{anomalie.regleId}</span>
           <h3 className="text-sm font-medium text-encre">{anomalie.titre}</h3>
         </div>
         <p className="mt-1 text-sm text-encre-douce">{anomalie.detail}</p>
@@ -142,6 +144,16 @@ function LigneAnomalie({ anomalie }: { anomalie: Anomalie }) {
             </Link>
           </li>
         ))}
+        {anomalie.lien && (
+          <li>
+            <Link
+              href={anomalie.lien.href}
+              className="text-sm font-medium text-accent underline-offset-4 hover:underline"
+            >
+              {anomalie.lien.libelle}
+            </Link>
+          </li>
+        )}
       </ul>
     </article>
   );

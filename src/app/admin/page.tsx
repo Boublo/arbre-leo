@@ -16,7 +16,12 @@ import type {
   MembreAdmin,
 } from '@/components/admin/vocabulaire';
 import { chargerArbre } from '@/lib/arbre';
-import { analyserCoherence } from '@/lib/coherence';
+import {
+  analyserChantiersEnAttente,
+  analyserCoherence,
+  analyserFaitsHorsPeriode,
+  completerRapportCoherence,
+} from '@/lib/coherence';
 import { exigerAdmin } from './garde';
 
 /**
@@ -48,6 +53,9 @@ export default async function PageAdmin() {
     souvenirsRes,
     photosRes,
     portraitsRes,
+    chantiersRes,
+    faitsRes,
+    faitsPersonnesRes,
     arbre,
   ] = await Promise.all([
     supabase
@@ -82,10 +90,25 @@ export default async function PageAdmin() {
       .eq('statut', 'en_attente')
       .order('cree_le', { ascending: true }),
 
+    supabase
+      .from('chantiers_recherche')
+      .select('id, statut, demande_le, reponse_le')
+      .eq('statut', 'en_attente_reponse'),
+
+    supabase.from('faits_historiques').select('id, annee_debut'),
+
+    supabase.from('faits_personnes').select('fait_id, personne_id'),
+
     chargerArbre({ signerPhotosPour: 'aucun' }),
   ]);
 
-  const rapport = analyserCoherence(arbre);
+  const rapport = completerRapportCoherence(
+    analyserCoherence(arbre),
+    [
+      ...analyserChantiersEnAttente(chantiersRes.data ?? []),
+      ...analyserFaitsHorsPeriode(arbre, faitsRes.data ?? [], faitsPersonnesRes.data ?? []),
+    ]
+  );
 
   const membres = membresRes.data ?? [];
 

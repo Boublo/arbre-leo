@@ -17,6 +17,7 @@ export const GROUPES_NAVIGATION = [
     id: 'raconter',
     titre: 'Raconter',
     liens: [
+      { href: '/histoire/famille', libelle: 'Notre histoire' },
       { href: '/recits', libelle: 'Récits' },
       { href: '/histoire', libelle: 'La grande Histoire' },
       { href: '/aujourdhui', libelle: 'Ces jours-ci' },
@@ -26,6 +27,7 @@ export const GROUPES_NAVIGATION = [
     id: 'chercher',
     titre: 'Chercher',
     liens: [
+      { href: '/recherche', libelle: 'Trouver une personne' },
       { href: '/recherches', libelle: 'Recherches' },
       { href: '/archives', libelle: 'Archives' },
       { href: '/parente', libelle: 'Parenté' },

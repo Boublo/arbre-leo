@@ -18,16 +18,20 @@ export async function BarreDeSaisie({
   personneId,
   nomComplet,
   sexe,
+  parents = [],
 }: {
   personneId: string;
   nomComplet: string;
   sexe: Sexe;
+  parents?: { id: string; nomComplet: string; sexe: Sexe }[];
 }) {
   const droits = await lireDroitsSaisie();
   if (!droits.peutContribuer) return null;
 
   const { pereId, mereId } = await chargerParentsPourNouvelEnfant(personneId, sexe);
   const urlNouvelEnfant = construireUrlNouvelEnfant(pereId, mereId);
+  const parentsFratrie = parentsPourFratrie(parents);
+  const urlNouvelleFratrie = construireUrlNouvelEnfant(parentsFratrie.pereId, parentsFratrie.mereId);
 
   return (
     <section className="carte flex flex-wrap items-center gap-x-4 gap-y-3 p-4">
@@ -46,6 +50,12 @@ export async function BarreDeSaisie({
         <Link href={urlNouvelEnfant} className="lien-discret">
           Ajouter un enfant de {nomComplet}
         </Link>
+        {parentsFratrie.libelles.length > 0 && (
+          <Link href={urlNouvelleFratrie} className="lien-discret">
+            Ajouter un frère ou une sœur
+            <span className="sr-only"> avec {parentsFratrie.libelles.join(' et ')} prérempli{parentsFratrie.libelles.length > 1 ? 's' : ''}</span>
+          </Link>
+        )}
         <Link href={`/personne/${personneId}/modifier#enfants`} className="lien-discret">
           Rattacher un enfant déjà dans l’arbre
         </Link>
@@ -61,4 +71,15 @@ export async function BarreDeSaisie({
       </span>
     </section>
   );
+}
+
+/** Préremplit uniquement les parents dont le rôle est connu ; aucun lien n'est inventé. */
+function parentsPourFratrie(parents: { id: string; nomComplet: string; sexe: Sexe }[]) {
+  const pere = parents.find((parent) => parent.sexe === 'M') ?? null;
+  const mere = parents.find((parent) => parent.sexe === 'F') ?? null;
+  return {
+    pereId: pere?.id ?? '',
+    mereId: mere?.id ?? '',
+    libelles: [pere?.nomComplet, mere?.nomComplet].filter((nom): nom is string => Boolean(nom)),
+  };
 }
