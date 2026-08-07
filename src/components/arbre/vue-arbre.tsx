@@ -484,11 +484,11 @@ export function VueArbre({
             </button>
           </div>
           <div className="hidden max-w-[calc(100vw-1rem)] sm:block">
-            <Legende />
+            <Legende mode={disposition.mode} />
           </div>
           {legendeOuverte && (
             <div className="max-w-[calc(100vw-1rem)] sm:hidden">
-              <Legende />
+              <Legende mode={disposition.mode} />
             </div>
           )}
         </div>

@@ -238,19 +238,21 @@ export function segmentOrthogonal(
   enfant: NoeudArbre,
   parent: NoeudArbre,
   id: string,
-  reprise: boolean
+  reprise: boolean,
+  decalageCouloir = 0,
+  modeEclate = false
 ): SegmentLien {
   const style = {
     stroke: reprise ? 'var(--or)' : 'var(--encre-douce)',
     strokeWidth: reprise ? 2.5 : 2,
     strokeDasharray: reprise ? '5 4' : undefined,
-    opacity: 0.9,
+    opacity: modeEclate ? (reprise ? 0.5 : 0.32) : 0.9,
   } as const;
 
   // Même rangée (souvent en mode éclaté) : passer sous les deux cartes, pas à travers.
   if (Math.abs(enfant.y - parent.y) < 1) {
     const yBas = enfant.y + HAUTEUR_NOEUD;
-    const yCouloir = yBas + MARGE_ENTRE_RANGS + 8;
+    const yCouloir = yBas + MARGE_ENTRE_RANGS + 8 + decalageCouloir;
     return {
       id,
       kind: 'path',
@@ -264,9 +266,10 @@ export function segmentOrthogonal(
 
   const ySortieLoin = enfantAuDessus ? loin.y : loin.y + HAUTEUR_NOEUD;
   const yEntreeProche = enfantAuDessus ? proche.y + HAUTEUR_NOEUD : proche.y;
-  const yHoriz = enfantAuDessus
+  const yHorizBase = enfantAuDessus
     ? yEntreeProche + MARGE_ENTRE_RANGS
     : yEntreeProche - MARGE_SUR_ENFANTS;
+  const yHoriz = enfantAuDessus ? yHorizBase + decalageCouloir : yHorizBase - decalageCouloir;
 
   return {
     id,
@@ -289,6 +292,104 @@ type UnionPedigree = {
 };
 
 const PAS_COULOIR_PEDIGREE = 8;
+const PAS_COULOIR_ORTHO = 12;
+
+type LienOrthogonalPlan = {
+  lien: LienArbre;
+  enfant: NoeudArbre;
+  parent: NoeudArbre;
+  xMin: number;
+  xMax: number;
+  yCle: number;
+};
+
+function intervalleXLien(enfant: NoeudArbre, parent: NoeudArbre): [number, number] {
+  const xs = [enfant.x, parent.x].sort((a, b) => a - b);
+  return [xs[0]! - LARGEUR_NOEUD / 2, xs[1]! + LARGEUR_NOEUD / 2];
+}
+
+function cleYCouloirOrtho(enfant: NoeudArbre, parent: NoeudArbre): number {
+  if (Math.abs(enfant.y - parent.y) < 1) {
+    return Math.round(enfant.y + HAUTEUR_NOEUD + MARGE_ENTRE_RANGS + 8);
+  }
+  const enfantAuDessus = enfant.y < parent.y;
+  const yEntreeProche = enfantAuDessus ? enfant.y + HAUTEUR_NOEUD : enfant.y;
+  const yHoriz = enfantAuDessus
+    ? yEntreeProche + MARGE_ENTRE_RANGS
+    : yEntreeProche - MARGE_SUR_ENFANTS;
+  return Math.round(yHoriz);
+}
+
+function allouerCouloirsOrthogonaux(plans: LienOrthogonalPlan[]): Map<LienOrthogonalPlan, number> {
+  const attribution = new Map<LienOrthogonalPlan, number>();
+  const parY = new Map<number, LienOrthogonalPlan[]>();
+
+  for (const plan of plans) {
+    const liste = parY.get(plan.yCle) ?? [];
+    liste.push(plan);
+    parY.set(plan.yCle, liste);
+  }
+
+  for (const liste of parY.values()) {
+    liste.sort((a, b) => a.xMin - b.xMin);
+    const lanes: Array<[number, number][]> = [];
+
+    for (const plan of liste) {
+      const intervalle: [number, number] = [plan.xMin, plan.xMax];
+      let lane = 0;
+      while (lane < lanes.length) {
+        const chevauche = lanes[lane]!.some((occupe) => intervallesSeChevauchent(intervalle, occupe));
+        if (!chevauche) break;
+        lane++;
+      }
+      const occupes = lanes[lane] ?? [];
+      occupes.push(intervalle);
+      lanes[lane] = occupes;
+      attribution.set(plan, lane);
+    }
+  }
+
+  return attribution;
+}
+
+function segmentsOrthogonauxEclate(
+  liens: LienArbre[],
+  noeudParId: Map<string, NoeudArbre>,
+  enfantsParUnion: Set<string>
+): SegmentLien[] {
+  const plans: LienOrthogonalPlan[] = [];
+
+  for (const lien of liens) {
+    if (enfantsParUnion.has(lien.enfantId)) continue;
+    const enfant = noeudParId.get(lien.enfantId);
+    const parent = noeudParId.get(lien.parentId);
+    if (!enfant || !parent) continue;
+
+    const [xMin, xMax] = intervalleXLien(enfant, parent);
+    plans.push({
+      lien,
+      enfant,
+      parent,
+      xMin,
+      xMax,
+      yCle: cleYCouloirOrtho(enfant, parent),
+    });
+  }
+
+  const couloirs = allouerCouloirsOrthogonaux(plans);
+
+  return plans.map((plan) => {
+    const decalage = (couloirs.get(plan) ?? 0) * PAS_COULOIR_ORTHO;
+    return segmentOrthogonal(
+      plan.enfant,
+      plan.parent,
+      plan.lien.id,
+      plan.lien.reprise,
+      decalage,
+      true
+    );
+  });
+}
 
 function intervalleEnfants(union: UnionPedigree): [number, number] {
   const xs = union.enfants.map((e) => e.x);
@@ -455,7 +556,12 @@ export function planifierLiens(
     const enfant = noeudParId.get(lien.enfantId);
     const parent = noeudParId.get(lien.parentId);
     if (!enfant || !parent) continue;
+    if (mode === 'eclate') continue;
     segments.push(segmentOrthogonal(enfant, parent, lien.id, lien.reprise));
+  }
+
+  if (mode === 'eclate') {
+    segments.push(...segmentsOrthogonauxEclate(liens, noeudParId, enfantsParUnion));
   }
 
   return { segments, enfantsParUnion };

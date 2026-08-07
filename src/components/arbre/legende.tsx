@@ -1,5 +1,7 @@
 'use client';
 
+import type { ModeArbre } from '@/lib/layout-arbre';
+
 /**
  * Légende posée en bas de l'arbre.
  *
@@ -9,7 +11,7 @@
  * ce que veut dire tel signe.
  */
 
-export function Legende() {
+export function Legende({ mode }: { mode?: ModeArbre }) {
   return (
     <div className="pointer-events-auto carte flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2 text-xs text-encre-douce">
       <Pastille couleur="var(--paternelle)">Côté paternel</Pastille>
@@ -20,6 +22,27 @@ export function Legende() {
 
       <TraitDePreuve mode="plein">Filiation</TraitDePreuve>
       <TraitDePreuve mode="pointille">Implexe : personne déjà posée ailleurs</TraitDePreuve>
+
+      {mode === 'eclate' && (
+        <>
+          <Separateur />
+          <TraitDePreuve mode="plein">Parenté proche (barre de fratrie)</TraitDePreuve>
+          <span className="flex items-center gap-1.5">
+            <svg width={22} height={8} aria-hidden>
+              <line
+                x1={1}
+                y1={4}
+                x2={21}
+                y2={4}
+                stroke="var(--encre-douce)"
+                strokeWidth={2}
+                opacity={0.35}
+              />
+            </svg>
+            Lien lointain (atténué)
+          </span>
+        </>
+      )}
 
       <Separateur />
 
