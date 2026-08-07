@@ -172,6 +172,7 @@ const schemaPersonne = z
     enfants: z
       .array(z.uuid('Un des enfants désignés n’est pas dans l’arbre.'))
       .max(30, 'Trente enfants d’un coup : reprenez en deux fois.'),
+    detacherParents: z.boolean(),
   })
   .superRefine((v, ctx) => {
     if (v.prenoms === undefined && v.nom === undefined) {
@@ -207,6 +208,7 @@ function analyser(donnees: FormData) {
     conjointId: champ(donnees, 'conjointId'),
     foyerEnfants: champ(donnees, 'foyerEnfants'),
     enfants: donnees.getAll('enfants').map((v) => String(v)),
+    detacherParents: donnees.get('detacherParents') !== null,
   });
 }
 
@@ -521,8 +523,14 @@ async function rattacher(
       ...(v.natureFiliation === 'naturelle' ? {} : { nature: v.natureFiliation }),
     });
     if (error) soucis.push(`Le rattachement aux parents a échoué. ${traduireErreur(error.message)}`);
-  } else if (!unionParents && !v.unionParents && !v.pereId && !v.mereId && filiationExistante) {
-    // Les deux champs ont été vidés volontairement : on détache.
+  } else if (
+    v.detacherParents &&
+    !unionParents &&
+    !v.unionParents &&
+    !v.pereId &&
+    !v.mereId &&
+    filiationExistante
+  ) {
     await supabase.from('filiations').delete().eq('enfant_id', personneId);
   }
 

@@ -166,24 +166,50 @@ export function ChoixPersonnesMultiple({
   const [recherche, setRecherche] = useState('');
   const idRecherche = useId();
   const idListe = useId();
+  const champsCaches = useRef<HTMLDivElement>(null);
 
   const parId = useMemo(() => new Map(personnes.map((p) => [p.id, p])), [personnes]);
-  const resultats = useMemo(
-    () => filtrer(personnes, recherche, exclus),
-    [personnes, recherche, exclus]
-  );
+  const resultats = useMemo(() => {
+    const filtres = filtrer(personnes, recherche, exclus);
+    const manquants = selection
+      .map((id) => parId.get(id))
+      .filter((p): p is OptionPersonne => Boolean(p))
+      .filter((p) => !filtres.some((f) => f.id === p.id));
+    return [...manquants, ...filtres];
+  }, [personnes, recherche, exclus, selection, parId]);
+
+  function synchroniserChampsCaches(ids: string[]) {
+    const conteneur = champsCaches.current;
+    if (!conteneur) return;
+    conteneur.replaceChildren(
+      ...ids.map((id) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = nom;
+        input.value = id;
+        return input;
+      })
+    );
+  }
+
+  useEffect(() => {
+    synchroniserChampsCaches(selection);
+  }, [selection, nom]);
 
   function basculer(id: string) {
-    setSelection((precedent) =>
-      precedent.includes(id) ? precedent.filter((autre) => autre !== id) : [...precedent, id]
-    );
+    setSelection((precedent) => {
+      const suivante = precedent.includes(id)
+        ? precedent.filter((autre) => autre !== id)
+        : [...precedent, id];
+      synchroniserChampsCaches(suivante);
+      return suivante;
+    });
   }
 
   return (
     <div className="flex flex-col gap-2">
-      {selection.map((id) => (
-        <input key={id} type="hidden" name={nom} value={id} />
-      ))}
+      {/* Champs non contrôlés : les Server Actions lisent le DOM natif. */}
+      <div ref={champsCaches} aria-hidden className="sr-only" />
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor={idRecherche} className="text-sm font-medium text-encre">
@@ -312,7 +338,7 @@ function LigneChoix({
       <label className="flex cursor-pointer items-baseline gap-2.5 rounded-[var(--rayon-petit)] px-2 py-1.5 text-sm text-encre hover:bg-fond-carte">
         <input
           type={type}
-          name={type === 'radio' ? nom : groupe}
+          name={type === 'radio' ? nom : undefined}
           value={personne.id}
           checked={coche}
           onChange={onBascule}

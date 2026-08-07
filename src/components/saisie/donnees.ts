@@ -397,6 +397,48 @@ export async function chargerLiensExistants(
  * Ce qu’une suppression romprait, compté avant de la proposer. Un chiffre
  * dissuade mieux qu’un avertissement général.
  */
+export async function chargerParentsPourNouvelEnfant(
+  personneId: string,
+  sexe: Sexe
+): Promise<{ pereId: string; mereId: string }> {
+  if (!estIdentifiant(personneId)) return { pereId: '', mereId: '' };
+
+  const supabase = await creerClientServeur();
+  let pereId = sexe === 'M' ? personneId : '';
+  let mereId = sexe === 'F' ? personneId : '';
+
+  const { data: foyers } = await supabase
+    .from('unions')
+    .select('conjoint_a, conjoint_b')
+    .or(`conjoint_a.eq.${personneId},conjoint_b.eq.${personneId}`)
+    .limit(1);
+
+  const foyer = foyers?.[0];
+  if (foyer) {
+    const autreId = foyer.conjoint_a === personneId ? foyer.conjoint_b : foyer.conjoint_a;
+    if (autreId) {
+      const { data: autre } = await supabase
+        .from('personnes')
+        .select('sexe')
+        .eq('id', autreId)
+        .maybeSingle();
+      const sexeAutre = autre?.sexe ?? 'inconnu';
+      if (sexe === 'M') {
+        if (sexeAutre === 'F' || !mereId) mereId = autreId;
+      } else if (sexe === 'F') {
+        if (sexeAutre === 'M' || !pereId) pereId = autreId;
+      } else {
+        if (sexeAutre === 'M') pereId = autreId;
+        else if (sexeAutre === 'F') mereId = autreId;
+      }
+    }
+  }
+
+  if (sexe === 'inconnu' && !pereId && !mereId) pereId = personneId;
+
+  return { pereId, mereId };
+}
+
 export type LiensRompus = {
   parents: number;
   unions: number;

@@ -21,6 +21,7 @@ import { ReperesRang } from '@/components/arbre/reperes-rang';
 import { LiensArbre } from '@/components/arbre/liens-arbre';
 import { CarteNoeud } from '@/components/arbre/carte-noeud';
 import { FondAtmospherique } from '@/components/arbre/fond-atmospherique';
+import { urlNouvelEnfant } from '@/lib/url-nouvel-enfant';
 import type { FondArbre } from '@/lib/fond-arbre';
 
 type EtatMenu = { personneId: string; x: number; y: number } | null;
@@ -331,6 +332,8 @@ export function VueArbre({
         onRecentrer(p.id);
       } else if (action === 'fiche') {
         onSelection(p.id);
+      } else if (action === 'enfant') {
+        router.push(urlNouvelEnfant(p.id, p.sexe, donnees));
       } else if (action === 'lien') {
         // Copie dans le presse-papier — on privilégie l'API moderne et l'on
         // retombe sur une saisie invisible si l'environnement la refuse.
@@ -352,7 +355,7 @@ export function VueArbre({
       // liens Next : elles se ferment d'elles-mêmes en changeant de page.
       setMenu(null);
     },
-    [menu, donnees, onRecentrer, onSelection]
+    [menu, donnees, onRecentrer, onSelection, router]
   );
 
   const focus = donnees.personnes.get(focusId);
@@ -482,8 +485,7 @@ export function VueArbre({
                     onDoubleClick={() => onRecentrer(noeud.personneId)}
                     onMenu={(evenement) => ouvrirMenu(noeud.personneId, evenement)}
                     onAjouterEnfant={(p) => {
-                      const cle = p.sexe === 'F' ? 'mere' : 'pere';
-                      router.push(`/personne/nouvelle?${cle}=${p.id}`);
+                      router.push(urlNouvelEnfant(p.id, p.sexe, donnees));
                     }}
                   />
                 </g>

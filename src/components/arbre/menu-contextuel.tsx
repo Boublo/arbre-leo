@@ -16,6 +16,7 @@ import type { PersonneArbre } from '@/lib/arbre';
 export type ActionContexte =
   | 'repartir'
   | 'fiche'
+  | 'enfant'
   | 'chronologie'
   | 'carte'
   | 'lien'
@@ -103,6 +104,16 @@ export function MenuContextuel({
             className={styleBouton}
           >
             <span>Ouvrir la fiche</span>
+          </button>
+        </li>
+        <li>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => onAction('enfant')}
+            className={styleBouton}
+          >
+            <span>Ajouter un enfant</span>
           </button>
         </li>
         <li>
