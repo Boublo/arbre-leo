@@ -26,7 +26,7 @@ export async function Navigation({ compact = false }: { compact?: boolean }) {
       : { count: 0 };
 
   return (
-    <header className="relative z-40 flex shrink-0 items-center gap-2 border-b border-bordure bg-fond-carte px-4 py-2.5 sm:gap-3">
+    <header className="sticky top-0 z-50 flex shrink-0 items-center gap-2 border-b border-bordure bg-fond-carte px-4 py-2.5 sm:gap-3">
       <MenuMobile
         admin={
           membre?.role === 'admin'
