@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { sansAccent } from '@/lib/souvenirs-partage';
 import type { OptionPersonne } from '@/components/saisie/donnees';
 
@@ -54,26 +54,40 @@ export function ChoixPersonne({
   const [recherche, setRecherche] = useState('');
   const idRecherche = useId();
   const idListe = useId();
+  const champCache = useRef<HTMLInputElement>(null);
 
   const choisie = useMemo(
     () => personnes.find((p) => p.id === selection) ?? null,
     [personnes, selection]
   );
 
-  const resultats = useMemo(
-    () => filtrer(personnes, recherche, exclus),
-    [personnes, recherche, exclus]
-  );
+  const resultats = useMemo(() => {
+    const filtres = filtrer(personnes, recherche, exclus);
+    if (choisie && !filtres.some((p) => p.id === choisie.id)) {
+      return [choisie, ...filtres];
+    }
+    return filtres;
+  }, [personnes, recherche, exclus, choisie]);
+
+  function synchroniserChampCache(valeurSelection: string) {
+    if (champCache.current) champCache.current.value = valeurSelection;
+  }
+
+  useEffect(() => {
+    synchroniserChampCache(selection);
+  }, [selection]);
 
   function choisir(id: string) {
     const suivante = id === selection ? '' : id;
     setSelection(suivante);
+    synchroniserChampCache(suivante);
     onChoix?.(suivante);
   }
 
   return (
     <div className="flex flex-col gap-2">
-      <input type="hidden" name={nom} value={selection} />
+      {/* Champ non contrôlé : les Server Actions lisent le DOM natif, pas l’état React. */}
+      <input ref={champCache} type="hidden" name={nom} defaultValue={valeur} />
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor={idRecherche} className="text-sm font-medium text-encre">
@@ -118,7 +132,7 @@ export function ChoixPersonne({
           <LigneChoix
             key={personne.id}
             type="radio"
-            groupe={`choix-${nom}`}
+            nom={nom}
             personne={personne}
             coche={selection === personne.id}
             onBascule={() => choisir(personne.id)}
@@ -278,13 +292,17 @@ function ListeChoix({
 /** Une proposition : le nom, et toujours de quoi le distinguer d’un homonyme. */
 function LigneChoix({
   type,
+  nom,
   groupe,
   personne,
   coche,
   onBascule,
 }: {
   type: 'radio' | 'checkbox';
-  groupe: string;
+  /** Nom du champ formulaire (choix unique). */
+  nom?: string;
+  /** Groupe visuel pour les cases à cocher multiples. */
+  groupe?: string;
   personne: OptionPersonne;
   coche: boolean;
   onBascule: () => void;
@@ -294,7 +312,7 @@ function LigneChoix({
       <label className="flex cursor-pointer items-baseline gap-2.5 rounded-[var(--rayon-petit)] px-2 py-1.5 text-sm text-encre hover:bg-fond-carte">
         <input
           type={type}
-          name={groupe}
+          name={type === 'radio' ? nom : groupe}
           value={personne.id}
           checked={coche}
           onChange={onBascule}
