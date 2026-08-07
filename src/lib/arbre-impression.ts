@@ -1,4 +1,11 @@
-import { RANG_MAX_ECLATE, type Disposition, type NoeudArbre } from '@/lib/layout-arbre';
+import {
+  filtrerDispositionEclate,
+  RANG_MAX_ECLATE,
+  type Disposition,
+  type FiltreBrancheEclate,
+  type ModeArbre,
+  type NoeudArbre,
+} from '@/lib/layout-arbre';
 
 /** Profondeur maximale affichée (nombre de rangs depuis la personne choisie). */
 export type ProfondeurImpression = 2 | 3 | 4 | 5 | 8 | 'tout';
@@ -8,6 +15,10 @@ export type OptionsImpressionArbre = {
   avecPhotos: boolean;
   format: 'paysage' | 'portrait';
   decoupage: 'complet' | 'pages';
+  /** Mode « Tout » : reprise de la profondeur affichée à l’écran. */
+  profondeurEclate?: number;
+  /** Mode « Tout » : filtre paternel / maternel. */
+  filtreBranche?: FiltreBrancheEclate;
 };
 
 export const PROFONDEURS: { valeur: ProfondeurImpression; libelle: string }[] = [
@@ -31,17 +42,35 @@ export function parserOptionsImpression(params: {
   photos?: string;
   format?: string;
   decoupage?: string;
+  eclateProfondeur?: string;
+  branche?: string;
 }): OptionsImpressionArbre {
   const profondeurBrute = params.profondeur;
   const profondeurValide = PROFONDEURS.some((p) => String(p.valeur) === profondeurBrute)
     ? (profondeurBrute === 'tout' ? 'tout' : Number(profondeurBrute)) as ProfondeurImpression
     : OPTIONS_IMPRESSION_DEFAUT.profondeur;
 
+  const brancheBrute = params.branche;
+  const filtreBranche: FiltreBrancheEclate | undefined =
+    brancheBrute === 'paternelle' || brancheBrute === 'maternelle' || brancheBrute === 'tous'
+      ? brancheBrute
+      : undefined;
+
+  const profondeurEclateBrute = params.eclateProfondeur
+    ? Number(params.eclateProfondeur)
+    : NaN;
+  const profondeurEclate =
+    Number.isFinite(profondeurEclateBrute) && profondeurEclateBrute > 0
+      ? Math.min(profondeurEclateBrute, RANG_MAX_ECLATE)
+      : undefined;
+
   return {
     profondeur: profondeurValide,
     avecPhotos: params.photos !== '0',
     format: params.format === 'portrait' ? 'portrait' : 'paysage',
     decoupage: params.decoupage === 'pages' ? 'pages' : 'complet',
+    profondeurEclate,
+    filtreBranche,
   };
 }
 
@@ -79,7 +108,38 @@ export function urlOptionsImpression(
     format: options.format,
     decoupage: options.decoupage,
   });
+  if (options.profondeurEclate !== undefined) {
+    q.set('eclateProfondeur', String(options.profondeurEclate));
+  }
+  if (options.filtreBranche && options.filtreBranche !== 'tous') {
+    q.set('branche', options.filtreBranche);
+  }
   return `/arbre/imprimer?${q.toString()}`;
+}
+
+/**
+ * Applique les filtres d’impression sur une disposition déjà calculée.
+ * En mode « Tout », la profondeur écran prime sur le découpage par générations.
+ */
+export function preparerDispositionImpression(
+  disposition: Disposition,
+  mode: ModeArbre,
+  racineId: string,
+  options: OptionsImpressionArbre
+): Disposition {
+  let resultat = disposition;
+
+  if (mode === 'eclate') {
+    if (options.filtreBranche && options.filtreBranche !== 'tous') {
+      resultat = filtrerDispositionEclate(resultat, options.filtreBranche, racineId);
+    }
+    if (!options.profondeurEclate) {
+      resultat = filtrerDisposition(resultat, options.profondeur, racineId);
+    }
+    return resultat;
+  }
+
+  return filtrerDisposition(resultat, options.profondeur, racineId);
 }
 
 /**
