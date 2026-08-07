@@ -154,6 +154,30 @@ export function reconstruireGraphe(graphe: GrapheSerialise): DonneesArbre {
   };
 }
 
+/**
+ * Quand Next.js renvoie un graphe frais (changement de `?personne=`), les URL
+ * signées côté client disparaissent. On les réinjecte depuis l'état courant.
+ */
+export function conserverPhotosGraphe(
+  nouveau: GrapheSerialise,
+  precedent: GrapheSerialise
+): GrapheSerialise {
+  const urls = new Map(
+    precedent.personnes
+      .filter((p) => p.photoUrl)
+      .map((p) => [p.id, p.photoUrl] as const)
+  );
+  if (urls.size === 0) return nouveau;
+
+  return {
+    ...nouveau,
+    personnes: nouveau.personnes.map((personne) => {
+      const photoUrl = urls.get(personne.id);
+      return photoUrl ? { ...personne, photoUrl } : personne;
+    }),
+  };
+}
+
 /** Enlève accents et casse : une recherche sans accent doit trouver le nom accentué. */
 export function normaliser(texte: string): string {
   return texte

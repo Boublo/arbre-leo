@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { GrapheSerialise } from '@/lib/arbre-graphe';
 
 const INTERVALLE_RAFRAICHISSEMENT_MS = 45 * 60 * 1000;
@@ -91,10 +91,18 @@ export function useRafraichirPhotosArbre(
 
   const cleVisibles = [...new Set(idsVisibles)].sort().join(',');
 
+  const manquePhotosVisibles = useMemo(() => {
+    const parId = new Map(graphe.personnes.map((p) => [p.id, p]));
+    return idsVisibles.some((id) => {
+      const personne = parId.get(id);
+      return Boolean(personne?.photoId && !personne.photoUrl);
+    });
+  }, [graphe, idsVisibles]);
+
   useEffect(() => {
     const id = window.setTimeout(() => signerVisibles(false), DELAI_DEBOUNCE_MS);
     return () => window.clearTimeout(id);
-  }, [cleVisibles, signerVisibles]);
+  }, [cleVisibles, manquePhotosVisibles, signerVisibles]);
 
   useEffect(() => {
     const minuteur = window.setInterval(() => signerVisibles(true), INTERVALLE_RAFRAICHISSEMENT_MS);

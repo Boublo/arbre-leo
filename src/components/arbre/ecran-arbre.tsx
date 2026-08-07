@@ -11,6 +11,7 @@ import { GuideArbre, guideDejaVu } from '@/components/arbre/guide-arbre';
 import { chargerGrapheArbre } from '@/app/actions/arbre';
 import {
   anneesDeVie,
+  conserverPhotosGraphe,
   reconstruireGraphe,
   type GrapheSerialise,
   type PersonneRecherche,
@@ -76,7 +77,7 @@ export function EcranArbre({
 
   if (grapheInitial !== grapheServeur) {
     setGrapheServeur(grapheInitial);
-    setGraphe(grapheInitial);
+    setGraphe((courant) => conserverPhotosGraphe(grapheInitial, courant));
   }
 
   const profondeurEclate = useSyncExternalStore(
