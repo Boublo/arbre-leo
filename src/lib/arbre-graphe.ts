@@ -18,6 +18,9 @@ import type { DonneesArbre, PersonneArbre, UnionArbre } from '@/lib/arbre';
 /** Profondeur BFS autour du focus pour le graphe envoyé au navigateur (/arbre). */
 export const PROFONDEUR_SOUS_GRAPHE_ARBRE = 4;
 
+/** Profondeur autour du focus sur une fiche (grands-parents = 2 sauts). */
+export const PROFONDEUR_CONTEXTE_FICHE = 2;
+
 /** Champs minimaux pour la recherche (palette F, sélecteur) — toute la base. */
 export type PersonneRecherche = Pick<
   PersonneArbre,
