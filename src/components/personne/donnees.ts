@@ -59,6 +59,7 @@ export type EvenementFiche = {
   annee: number | null;
   lieu: string | null;
   lieuCourt: string | null;
+  lieuId: string | null;
   niveauPreuve: NiveauPreuve | null;
   notes: string | null;
   /** Renseigné quand l'événement est porté par une union : mariage, divorce. */
@@ -151,6 +152,7 @@ export type Fiche = {
   /** Naissance et décès, mis de côté pour l'en-tête. */
   naissance: EvenementFiche | null;
   deces: EvenementFiche | null;
+  inhumation: EvenementFiche | null;
   evenements: EvenementFiche[];
   parents: LienPersonne[];
   natureFiliation: string | null;
@@ -489,6 +491,7 @@ export async function chargerFiche(id: string): Promise<Fiche | null> {
       annee: e.annee,
       lieu: libelle,
       lieuCourt: lieuCourt(libelle),
+      lieuId: e.lieu_id,
       niveauPreuve: e.niveau_preuve,
       notes: e.notes,
       avec,
@@ -568,6 +571,7 @@ export async function chargerFiche(id: string): Promise<Fiche | null> {
       personne.nom_complet?.trim() || personne.prenoms || personne.nom || 'Personne sans nom',
     naissance: evenements.find((e) => e.type === 'naissance') ?? null,
     deces: evenements.find((e) => e.type === 'deces') ?? null,
+    inhumation: evenements.find((e) => e.type === 'inhumation') ?? null,
     evenements,
     parents: liens(idsParents),
     natureFiliation: preciserNature(filiationsSujet[0]?.nature ?? null),

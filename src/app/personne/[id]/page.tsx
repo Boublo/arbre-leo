@@ -94,7 +94,9 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
         </p>
 
         <div className="flex flex-col gap-6">
-          {personneEstVivante(fiche.personne.presume_vivant, { aEvenementFinDeVie: Boolean(fiche.deces) }) && (
+          {personneEstVivante(fiche.personne.presume_vivant, {
+            aEvenementFinDeVie: Boolean(fiche.deces || fiche.inhumation),
+          }) && (
             <BandeauVivant />
           )}
 

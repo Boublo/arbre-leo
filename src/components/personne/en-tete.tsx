@@ -7,7 +7,7 @@ import { urlImpressionArbre } from '@/lib/arbre-impression';
 
 /** L'identité : le nom, ce qu'on l'appelait, et d'où elle vient dans l'arbre. */
 export function EnTetePersonne({ fiche }: { fiche: Fiche }) {
-  const { personne, naissance, deces } = fiche;
+  const { personne, naissance, deces, inhumation } = fiche;
 
   const bornes = [
     naissance?.annee ? String(naissance.annee) : null,
@@ -53,6 +53,23 @@ export function EnTetePersonne({ fiche }: { fiche: Fiche }) {
         <Etiquette>{LIBELLE_SEXE[personne.sexe]}</Etiquette>
         <Branches branches={personne.branches ?? []} />
       </div>
+
+      {inhumation?.lieu && (
+        <p className="mt-3 text-sm text-encre-douce">
+          {accorder(personne.sexe, 'Inhumé')} à{' '}
+          {inhumation.lieuId ? (
+            <Link
+              href={`/carte?lieu=${encodeURIComponent(inhumation.lieuId)}`}
+              className="lien-discret"
+            >
+              {inhumation.lieu}
+            </Link>
+          ) : (
+            inhumation.lieu
+          )}
+          {inhumation.date ? ` · ${inhumation.date}` : ''}
+        </p>
+      )}
 
       {(personne.niveaux_preuve ?? []).length > 0 && (
         <div className="mt-4 border-t border-bordure pt-4">
