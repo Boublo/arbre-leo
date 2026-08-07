@@ -58,10 +58,6 @@ export function BandeauAide({
     return () => window.clearTimeout(id);
   }, [peutAfficher, fermeLocalement, guideTermine]);
 
-  useEffect(() => {
-    if (peutAfficher) setFermeLocalement(false);
-  }, [peutAfficher]);
-
   const visible = peutAfficher && !fermeLocalement;
 
   if (!visible) return null;

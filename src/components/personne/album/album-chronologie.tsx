@@ -34,6 +34,17 @@ export function AlbumChronologie({
     [medias, evenements, faits, options],
   );
 
+  const marqueursAnnee = useMemo(() => {
+    const marques: boolean[] = [];
+    let courante: number | null | undefined;
+    for (const entree of entrees) {
+      const marque = entree.annee !== courante;
+      if (marque) courante = entree.annee;
+      marques.push(marque);
+    }
+    return marques;
+  }, [entrees]);
+
   if (entrees.length === 0) {
     return (
       <p className="rounded-[var(--rayon)] border border-dashed border-bordure bg-fond-doux/60 px-5 py-8 text-center text-sm text-encre-douce">
@@ -43,8 +54,6 @@ export function AlbumChronologie({
     );
   }
 
-  let anneeCourante: number | null | undefined;
-
   return (
     <ol className="relative flex flex-col gap-0">
       <div
@@ -53,8 +62,7 @@ export function AlbumChronologie({
       />
 
       {entrees.map((entree, index) => {
-        const marqueurAnnee = entree.annee !== anneeCourante;
-        if (marqueurAnnee) anneeCourante = entree.annee;
+        const marqueurAnnee = marqueursAnnee[index] ?? false;
 
         return (
           <li key={entree.id} className="relative pb-8 last:pb-0">

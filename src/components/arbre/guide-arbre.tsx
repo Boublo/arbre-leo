@@ -256,6 +256,35 @@ export function GuideArbre({
   ficheVisible: boolean;
   onEtapeChange?: (etapeId: string) => void;
 }) {
+  if (!ouvert) return null;
+
+  return (
+    <GuideArbreActif
+      onFermer={onFermer}
+      nomFocus={nomFocus}
+      mode={mode}
+      selectionFaite={selectionFaite}
+      ficheVisible={ficheVisible}
+      onEtapeChange={onEtapeChange}
+    />
+  );
+}
+
+function GuideArbreActif({
+  onFermer,
+  nomFocus,
+  mode,
+  selectionFaite,
+  ficheVisible,
+  onEtapeChange,
+}: {
+  onFermer: () => void;
+  nomFocus: string;
+  mode: ModeArbre;
+  selectionFaite: boolean;
+  ficheVisible: boolean;
+  onEtapeChange?: (etapeId: string) => void;
+}) {
   const etapes = useMemo(() => etapesGuide(nomFocus), [nomFocus]);
   const [etapeCourante, setEtapeCourante] = useState(0);
   const [rectangle, setRectangle] = useState<Rectangle | null>(null);
@@ -282,17 +311,11 @@ export function GuideArbre({
   }, [etape.cible]);
 
   useEffect(() => {
-    if (!ouvert) return;
-    setEtapeCourante(0);
-  }, [ouvert]);
-
-  useEffect(() => {
-    if (!ouvert) return;
     onEtapeChange?.(etape.id);
-  }, [ouvert, etape.id, onEtapeChange]);
+  }, [etape.id, onEtapeChange]);
 
   useEffect(() => {
-    if (!ouvert || !etape.attendreSelection || !selectionFaite) return;
+    if (!etape.attendreSelection || !selectionFaite) return;
     if (etape.id !== 'explorer') return;
 
     const id = window.setTimeout(() => {
@@ -301,23 +324,22 @@ export function GuideArbre({
     }, 600);
 
     return () => window.clearTimeout(id);
-  }, [ouvert, etape.id, etape.attendreSelection, selectionFaite, etapes]);
+  }, [etape.id, etape.attendreSelection, selectionFaite, etapes]);
 
   useEffect(() => {
-    if (!ouvert) return;
-
-    actualiserRectangle();
-    const id = window.setTimeout(actualiserRectangle, 120);
+    const id = window.setTimeout(actualiserRectangle, 0);
+    const id2 = window.setTimeout(actualiserRectangle, 120);
 
     window.addEventListener('resize', actualiserRectangle);
     window.addEventListener('scroll', actualiserRectangle, true);
 
     return () => {
       window.clearTimeout(id);
+      window.clearTimeout(id2);
       window.removeEventListener('resize', actualiserRectangle);
       window.removeEventListener('scroll', actualiserRectangle, true);
     };
-  }, [ouvert, etapeCourante, actualiserRectangle]);
+  }, [etapeCourante, actualiserRectangle]);
 
   const fermer = useCallback(() => {
     marquerGuideVu();
@@ -334,8 +356,6 @@ export function GuideArbre({
   }, [peutAvancer, derniere, fermer]);
 
   useEffect(() => {
-    if (!ouvert) return;
-
     function surTouche(evt: KeyboardEvent) {
       const cible = evt.target as HTMLElement | null;
       const tag = cible?.tagName;
@@ -362,9 +382,7 @@ export function GuideArbre({
 
     document.addEventListener('keydown', surTouche);
     return () => document.removeEventListener('keydown', surTouche);
-  }, [ouvert, peutAvancer, fermer, suivant]);
-
-  if (!ouvert) return null;
+  }, [peutAvancer, fermer, suivant]);
 
   const libelleSuivant = (() => {
     if (derniere) return 'Explorer l’arbre';

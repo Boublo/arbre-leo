@@ -17,10 +17,15 @@ export function useRafraichirPhotosArbre(
   idsVisibles: readonly string[]
 ) {
   const grapheRef = useRef(graphe);
-  grapheRef.current = graphe;
-
   const idsVisiblesRef = useRef(idsVisibles);
-  idsVisiblesRef.current = idsVisibles;
+
+  useEffect(() => {
+    grapheRef.current = graphe;
+  }, [graphe]);
+
+  useEffect(() => {
+    idsVisiblesRef.current = idsVisibles;
+  }, [idsVisibles]);
 
   const requeteCourante = useRef(0);
 

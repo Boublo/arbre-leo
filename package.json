@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint --quiet",
+    "test:e2e": "playwright test",
     "arbre:fusion": "node scripts/build-tree.mjs",
     "arbre:sql": "node scripts/generate-import-sql.mjs",
     "arbre:maj": "node scripts/maj.mjs",
@@ -36,6 +37,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.51.1",
     "@tailwindcss/postcss": "^4",
     "@types/d3": "^7.4.3",
     "@types/node": "^20",

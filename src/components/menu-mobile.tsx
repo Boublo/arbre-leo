@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Tiroir } from '@/components/interactions/tiroir';
@@ -25,29 +25,32 @@ export function MenuMobile({
   maFiche?: { href: string };
   groupes?: readonly GroupeNavigation[];
 }) {
-  const [ouvert, setOuvert] = useState(false);
   const chemin = usePathname() ?? '/';
-
-  useEffect(() => {
-    setOuvert(false);
-  }, [chemin]);
+  const [etatMenu, setEtatMenu] = useState({ chemin, ouvert: false });
+  const menuOuvert = etatMenu.chemin === chemin && etatMenu.ouvert;
 
   return (
     <>
       <button
         type="button"
         className="grid h-11 w-11 place-items-center rounded-[var(--rayon-petit)] text-encre-douce transition hover:bg-fond-doux hover:text-encre lg:hidden"
-        aria-expanded={ouvert}
+        aria-expanded={menuOuvert}
         aria-controls="menu-mobile-navigation"
-        aria-label={ouvert ? 'Fermer le menu' : 'Ouvrir le menu'}
-        onClick={() => setOuvert((v) => !v)}
+        aria-label={menuOuvert ? 'Fermer le menu' : 'Ouvrir le menu'}
+        onClick={() =>
+          setEtatMenu((courant) =>
+            courant.chemin === chemin
+              ? { chemin, ouvert: !courant.ouvert }
+              : { chemin, ouvert: true },
+          )
+        }
       >
         <span aria-hidden className="text-xl leading-none">
-          {ouvert ? '✕' : '☰'}
+          {menuOuvert ? '✕' : '☰'}
         </span>
       </button>
 
-      <Tiroir ouvert={ouvert} onFermer={() => setOuvert(false)} cote="gauche" titre="Parcourir">
+      <Tiroir ouvert={menuOuvert} onFermer={() => setEtatMenu({ chemin, ouvert: false })} cote="gauche" titre="Parcourir">
         <nav id="menu-mobile-navigation" className="flex flex-col gap-4">
           <SectionLiens titre="Voir" liens={LIENS_PRINCIPAUX} chemin={chemin} />
 
