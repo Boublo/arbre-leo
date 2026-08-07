@@ -25,6 +25,8 @@ export type PhotoDetail = {
   media: MediaFiche;
   personneId: string;
   nomPersonne: string;
+  personnesLiees: { id: string; nom: string }[];
+  lieu: { id: string; libelle: string; estSitue: boolean } | null;
   estPortraitCarte: boolean;
   demandePortrait?: {
     statut: StatutDemandePortrait;
@@ -72,21 +74,44 @@ export async function chargerPhotoPersonne(
     .maybeSingle();
   if (!media) return null;
 
-  const { data: commentairesBruts } = await supabase
-    .from('commentaires')
-    .select('*')
-    .eq('media_id', mediaId)
-    .order('cree_le');
+  const m = media as Media;
 
-  const commentaires: Commentaire[] = commentairesBruts ?? [];
+  const [commentairesRes, liensPhotoRes, lieuRes] = await Promise.all([
+    supabase.from('commentaires').select('*').eq('media_id', mediaId).order('cree_le'),
+    supabase.from('medias_personnes').select('personne_id').eq('media_id', mediaId),
+    m.lieu_id
+      ? supabase
+          .from('lieux')
+          .select('id, libelle, latitude, longitude')
+          .eq('id', m.lieu_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const commentaires: Commentaire[] = commentairesRes.data ?? [];
   const idsAuteurs = [...new Set(commentaires.map((c) => c.auteur_id))];
+  const idsPersonnes = [...new Set((liensPhotoRes.data ?? []).map((l) => l.personne_id))];
 
-  const { data: auteurs } =
+  const [auteursRes, personnesRes] = await Promise.all([
     idsAuteurs.length > 0
-      ? await supabase.from('membres').select('id, nom_affiche').in('id', idsAuteurs)
-      : { data: [] as Pick<Membre, 'id' | 'nom_affiche'>[] };
+      ? supabase.from('membres').select('id, nom_affiche').in('id', idsAuteurs)
+      : Promise.resolve({ data: [] as Pick<Membre, 'id' | 'nom_affiche'>[] }),
+    idsPersonnes.length > 0
+      ? supabase.from('personnes').select('id, nom_complet, prenoms, nom').in('id', idsPersonnes)
+      : Promise.resolve({ data: [] as { id: string; nom_complet: string | null; prenoms: string | null; nom: string | null }[] }),
+  ]);
 
-  const nomAuteur = new Map((auteurs ?? []).map((a) => [a.id, a.nom_affiche]));
+  const nomAuteur = new Map((auteursRes.data ?? []).map((a) => [a.id, a.nom_affiche]));
+  const personnesLiees = (personnesRes.data ?? [])
+    .map((p) => ({ id: p.id, nom: p.nom_complet?.trim() || p.prenoms || p.nom || 'Sans nom' }))
+    .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
+  const lieu = lieuRes.data
+    ? {
+        id: lieuRes.data.id,
+        libelle: lieuRes.data.libelle,
+        estSitue: lieuRes.data.latitude !== null && lieuRes.data.longitude !== null,
+      }
+    : null;
 
   const { data: signe } = await supabase.storage
     .from(BUCKET_MEDIAS)
@@ -105,7 +130,6 @@ export async function chargerPhotoPersonne(
     console.error('demandes_portrait_carte:', erreurDemandePortrait.message);
   }
 
-  const m = media as Media;
   const fiche: MediaFiche = {
     id: m.id,
     type: m.type,
@@ -115,7 +139,7 @@ export async function chargerPhotoPersonne(
     annee: m.annee,
     mois: m.mois,
     jour: m.jour,
-    lieu: null,
+    lieu: lieu?.libelle ?? null,
     transcription: m.transcription,
     cote: m.cote,
     depot: m.depot,
@@ -131,6 +155,8 @@ export async function chargerPhotoPersonne(
     media: fiche,
     personneId,
     nomPersonne: personne.nom_complet?.trim() || personne.prenoms || personne.nom || 'Sans nom',
+    personnesLiees,
+    lieu,
     estPortraitCarte: personne.photo_id === mediaId,
     demandePortrait: demandePortrait
       ? {

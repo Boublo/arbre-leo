@@ -43,7 +43,15 @@ export default async function PagePhoto({ params, searchParams }: ParamsPhoto) {
   ]);
   if (!photo) notFound();
 
-  const { media, nomPersonne, estPortraitCarte, demandePortrait, commentaires } = photo;
+  const {
+    media,
+    nomPersonne,
+    personnesLiees,
+    lieu: lieuPhoto,
+    estPortraitCarte,
+    demandePortrait,
+    commentaires,
+  } = photo;
   const titre = media.titre ?? `${LIBELLE_MEDIA[media.type]} sans titre`;
   const legende = [media.date, media.lieu, media.role].filter(Boolean).join(' · ');
 
@@ -124,6 +132,37 @@ export default async function PagePhoto({ params, searchParams }: ParamsPhoto) {
 
         {media.description && (
           <p className="mt-4 text-sm leading-relaxed text-encre-douce">{media.description}</p>
+        )}
+
+        {(personnesLiees.length > 1 || lieuPhoto) && (
+          <aside className="mt-5 rounded-[var(--rayon-petit)] border border-bordure bg-fond-doux/60 p-4">
+            <h2 className="text-sm font-medium text-encre">Repères de cette photo</h2>
+            {personnesLiees.length > 1 && (
+              <p className="mt-2 text-sm text-encre-douce">
+                <span className="font-medium text-encre">Personnes liées : </span>
+                {personnesLiees.map((personne, index) => (
+                  <span key={personne.id}>
+                    {index > 0 && ' · '}
+                    <Link href={`/personne/${personne.id}`} className="lien-discret">
+                      {personne.nom}
+                    </Link>
+                  </span>
+                ))}
+              </p>
+            )}
+            {lieuPhoto && (
+              <p className="mt-2 text-sm text-encre-douce">
+                <span className="font-medium text-encre">Lieu : </span>
+                {lieuPhoto.estSitue ? (
+                  <Link href={`/carte?lieu=${encodeURIComponent(lieuPhoto.id)}`} className="lien-discret">
+                    {lieuPhoto.libelle}
+                  </Link>
+                ) : (
+                  lieuPhoto.libelle
+                )}
+              </p>
+            )}
+          </aside>
         )}
 
         {peutDeposer && media.estImage && (

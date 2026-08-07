@@ -114,6 +114,7 @@ Les couches `B` à `G` doivent être utilisables **sans IA**. L’IA, si elle es
 - `UX-002` : livré — `/recherche` réemploie l’index léger et la recherche de l’arbre ; les résultats sont chargés côté serveur avec RLS, sans index public supplémentaire.
 - `UX-003` : livré — la fiche propose une prochaine étape selon son contenu déjà chargé : album, souvenirs, repères de vie ou parenté.
 - Contexte photo livré : depuis l’album d’une personne, suivant/précédent reste dans la même année et le retour rouvre l’onglet Album.
+- Détail photo enrichi : les personnes explicitement liées à l’image et son lieu géolocalisé deviennent des portes de navigation, sans inférence.
 - Préparer, sans coder prématurément, l’import massif, la sélection multiple et les actions de classement.
 
 **Critère de sortie :** trouver une personne puis ses photos demande au plus deux actions après l’ouverture de sa fiche ; toute action reste accessible sans geste caché.
