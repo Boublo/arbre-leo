@@ -1,4 +1,5 @@
 import { creerClientServeur } from '@/lib/supabase/server';
+import { coteDUneBranche, coteDesBranches, type Cote } from '@/lib/branches';
 import type { Recit, Sexe, StatutModeration } from '@/lib/types-base';
 
 /**
@@ -58,6 +59,29 @@ export type ChoixFamille = {
   patronyme: string;
   nombre: number;
 };
+
+/** Regroupement thématique : récits libres (sans patronyme). */
+export type ChoixTheme = {
+  theme: string;
+  nombre: number;
+};
+
+export type FiltreRecitsListe =
+  | { type: 'tous' }
+  | { type: 'famille'; valeur: string }
+  | { type: 'theme'; valeur: string };
+
+export type ContexteRecit = {
+  patronyme: string | null;
+  theme: string | null;
+};
+
+/** Côté paternel / maternel d'un récit pour le liseré de carte. */
+export function coteDuRecit(recit: Pick<RecitResume, 'branche' | 'personnes'>): Cote {
+  if (recit.branche) return coteDUneBranche(recit.branche);
+  if (recit.personnes.length > 0) return coteDesBranches(recit.personnes[0].branches);
+  return 'commune';
+}
 
 export type Droits = {
   utilisateurId: string | null;
@@ -237,17 +261,23 @@ export async function lireDroits(): Promise<Droits> {
 // ---------------------------------------------------------------------------
 
 /**
- * Tous les récits, filtrés éventuellement sur un patronyme. Les épinglés en
- * tête, puis du plus récent au plus ancien. Les récits sans période trient au
- * fil du dépôt : rien ne prime le classement chronologique quand il existe.
+ * Tous les récits, filtrés sur une famille, un thème, ou sans filtre.
+ * Les épinglés en tête, puis du plus récent au plus ancien.
  */
 export async function chargerRecits(
-  patronyme: string | null = null
+  filtre: FiltreRecitsListe | string | null = null
 ): Promise<RecitResume[]> {
   const supabase = await creerClientServeur();
 
   let requete = supabase.from('recits').select(CHAMPS_RECIT);
-  if (patronyme !== null) requete = requete.eq('patronyme', patronyme);
+
+  if (typeof filtre === 'string') {
+    requete = requete.eq('patronyme', filtre);
+  } else if (filtre?.type === 'famille') {
+    requete = requete.eq('patronyme', filtre.valeur);
+  } else if (filtre?.type === 'theme') {
+    requete = requete.eq('theme', filtre.valeur);
+  }
 
   const { data, error } = await requete
     .order('epingle', { ascending: false })
@@ -335,17 +365,26 @@ export async function chargerRecit(id: string): Promise<RecitDetail | null> {
 }
 
 /**
- * Les récits qui bordent celui-ci au sein de la même famille, pour que la
- * lecture se prolonge sans revenir à la liste. Renvoyé quand il en existe, ce
- * qui n'est pas garanti — un récit thématique peut être seul.
+ * Les récits qui bordent celui-ci (même famille ou même thème), pour prolonger
+ * la lecture sans revenir à la liste.
  */
 export async function chargerVoisins(
   id: string,
-  patronyme: string | null
+  contexte: ContexteRecit | string | null
 ): Promise<{ precedent: RecitResume | null; suivant: RecitResume | null }> {
-  if (patronyme === null) return { precedent: null, suivant: null };
+  const ctx: ContexteRecit =
+    typeof contexte === 'string'
+      ? { patronyme: contexte, theme: null }
+      : (contexte ?? { patronyme: null, theme: null });
 
-  const liste = await chargerRecits(patronyme);
+  const liste = ctx.patronyme
+    ? await chargerRecits({ type: 'famille', valeur: ctx.patronyme })
+    : ctx.theme
+      ? await chargerRecits({ type: 'theme', valeur: ctx.theme })
+      : [];
+
+  if (liste.length === 0) return { precedent: null, suivant: null };
+
   const index = liste.findIndex((r) => r.id === id);
   if (index === -1) return { precedent: null, suivant: null };
 
@@ -374,6 +413,23 @@ export async function chargerChoixFamilles(): Promise<ChoixFamille[]> {
   return [...totaux.entries()]
     .map(([patronyme, nombre]) => ({ patronyme, nombre }))
     .sort((a, b) => a.patronyme.localeCompare(b.patronyme, 'fr'));
+}
+
+/** Les thèmes libres (récits sans patronyme), avec leur nombre. */
+export async function chargerChoixThemes(): Promise<ChoixTheme[]> {
+  const supabase = await creerClientServeur();
+
+  const { data } = await supabase.from('recits').select('theme');
+  const totaux = new Map<string, number>();
+  for (const ligne of data ?? []) {
+    const cle = ligne.theme?.trim();
+    if (!cle) continue;
+    totaux.set(cle, (totaux.get(cle) ?? 0) + 1);
+  }
+
+  return [...totaux.entries()]
+    .map(([theme, nombre]) => ({ theme, nombre }))
+    .sort((a, b) => a.theme.localeCompare(b.theme, 'fr'));
 }
 
 /**
