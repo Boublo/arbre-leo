@@ -523,6 +523,12 @@ async function rattacher(
       ...(v.natureFiliation === 'naturelle' ? {} : { nature: v.natureFiliation }),
     });
     if (error) soucis.push(`Le rattachement aux parents a échoué. ${traduireErreur(error.message)}`);
+    else {
+      const union = unions.find((u) => u.id === unionParents);
+      if (union) {
+        await actualiserBranchesHeritees(supabase, [personneId], uniques([union.conjoint_a, union.conjoint_b]));
+      }
+    }
   } else if (
     v.detacherParents &&
     !unionParents &&
@@ -592,7 +598,15 @@ async function rattacher(
     const { error } = await supabase
       .from('filiations')
       .insert(aEcrire.map((enfantId) => ({ union_id: foyerId, enfant_id: enfantId })));
-    if (error) soucis.push(`Les enfants n’ont pas pu être rattachés. ${traduireErreur(error.message)}`);
+    if (error) {
+      soucis.push(`Les enfants n’ont pas pu être rattachés. ${traduireErreur(error.message)}`);
+    } else {
+      const union = unions.find((u) => u.id === foyerId);
+      const parents = union
+        ? uniques([union.conjoint_a, union.conjoint_b])
+        : [personneId];
+      await actualiserBranchesHeritees(supabase, aEcrire, parents);
+    }
   }
 
   return soucis;
@@ -605,6 +619,18 @@ function branchesHeritees(voisins: Map<string, Voisin>, parents: string[]): stri
     for (const b of voisins.get(id)?.branches ?? []) branches.add(b);
   }
   return [...branches];
+}
+
+async function actualiserBranchesHeritees(
+  supabase: ClientServeur,
+  enfantsIds: string[],
+  parents: string[]
+): Promise<void> {
+  if (enfantsIds.length === 0 || parents.length === 0) return;
+  const voisins = await chargerVoisins(supabase, parents);
+  const branches = branchesHeritees(voisins, parents);
+  if (branches.length === 0) return;
+  await supabase.from('personnes').update({ branches }).in('id', enfantsIds);
 }
 
 async function conjointsDUneUnion(
