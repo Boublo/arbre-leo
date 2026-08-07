@@ -228,7 +228,7 @@ export async function validerDemandePortrait(
   _precedent: EtatAdmin,
   donnees: FormData
 ): Promise<EtatAdmin> {
-  const { supabase, moi } = await exigerAdmin();
+  const { supabase } = await exigerAdmin();
 
   const analyse = schemaDemandePortrait.safeParse({ demandeId: donnees.get('demandeId') });
   if (!analyse.success) {
@@ -237,57 +237,22 @@ export async function validerDemandePortrait(
 
   const { data: demande } = await supabase
     .from('demandes_portrait_carte')
-    .select('id, personne_id, media_id, statut')
+    .select('personne_id, media_id')
     .eq('id', analyse.data.demandeId)
     .maybeSingle();
 
-  if (!demande || demande.statut !== 'en_attente') {
-    return { erreur: 'Cette demande n’est plus en attente.' };
-  }
-
-  const maintenant = new Date().toISOString();
-
-  const { error: erreurPersonne } = await supabase
-    .from('personnes')
-    .update({ photo_id: demande.media_id, modifie_par: moi.id })
-    .eq('id', demande.personne_id);
-  if (erreurPersonne) return { erreur: traduireErreurBase(erreurPersonne) };
-
-  await supabase
-    .from('medias_personnes')
-    .update({ role: 'portrait' })
-    .eq('media_id', demande.media_id)
-    .eq('personne_id', demande.personne_id);
-
-  const { error: erreurDemande } = await supabase
-    .from('demandes_portrait_carte')
-    .update({
-      statut: 'acceptee',
-      traite_par: moi.id,
-      traite_le: maintenant,
-      motif_refus: null,
-    })
-    .eq('id', demande.id);
-
-  if (erreurDemande) return { erreur: traduireErreurBase(erreurDemande) };
-
-  await supabase
-    .from('demandes_portrait_carte')
-    .update({
-      statut: 'refusee',
-      traite_par: moi.id,
-      traite_le: maintenant,
-      motif_refus: 'Une autre photo a été choisie pour la carte.',
-    })
-    .eq('personne_id', demande.personne_id)
-    .eq('statut', 'en_attente')
-    .neq('id', demande.id);
+  const { error } = await supabase.rpc('accepter_demande_portrait_carte', {
+    p_demande_id: analyse.data.demandeId,
+  });
+  if (error) return { erreur: traduireErreurBase(error) };
 
   rafraichir();
   revalidatePath('/arbre');
   revalidatePath('/arbre/imprimer');
-  revalidatePath(`/personne/${demande.personne_id}`);
-  revalidatePath(`/personne/${demande.personne_id}/photo/${demande.media_id}`);
+  if (demande) {
+    revalidatePath(`/personne/${demande.personne_id}`);
+    revalidatePath(`/personne/${demande.personne_id}/photo/${demande.media_id}`);
+  }
   return { message: 'Portrait de la carte validé.' };
 }
 

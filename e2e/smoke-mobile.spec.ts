@@ -20,6 +20,12 @@ test.describe('fumée mobile', () => {
     await expect(page.url()).toContain('suite=%2Farbre');
   });
 
+  test('l’arbre conserve le focus dans suite sans session', async ({ page }) => {
+    await page.goto('/arbre?personne=00000000-0000-4000-8000-000000000001');
+    await expect(page).toHaveURL(/\/connexion/);
+    await expect(page.url()).toContain('suite=%2Farbre%3Fpersonne%3D');
+  });
+
   test('la chronologie redirige vers la connexion sans session', async ({ page }) => {
     await page.goto('/chronologie');
     await expect(page).toHaveURL(/\/connexion/);

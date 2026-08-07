@@ -1,11 +1,33 @@
 # Audit complet — L'arbre de Léo
 
-Dernière mise à jour : 6 août 2026 — **v1–v6** (sécurité, lisibilité, immersion, assistance, densification arbre, garde-fous CI).
+Dernière mise à jour : 7 août 2026 — **v1–v7** (sécurité, lisibilité, immersion, mobile, rappels, garde-fous CI).
 
-> Revue senior du 6 août 2026 : voir le rapport d'audit cloud agent.
-> Correctifs v1–v5 appliqués.
+> PR #39 (rappels anniversaires) et #40 (mobile UX phases 1–6) fusionnées sur `main`.
+> Correctifs v1–v6 appliqués ; v7 en cours de déploiement prod.
 
 ---
+
+## Correctifs v7 (août 2026) — mobile, rappels, perf arbre
+
+```
+✓ Mobile  Navigation tactile 44 px, safe-area, menu « Mon compte », titre compact
+✓ Mobile  Filtres chronologie et légende carte repliables
+✓ Mobile  Hydratation sans flash localStorage (useSyncExternalStore)
+✓ Perf    Signatures photo lazy sur /arbre (visible + focus + sélection)
+✓ Fiche   Événement inhumation (formulaire, carte, lien /carte)
+✓ Rappels E-mails anniversaires/décès (cron, prefs /notifications, migration 0022)
+✓ Admin   Portraits carte : file d’attente + notifications (0020–0021)
+✓ Admin   Acceptation portrait atomique via RPC (0023)
+✓ CI      Workflow complet : typecheck, lint, build, Playwright mobile
+```
+
+### Checklist déploiement production (v7)
+
+Après merge sur `main` :
+
+1. **Vercel** — déploiement Production ; variables pour les rappels : `RESEND_API_KEY`, `RAPPELS_EMAIL_FROM`, `CRON_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`.
+2. **Supabase** — appliquer dans l’ordre les migrations `0020` à `0023` si pas encore faites en prod (`supabase db push` ou SQL manuel).
+3. **CI** — workflows « Garde-fous arbre » et « CI » verts (`typecheck`, `lint`, `arbre:verifier`, `build`, `test:e2e`).
 
 ## Correctifs v1 (août 2026)
 
@@ -93,8 +115,8 @@ Après merge sur `main` :
 | **Liens de l'arbre** | Bon | Pedigree contacte les cartes ; couples atomiques ; fratrie centrée |
 | **Cartes personnes** | Bon | Portraits OK ; badge « Fratrie » + contour plein |
 | **Site global** | Bon | 32 routes, auth, navigation améliorées |
-| **Performance `/arbre`** | Acceptable | Graphe complet (nécessaire à l'ascendance) + refresh photos |
-| **Tests auto** | Bon | Suite `npm run arbre:verifier` (11 checks + CI) |
+| **Performance `/arbre`** | Bon | Signatures lazy ; graphe complet conservé pour l'ascendance |
+| **Tests auto** | Bon | `arbre:verifier` + CI Playwright mobile |
 
 ### Correctifs appliqués (audit)
 
@@ -234,13 +256,11 @@ Ils vérifient que certains **noms de fonctions existent** dans le code, pas que
 
 ---
 
-### H4 — Membre en attente perd le lien profond
+### H4 — Membre en attente perd le lien profond — **corrigé**
 
-**Fichier :** `src/proxy.ts`
+**Fichier :** `src/proxy.ts` (l.74–78), `src/app/auth/callback/route.ts`, `src/app/actions/auth.ts`
 
-Redirection vers `/attente` sans conserver `?suite=/arbre?personne=…`.
-
-**Symptôme :** Lien « voir Laura dans l'arbre » → inscription → attente → accueil (pas Laura).
+La redirection vers `/attente` conserve désormais `?suite=` (ex. `/arbre?personne=…`). Testé en e2e (`smoke-mobile.spec.ts`).
 
 ---
 
@@ -306,7 +326,8 @@ Redirection vers `/attente` sans conserver `?suite=/arbre?personne=…`.
 
 ### 4. Membre `en_attente` clique lien `/arbre?personne=…`
 
-- [ ] Après validation, arrive sur la bonne personne
+- [x] Redirection vers `/attente?suite=…` avec le focus conservé
+- [x] Après validation, arrive sur la bonne personne
 
 ---
 
@@ -323,17 +344,14 @@ Redirection vers `/attente` sans conserver `?suite=/arbre?personne=…`.
 
 ---
 
-## Ordre de correction recommandé
+## Ordre de correction recommandé (restant)
 
 ```
-1. C1  Style cartes : frère ≠ conjoint (+ légende)
-2. C2  Layout famille : rapprocher les conjoints après chaque rangée
-3. C3  (suit C2)       Recentrer fratries ; raccourcir raccords
-4. H3  Tests géométrie automatisés (fixture Laura)
-5. H1  Mode défaut « famille autour »
-6. H2  Sous-graphe + refresh photos
-7. H4  Suite URL pour membres en attente
+1. Prod  Appliquer migrations 0020–0023 + variables rappels Vercel
+2. Print Parité profondeur/filtre branche mode éclaté ↔ page imprimable (mineur)
 ```
+
+Les items C1–C3, H1–H4, M1–M6 de l’audit initial sont corrigés dans le code.
 
 ---
 
@@ -341,15 +359,16 @@ Redirection vers `/attente` sans conserver `?suite=/arbre?personne=…`.
 
 ```bash
 npm run build
+npm run typecheck
+npm run lint
 npm run arbre:verifier                   # suite anti-régression complète
+npm run test:e2e                         # smoke Playwright mobile
+npm run arbre:rappels                    # dry-run rappels anniversaires
 npm run arbre:diag                       # santé base (membre + RLS)
-node scripts/verifier-liens-famille.mjs  # grep symboles (insuffisant seul)
-node scripts/verifier-navigation-arbre.mjs
-node scripts/verifier-panneau-arbre.mjs
 ```
 
 ---
 
 ## Sécurité (inchangé)
 
-RLS actif, `noindex`, export filtré, admin gardé côté serveur. Pas de faille critique identifiée côté auth (hors perte de deep link H4).
+RLS actif, `noindex`, export filtré, admin gardé côté serveur. Acceptation portrait carte atomique (RPC 0023).
