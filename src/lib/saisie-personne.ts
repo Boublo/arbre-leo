@@ -87,6 +87,17 @@ export const NATURES_FILIATION: { valeur: string; libelle: string }[] = [
 
 export const VALEURS_NATURE = ['naturelle', 'adoptive', 'reconnue', 'recueillie'] as const;
 
+export type NatureFiliation = (typeof VALEURS_NATURE)[number];
+
+/** Relit la nature stockée en base pour le formulaire de saisie. */
+export function versNatureFiliation(nature: string | null | undefined): NatureFiliation {
+  if (!nature) return 'naturelle';
+  const n = nature.trim().toLowerCase();
+  if (n === '' || n === 'naturelle' || n === 'biologique') return 'naturelle';
+  if ((VALEURS_NATURE as readonly string[]).includes(n)) return n as NatureFiliation;
+  return 'naturelle';
+}
+
 // ---------------------------------------------------------------------------
 // Traduction en colonnes
 // ---------------------------------------------------------------------------

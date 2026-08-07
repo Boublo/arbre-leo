@@ -1,6 +1,6 @@
 import { creerClientServeur } from '@/lib/supabase/server';
 import { lieuCourt } from '@/lib/arbre';
-import { DATE_VIDE, repereDeVie, type ValeursDateSaisie } from '@/lib/saisie-personne';
+import { DATE_VIDE, repereDeVie, versNatureFiliation, type ValeursDateSaisie } from '@/lib/saisie-personne';
 import type {
   Evenement,
   NiveauPreuve,
@@ -290,7 +290,7 @@ export async function chargerValeursPersonne(id: string): Promise<ValeursPersonn
       .select('id, type, annee, mois, jour, qualificatif, precision_date, detail, lieu_id, lieux(libelle)')
       .eq('personne_id', id)
       .in('type', ['naissance', 'deces', 'inhumation', 'profession', 'residence']),
-    supabase.from('filiations').select('union_id').eq('enfant_id', id).maybeSingle(),
+    supabase.from('filiations').select('union_id, nature').eq('enfant_id', id).maybeSingle(),
   ]);
 
   const evenements = (evenementsRes.data ?? []) as unknown as LigneEvenement[];
@@ -331,7 +331,7 @@ export async function chargerValeursPersonne(id: string): Promise<ValeursPersonn
     unionParents,
     pereId,
     mereId,
-    natureFiliation: 'naturelle',
+    natureFiliation: versNatureFiliation(filiationRes.data?.nature),
   };
 }
 
