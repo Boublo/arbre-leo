@@ -34,6 +34,7 @@ export function DateEvenement({
   idLieux,
   aideLieu,
   onChangerAnnee,
+  onChangerLieu,
 }: {
   prefixe: 'naissance' | 'deces' | 'inhumation';
   legende: string;
@@ -43,6 +44,7 @@ export function DateEvenement({
   idLieux: string;
   aideLieu?: string;
   onChangerAnnee?: (annee: string) => void;
+  onChangerLieu?: (lieu: string) => void;
 }) {
   const [precision, setPrecision] = useState<PrecisionSaisie>(valeurs.precision);
 
@@ -127,6 +129,7 @@ export function DateEvenement({
         list={idLieux}
         maxLength={200}
         defaultValue={valeurs.lieu}
+        onChange={(event) => onChangerLieu?.(event.currentTarget.value)}
         placeholder="Commune, département, pays"
         aide={
           aideLieu ??

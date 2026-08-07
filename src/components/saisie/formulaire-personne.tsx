@@ -58,6 +58,7 @@ export function FormulairePersonne({
   const [prenomsSaisis, setPrenomsSaisis] = useState('');
   const [nomSaisi, setNomSaisi] = useState('');
   const [anneeNaissanceSaisie, setAnneeNaissanceSaisie] = useState('');
+  const [lieuNaissanceSaisi, setLieuNaissanceSaisi] = useState('');
 
   // React vide les champs non contrôlés après chaque envoi. Le formulaire est
   // donc remonté avec ce que le serveur vient de nous rendre : une année
@@ -115,6 +116,7 @@ export function FormulairePersonne({
           prenoms={prenomsSaisis}
           nom={nomSaisi}
           anneeNaissance={anneeNaissanceSaisie}
+          lieuNaissance={lieuNaissanceSaisi}
           personnes={personnes}
         />
 
@@ -158,6 +160,7 @@ export function FormulairePersonne({
         valeurs={depart.naissance}
         idLieux={idLieux}
         onChangerAnnee={setAnneeNaissanceSaisie}
+        onChangerLieu={setLieuNaissanceSaisi}
       />
 
       <DateEvenement
@@ -255,11 +258,13 @@ function DoublonsPossibles({
   prenoms,
   nom,
   anneeNaissance,
+  lieuNaissance,
   personnes,
 }: {
   prenoms: string;
   nom: string;
   anneeNaissance: string;
+  lieuNaissance: string;
   personnes: OptionPersonne[];
 }) {
   const candidats = useMemo(() => {
@@ -269,17 +274,23 @@ function DoublonsPossibles({
     const termes = [nomNormalise, sansAccent(prenoms.trim())].filter((terme) => terme.length >= 2);
     const annee = Number(anneeNaissance);
     const anneeConnue = Number.isInteger(annee) && annee >= 1200 && annee <= new Date().getFullYear();
+    const motsLieu = sansAccent(lieuNaissance)
+      .split(/[^a-z0-9]+/)
+      .filter((mot) => mot.length >= 3);
+    const memeLieu = (personne: OptionPersonne) => motsLieu.some((mot) => sansAccent(personne.repere).includes(mot));
     return personnes
       .filter((personne) => {
         const identite = sansAccent(personne.nomComplet);
         return termes.every((terme) => identite.includes(terme));
       })
       .sort((a, b) => {
-        if (!anneeConnue) return 0;
-        return Number(b.anneeNaissance === annee) - Number(a.anneeNaissance === annee);
+        const ecartAnnee = anneeConnue
+          ? Number(b.anneeNaissance === annee) - Number(a.anneeNaissance === annee)
+          : 0;
+        return ecartAnnee || Number(memeLieu(b)) - Number(memeLieu(a));
       })
       .slice(0, 5);
-  }, [anneeNaissance, nom, personnes, prenoms]);
+  }, [anneeNaissance, lieuNaissance, nom, personnes, prenoms]);
 
   if (candidats.length === 0) return null;
 
@@ -298,12 +309,22 @@ function DoublonsPossibles({
               {personne.anneeNaissance === Number(anneeNaissance) && (
                 <span className="text-encre-douce"> · même année de naissance</span>
               )}
+              {partageLieuNaissance(personne, lieuNaissance) && (
+                <span className="text-encre-douce"> · lieu de naissance proche</span>
+              )}
             </Link>
           </li>
         ))}
       </ul>
     </aside>
   );
+}
+
+function partageLieuNaissance(personne: OptionPersonne, lieu: string): boolean {
+  const repere = sansAccent(personne.repere);
+  return sansAccent(lieu)
+    .split(/[^a-z0-9]+/)
+    .some((mot) => mot.length >= 3 && repere.includes(mot));
 }
 
 // ---------------------------------------------------------------------------
