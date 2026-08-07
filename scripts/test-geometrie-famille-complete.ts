@@ -25,6 +25,7 @@ function personne(id: string, issuDe: string | null, unions: string[] = []): Per
     profession: null,
     unions,
     issuDe,
+    inhumation: null,
     descendanceIncomplete: false,
   };
 }

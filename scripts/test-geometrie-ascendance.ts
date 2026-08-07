@@ -36,6 +36,7 @@ function personne(id: string, issuDe: string | null): PersonneArbre {
     profession: null,
     unions: [],
     issuDe,
+    inhumation: null,
     descendanceIncomplete: false,
   };
 }

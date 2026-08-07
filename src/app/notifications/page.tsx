@@ -2,10 +2,12 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Navigation } from '@/components/navigation';
 import { ListeNotifications } from '@/components/notifications/liste-notifications';
+import { PreferencesRappels } from '@/components/notifications/preferences-rappels';
 import {
   compterNotificationsNonLues,
   listerNotifications,
 } from '@/app/actions/notifications';
+import { lirePreferencesRappels } from '@/app/actions/rappels';
 import { creerClientServeur } from '@/lib/supabase/server';
 
 export const metadata: Metadata = { title: 'Notifications' };
@@ -20,9 +22,10 @@ export default async function PageNotifications() {
 
   if (!user) redirect('/connexion?suite=/notifications');
 
-  const [notifications, nonLues] = await Promise.all([
+  const [notifications, nonLues, prefs] = await Promise.all([
     listerNotifications(50),
     compterNotificationsNonLues(),
+    lirePreferencesRappels(),
   ]);
 
   return (
@@ -39,6 +42,8 @@ export default async function PageNotifications() {
         </header>
 
         <ListeNotifications notifications={notifications} nonLues={nonLues} />
+
+        {prefs && <PreferencesRappels prefs={prefs} />}
       </main>
     </>
   );

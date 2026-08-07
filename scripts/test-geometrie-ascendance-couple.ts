@@ -37,6 +37,7 @@ function personne(
     profession: null,
     unions,
     issuDe,
+    inhumation: null,
     descendanceIncomplete: false,
   };
 }

@@ -2,9 +2,11 @@ import Link from 'next/link';
 import { Navigation } from '@/components/navigation';
 import { BarreScroll } from '@/components/interactions/barre-scroll';
 import { RaccourciAccueil } from '@/components/interactions/raccourci-accueil';
+import { LigneCommemoration } from '@/components/ephemerides/ligne-commemoration';
 import { Vignette } from '@/components/portrait/vignette';
 import { portraitDePersonne } from '@/components/portrait/types';
 import { chargerArbre, formaterDate } from '@/lib/arbre';
+import { lieuCommemoration } from '@/lib/lieu-commemoration';
 import {
   ephemeridesDeCeJour,
   ephemeridesSemaine,
@@ -321,6 +323,7 @@ function CarteEphemeride({ ephemeride }: { ephemeride: Ephemeride }) {
   // Décès
   const p = ephemeride.personne;
   const feminin = p.sexe === 'F';
+  const lieu = lieuCommemoration(p);
   return (
     <article className="carte flex flex-col gap-2 p-4">
       <p className="text-xs uppercase tracking-[0.09em] text-encre-tres-douce">
@@ -330,6 +333,7 @@ function CarteEphemeride({ ephemeride }: { ephemeride: Ephemeride }) {
       <p className="text-xs text-encre-tres-douce">
         {feminin ? 'Décédée' : 'Décédé'} le {dateEcrite}.
       </p>
+      {lieu && <LigneCommemoration lieu={lieu} feminin={feminin} />}
       <div className="mt-1 flex flex-wrap gap-3 text-sm">
         <Link href={`/personne/${p.id}`} className="font-medium text-accent transition hover:underline">
           Voir la fiche
