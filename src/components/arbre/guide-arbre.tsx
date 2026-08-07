@@ -78,6 +78,13 @@ function etapesGuide(nomFocus: string): EtapeGuide[] {
       cible: 'chercher',
     },
     {
+      id: 'fond-arbre',
+      icone: '🎨',
+      titre: 'Personnaliser le fond',
+      texte: 'Quatre ambiances sont proposées : grille discrète, parchemin uni, parchemin vivant ou aurore. Le choix est mémorisé pour vos prochaines visites.',
+      cible: 'fond-arbre',
+    },
+    {
       id: 'imprimer',
       icone: '🖨',
       titre: 'Imprimer ou partager',

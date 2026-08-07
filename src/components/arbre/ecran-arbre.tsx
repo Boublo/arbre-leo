@@ -24,7 +24,7 @@ import {
   type ModeArbre,
 } from '@/lib/layout-arbre';
 import { ReglagesModeEclate } from '@/components/arbre/reglage-profondeur-eclate';
-import { urlImpressionArbre, profondeurEclateVersImpression } from '@/lib/arbre-impression';
+import { urlImpressionArbre } from '@/lib/arbre-impression';
 import {
   CLE_MODE_ARBRE,
   lireFiltreBrancheEclateClient,
@@ -148,11 +148,13 @@ export function EcranArbre({
   const lienImprimer = useMemo(() => {
     if (mode === 'eclate') {
       return urlImpressionArbre(focusId, mode, {
-        profondeur: profondeurEclateVersImpression(profondeurEclate),
+        profondeur: 'tout',
+        profondeurEclate: profondeurEclate,
+        filtreBranche: filtreBrancheEclate,
       });
     }
     return urlImpressionArbre(focusId, mode);
-  }, [focusId, mode, profondeurEclate]);
+  }, [focusId, mode, profondeurEclate, filtreBrancheEclate]);
 
   const focus = donnees.personnes.get(focusId) ?? null;
 

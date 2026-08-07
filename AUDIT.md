@@ -19,6 +19,8 @@ Dernière mise à jour : 7 août 2026 — **v1–v7** (sécurité, lisibilité, 
 ✓ Admin   Portraits carte : file d’attente + notifications (0020–0021)
 ✓ Admin   Acceptation portrait atomique via RPC (0023)
 ✓ CI      Workflow complet : typecheck, lint, build, Playwright mobile
+✓ Arbre   Choix du fond (grille, uni, vivant, aurore) — PR #42
+✓ Print   Parité mode éclaté ↔ page imprimable (profondeur + branche)
 ```
 
 ### Checklist déploiement production (v7)
@@ -348,7 +350,6 @@ La redirection vers `/attente` conserve désormais `?suite=` (ex. `/arbre?person
 
 ```
 1. Prod  Appliquer migrations 0020–0023 + variables rappels Vercel
-2. Print Parité profondeur/filtre branche mode éclaté ↔ page imprimable (mineur)
 ```
 
 Les items C1–C3, H1–H4, M1–M6 de l’audit initial sont corrigés dans le code.

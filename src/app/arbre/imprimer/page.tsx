@@ -8,7 +8,7 @@ import { OptionsImpressionArbre } from '@/components/arbre/options-impression-ar
 import { SelecteurPersonneImpression } from '@/components/arbre/selecteur-personne-impression';
 import { chargerArbre, derniersEnfants, personneOuDefaut, signerPhotosPersonnes } from '@/lib/arbre';
 import { conseilsImpression } from '@/lib/arbre-impression-conseils';
-import { filtrerDisposition, parserOptionsImpression, urlOptionsImpression } from '@/lib/arbre-impression';
+import { parserOptionsImpression, preparerDispositionImpression, urlOptionsImpression } from '@/lib/arbre-impression';
 import { versPersonneRecherche } from '@/lib/arbre-graphe';
 import { disposerArbre, LIBELLE_MODE, type ModeArbre } from '@/lib/layout-arbre';
 
@@ -46,6 +46,9 @@ export default async function PageArbreImprimer({
     photos: typeof params.photos === 'string' ? params.photos : undefined,
     format: typeof params.format === 'string' ? params.format : undefined,
     decoupage: typeof params.decoupage === 'string' ? params.decoupage : undefined,
+    eclateProfondeur:
+      typeof params.eclateProfondeur === 'string' ? params.eclateProfondeur : undefined,
+    branche: typeof params.branche === 'string' ? params.branche : undefined,
   });
 
   const donnees = await chargerArbre({ signerPhotosPour: 'aucun' });
@@ -61,10 +64,18 @@ export default async function PageArbreImprimer({
     redirect(urlOptionsImpression({ personne: focus.id, mode }, options));
   }
 
-  const disposition = filtrerDisposition(
-    disposerArbre(donnees, focus.id, mode),
-    options.profondeur,
-    focus.id
+  const disposition = preparerDispositionImpression(
+    disposerArbre(
+      donnees,
+      focus.id,
+      mode,
+      mode === 'eclate' && options.profondeurEclate
+        ? { profondeurEclate: options.profondeurEclate }
+        : undefined
+    ),
+    mode,
+    focus.id,
+    options
   );
 
   if (options.avecPhotos) {
