@@ -46,7 +46,7 @@ export function BarreOutilsArbre({
   return (
     <>
       {/* Mobile : deux lignes compactes */}
-      <div className="z-10 flex flex-col gap-2 border-b border-bordure bg-fond-carte px-3 py-2 lg:hidden">
+      <div className="relative z-30 shrink-0 flex flex-col gap-2 border-b border-bordure bg-fond-carte px-3 py-2 lg:hidden">
         <div className="flex min-w-0 items-center gap-2" data-guide="partir-de">
           <div className="min-w-0 flex-1">
             <SelecteurPersonne
@@ -123,7 +123,7 @@ export function BarreOutilsArbre({
       </div>
 
       {/* Grand écran : barre complète */}
-      <div className="z-10 hidden flex-wrap items-center gap-x-5 gap-y-3 border-b border-bordure bg-fond-carte px-4 py-3 lg:flex">
+      <div className="relative z-30 hidden shrink-0 flex-wrap items-center gap-x-5 gap-y-3 border-b border-bordure bg-fond-carte px-4 py-3 lg:flex">
         <div className="flex min-w-0 items-center gap-2" data-guide="partir-de">
           <span className="shrink-0 text-sm text-encre-tres-douce">Partir de</span>
           <SelecteurPersonne

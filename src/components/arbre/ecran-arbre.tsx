@@ -340,7 +340,7 @@ export function EcranArbre({
         dépasse l'écran grossit la ligne et overflow-y-auto ne s'active jamais.
         inset-y-0 borne la hauteur au cadre visible, le défilement devient fiable.
       */}
-      <div className="relative min-h-0 flex-1 overflow-hidden" data-guide="arbre">
+      <div className="relative z-0 min-h-0 flex-1 overflow-hidden" data-guide="arbre">
         <div className="absolute inset-0 min-h-0 min-w-0">
           <VueArbre
             donnees={donnees}
