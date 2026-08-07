@@ -1,5 +1,20 @@
 # Journal d’exécution
 
+## Lot VISION-001 — 7 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| IDs audit | Vision phase 3 ; dépendances `OPS-001`, `DATA-001`, `ENV-001`. |
+| Problème | Les capacités existantes étaient riches mais dispersées ; le nouveau parcours ne devait ni dupliquer les données ni devancer les preuves. |
+| Cause vérifiée | Le dépôt contient déjà accueil, arbre, fiche, chronologie, carte, archives, recherches, récits, contexte historique et moteur de parenté. Le modèle porte aussi les sources, niveaux de preuve, dates partielles, lieux et journal. |
+| Fichiers modifiés | `IMMERSIVE_GENEALOGY_VISION.md`, `IMMERSIVE_ROADMAP.md`, `IMPLEMENTATION_LOG.md`. |
+| Correction | Architecture de lecture dérivée, contrat de vérité et feuille de route priorisée ; conception détaillée de `EXP-001` sans code applicatif. |
+| Tests | Lecture du code, migrations et schéma Supabase en lecture seule ; aucune donnée familiale lue ni modifiée. |
+| Résultat | Stable. Le premier lot applicatif reste `EXP-001`, à réaliser après rétablissement d’un environnement de tests reproductible. |
+| Impact | Aucun changement de données, permissions, routes ou interface. |
+| Risques | L’implémentation ne doit pas débuter avec une formulation de parenté non testée ou une nouvelle navigation qui dupliquerait les vues existantes. |
+| Rollback | Supprimer les documents de vision ; aucun état distant n’est à restaurer. |
+
 ## Lot BASELINE-001 — 7 août 2026
 
 | Champ | Détail |
