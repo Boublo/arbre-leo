@@ -19,6 +19,8 @@ import { ecrireStockage, lireStockage, subscribeStockageLocal } from '@/lib/stoc
 
 const CLE_VUE = 'arbre-album-vue';
 const CLE_OPTIONS = 'arbre-album-options-chrono';
+let optionsStockeesEnCache: string | null | undefined;
+let optionsChronologieEnCache: OptionsChronologie = OPTIONS_CHRONOLOGIE_DEFAUT;
 
 function lireVueAlbum(): VueAlbum {
   const vueStockee = lireStockage(CLE_VUE);
@@ -28,13 +30,18 @@ function lireVueAlbum(): VueAlbum {
 function lireOptionsChronologie(): OptionsChronologie {
   try {
     const optionsStockees = lireStockage(CLE_OPTIONS);
+    if (optionsStockees === optionsStockeesEnCache) return optionsChronologieEnCache;
+
+    optionsStockeesEnCache = optionsStockees;
     if (optionsStockees) {
-      return { ...OPTIONS_CHRONOLOGIE_DEFAUT, ...JSON.parse(optionsStockees) };
+      optionsChronologieEnCache = { ...OPTIONS_CHRONOLOGIE_DEFAUT, ...JSON.parse(optionsStockees) };
+    } else {
+      optionsChronologieEnCache = OPTIONS_CHRONOLOGIE_DEFAUT;
     }
   } catch {
     /* lecture locale impossible */
   }
-  return OPTIONS_CHRONOLOGIE_DEFAUT;
+  return optionsChronologieEnCache;
 }
 
 /**
