@@ -98,8 +98,8 @@ Dans le tableau de bord Supabase → **Authentication → URL Configuration** :
    - `https://arbre.modulyx.eu/auth/callback`
    - URLs Modulyx déjà présentes (ne pas les retirer)
 
-   Les URL `arbre-leo-*.vercel.app` (previews) ne sont plus utilisées : les
-   déploiements Vercel sont limités à la branche `main` (production).
+   Les URL `arbre-leo-*.vercel.app` (previews) ne sont plus utilisées : seule la
+   branche `main` déclenche un déploiement Vercel (production).
 3. Enregistrer.
 
 Sans cette étape, les liens de confirmation d'inscription envoyés par mail
@@ -159,9 +159,10 @@ Chaque `git push` sur **`main`** déclenche un déploiement **Production** sur
 https://arbre.modulyx.eu.
 
 Les branches de travail (`cursor/*`, PR, etc.) **ne déclenchent plus de
-preview Vercel** : le fichier `vercel.json` limite les builds à `main` et
-ignore les autres branches (`scripts/vercel-build-uniquement-main.sh`). Cela
-évite de consommer les minutes de build sur des URL éphémères inutiles.
+preview Vercel** : `vercel.json` n’autorise que `main` via
+`git.deploymentEnabled` (`"*": false`, `"main": true`). Aucun déploiement
+« annulé » ni erreur rouge sur les PR : Vercel ignore simplement les autres
+branches.
 
 La validation avant merge repose sur **GitHub Actions** (`CI`, `Garde-fous
 arbre`) : typecheck, lint, build, Playwright mobile.
@@ -171,14 +172,19 @@ arbre`) : typecheck, lint, build, Playwright mobile.
 ```json
 // vercel.json
 {
-  "git": { "deploymentEnabled": { "main": true } },
-  "github": { "silent": true },
-  "ignoreCommand": "bash scripts/vercel-build-uniquement-main.sh"
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "*": false
+    }
+  }
 }
 ```
 
-Si des previews apparaissent encore, vérifier dans Vercel → **Settings → Git**
-que **Preview Deployments** est désactivé ou limité à aucune branche.
+Ne pas réintroduire de script `ignoreCommand` basé sur `VERCEL_GIT_COMMIT_REF`
+sans activer **Automatically expose System Environment Variables** dans Vercel
+→ Settings → Environment Variables : sans cette option, la variable est vide,
+tous les builds sont ignorés (y compris `main`) et apparaissent en erreur.
 
 Pour importer de nouvelles données ou tourner les scripts de veille et de
 diagnostic, se référer à `MISE-EN-SERVICE.md` : ces opérations tournent en
