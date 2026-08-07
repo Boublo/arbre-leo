@@ -1,5 +1,18 @@
 # Journal d’exécution
 
+## Lot EXP-UX-001 — 7 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| ID audit | `EXP-UX-001` — photo détaillée, plein écran accessible. |
+| Problème | La photo s’affichait sur sa page détaillée sans action plein écran explicite, alors que la visionneuse est disponible dans l’album et l’arbre. |
+| Cause vérifiée | `VisionneusePhoto` était réutilisée par les vues de collection, mais pas par la route de détail `/personne/[id]/photo/[mediaId]`. |
+| Fichiers modifiés | `UX_UI_INTERACTION_AUDIT.md`, `UX_NAVIGATION_MAP.md`, `src/components/photos/photo-detail-plein-ecran.tsx`, `src/app/personne/[id]/photo/[mediaId]/page.tsx`, `IMPLEMENTATION_LOG.md`. |
+| Correction | Clic sur l’image et bouton visible « Agrandir la photo » ouvrent la visionneuse existante ; zoom, pincement, déplacement, Échap et fermeture restent disponibles. |
+| Tests | TypeScript, lint et contrôle des différences avant commit. La page publique de connexion ne déborde pas horizontalement à 390, 430, 768, 1024, 1440 et 1920 px ; le rendu connecté aux mêmes largeurs doit encore être confirmé avec une session membre de démonstration. |
+| Impact | Aucune écriture, requête supplémentaire, nouvelle URL signée, migration ou modification de permission. |
+| Rollback | Supprimer le composant et rétablir l’image directe ; aucune donnée persistante à restaurer. |
+
 ## Lot EXP-001 — 7 août 2026
 
 | Champ | Détail |

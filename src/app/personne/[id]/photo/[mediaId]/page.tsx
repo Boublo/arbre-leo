@@ -6,6 +6,7 @@ import { Moderation, Rien, Section } from '@/components/personne/blocs';
 import { LIBELLE_MEDIA } from '@/components/personne/vocabulaire';
 import { FormulaireCommentairePhoto } from '@/components/photos/formulaire-commentaire-photo';
 import { BoutonPortraitCarte } from '@/components/photos/bouton-portrait-carte';
+import { PhotoDetailPleinEcran } from '@/components/photos/photo-detail-plein-ecran';
 import { chargerPhotoPersonne } from '@/components/photos/donnees';
 import { lireDroitsSaisie, peutDeposerPhotoAlbum } from '@/components/saisie/donnees';
 import type { CommentaireFiche } from '@/components/personne/donnees';
@@ -54,13 +55,11 @@ export default async function PagePhoto({ params }: ParamsPhoto) {
 
         <figure className="mt-6 overflow-hidden rounded-[var(--rayon)] border border-bordure bg-fond-doux">
           {media.estImage && media.url ? (
-            // eslint-disable-next-line @next/next/no-img-element -- URL signée temporaire
-            <img
+            <PhotoDetailPleinEcran
               src={media.url}
               alt={titre}
-              width={media.largeur ?? undefined}
-              height={media.hauteur ?? undefined}
-              className="mx-auto max-h-[min(75vh,720px)] w-auto max-w-full object-contain"
+              largeur={media.largeur ?? undefined}
+              hauteur={media.hauteur ?? undefined}
             />
           ) : media.type === 'audio' && media.url ? (
             <audio controls className="w-full p-6" src={media.url}>
