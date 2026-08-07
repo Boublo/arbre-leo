@@ -31,4 +31,10 @@ test.describe('fumée mobile', () => {
     await expect(page).toHaveURL(/\/connexion/);
     await expect(page.url()).toContain('suite=%2Fchronologie');
   });
+
+  test('la page d’erreur générique s’affiche', async ({ page }) => {
+    await page.goto('/erreur');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(/impossible/i);
+    await expect(page.getByRole('link', { name: /se connecter/i })).toBeVisible();
+  });
 });

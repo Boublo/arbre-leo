@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { createPortal } from 'react-dom';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import {
   compterNotificationsNonLues,
@@ -9,6 +10,7 @@ import {
   marquerToutesNotificationsLues,
 } from '@/app/actions/notifications';
 import type { NotificationAffichee } from '@/lib/notifications';
+import { styleMenuAncre, useFermerMenuAncre, useMenuAncre } from '@/lib/menu-ancre';
 
 /**
  * Cloche de navigation : pastille de non-lus et aperçu des dernières alertes.
@@ -18,7 +20,8 @@ export function ClocheNotifications() {
   const [nonLues, setNonLues] = useState(0);
   const [liste, setListe] = useState<NotificationAffichee[]>([]);
   const [enChargement, startTransition] = useTransition();
-  const conteneur = useRef<HTMLDivElement>(null);
+  const ancreRef = useRef<HTMLButtonElement>(null);
+  const { menuRef, position } = useMenuAncre(ouvert, ancreRef, { aligner: 'droite' });
 
   const charger = () => {
     startTransition(async () => {
@@ -37,18 +40,7 @@ export function ClocheNotifications() {
     return () => window.clearInterval(intervalle);
   }, []);
 
-  useEffect(() => {
-    if (!ouvert) return;
-
-    function auClic(exterieur: MouseEvent) {
-      if (conteneur.current && !conteneur.current.contains(exterieur.target as Node)) {
-        setOuvert(false);
-      }
-    }
-
-    document.addEventListener('mousedown', auClic);
-    return () => document.removeEventListener('mousedown', auClic);
-  }, [ouvert]);
+  useFermerMenuAncre(ouvert, () => setOuvert(false), ancreRef, menuRef);
 
   async function ouvrirNotification(notification: NotificationAffichee) {
     if (!notification.lu) {
@@ -65,37 +57,15 @@ export function ClocheNotifications() {
     charger();
   }
 
-  return (
-    <div ref={conteneur} className="relative">
-      <button
-        type="button"
-        onClick={() => {
-          setOuvert((v) => !v);
-          if (!ouvert) charger();
-        }}
-        aria-expanded={ouvert}
-        aria-haspopup="true"
-        aria-label={
-          nonLues > 0
-            ? `Notifications : ${nonLues} non lue${nonLues > 1 ? 's' : ''}`
-            : 'Notifications'
-        }
-        className="relative grid min-h-11 min-w-11 place-items-center rounded-[var(--rayon-petit)] text-encre-douce transition hover:bg-fond-doux hover:text-encre"
-      >
-        <span aria-hidden className="text-lg leading-none">
-          🔔
-        </span>
-        {nonLues > 0 && (
-          <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-alerte px-1 text-[10px] font-semibold text-accent-contraste">
-            {nonLues > 9 ? '9+' : nonLues}
-          </span>
-        )}
-      </button>
-
-      {ouvert && (
+  const panneau = ouvert
+    ? createPortal(
         <div
+          ref={(el) => {
+            menuRef.current = el;
+          }}
           role="menu"
-          className="absolute right-0 top-full z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-[var(--rayon)] border border-bordure bg-fond-carte shadow-[var(--ombre-forte)]"
+          style={styleMenuAncre(position)}
+          className="fixed z-[60] w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-[var(--rayon)] border border-bordure bg-fond-carte shadow-[var(--ombre-forte)]"
         >
           <div className="flex items-center justify-between gap-3 border-b border-bordure px-4 py-3">
             <p className="text-sm font-medium text-encre">Notifications</p>
@@ -158,8 +128,40 @@ export function ClocheNotifications() {
               Voir tout l’historique
             </Link>
           </div>
-        </div>
-      )}
+        </div>,
+        document.body
+      )
+    : null;
+
+  return (
+    <div className="relative">
+      <button
+        ref={ancreRef}
+        type="button"
+        onClick={() => {
+          setOuvert((v) => !v);
+          if (!ouvert) charger();
+        }}
+        aria-expanded={ouvert}
+        aria-haspopup="true"
+        aria-label={
+          nonLues > 0
+            ? `Notifications : ${nonLues} non lue${nonLues > 1 ? 's' : ''}`
+            : 'Notifications'
+        }
+        className="relative grid min-h-11 min-w-11 place-items-center rounded-[var(--rayon-petit)] text-encre-douce transition hover:bg-fond-doux hover:text-encre"
+      >
+        <span aria-hidden className="text-lg leading-none">
+          🔔
+        </span>
+        {nonLues > 0 && (
+          <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-alerte px-1 text-[10px] font-semibold text-accent-contraste">
+            {nonLues > 9 ? '9+' : nonLues}
+          </span>
+        )}
+      </button>
+
+      {panneau}
     </div>
   );
 }
