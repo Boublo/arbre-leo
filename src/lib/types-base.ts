@@ -375,6 +375,7 @@ export type BaseDeDonnees = {
       peut_deposer_photo_album: { Args: { p_personne_id: string }; Returns: boolean };
       personne_est_decedee: { Args: { p_personne_id: string }; Returns: boolean };
       assurer_fiche_membre: { Args: Record<string, never>; Returns: Membre };
+      accepter_demande_portrait_carte: { Args: { p_demande_id: string }; Returns: undefined };
     };
     Enums: {
       role_membre: RoleMembre;
