@@ -53,6 +53,7 @@ export function EcranCarte({ donnees }: { donnees: DonneesCarte }) {
   const [survolId, setSurvolId] = useState<string | null>(null);
   const [montrerDeplacements, setMontrerDeplacements] = useState(true);
   const [montrerFlux, setMontrerFlux] = useState(false);
+  const [legendeOuverte, setLegendeOuverte] = useState(false);
   const [taille, setTaille] = useState({ largeur: 0, hauteur: 0 });
   const [transformation, setTransformation] = useState<Transformation>({ k: 1, x: 0, y: 0 });
 
@@ -516,70 +517,40 @@ export function EcranCarte({ donnees }: { donnees: DonneesCarte }) {
           </div>
         )}
 
+        <button
+          type="button"
+          onClick={() => setLegendeOuverte((ouvert) => !ouvert)}
+          aria-expanded={legendeOuverte}
+          aria-controls="carte-legende-mobile"
+          className="carte pointer-events-auto absolute left-3 top-3 z-20 grid min-h-11 place-items-center rounded-[var(--rayon-petit)] px-3 text-xs font-medium text-encre sm:hidden"
+        >
+          {legendeOuverte ? 'Masquer' : 'Légende'}
+        </button>
+
+        {legendeOuverte && (
+          <div
+            id="carte-legende-mobile"
+            className="carte pointer-events-auto absolute inset-x-3 top-14 z-20 max-h-[min(50dvh,20rem)] overflow-y-auto p-3 text-xs text-encre-douce sm:hidden"
+          >
+            <LegendeCouleurs nbActifs={nbActifs} debut={debut} fin={fin} />
+            <div className="mt-3 border-t border-bordure pt-3">
+              <LegendeNiveau niveau={niveauLegende} groupes={groupesLegende} />
+            </div>
+          </div>
+        )}
+
         {/* --- Légende des couleurs et des symboles --------------------- */}
-        <div className="carte pointer-events-none absolute left-4 top-4 max-w-xs p-3 text-xs text-encre-douce">
-          <p className="mb-2 text-encre">
-            <span className="tabular-nums">{nbActifs}</span> lieu{nbActifs > 1 ? 'x' : ''} entre{' '}
-            <span className="tabular-nums">{debut}</span> et <span className="tabular-nums">{fin}</span>
-          </p>
-          <ul className="flex flex-col gap-1">
-            <li className="flex items-center gap-2">
-              <Pastille couleur={COULEUR_COTE.paternelle} /> Côté paternel
-            </li>
-            <li className="flex items-center gap-2">
-              <Pastille couleur={COULEUR_COTE.maternelle} /> Côté maternel
-            </li>
-            <li className="flex items-center gap-2">
-              <Pastille couleur={COULEUR_COTE.commune} /> Les deux branches
-            </li>
-          </ul>
-          <p className="mt-2 text-encre-tres-douce">
-            La taille du point dit le nombre d’événements. Un cercle vide et pointillé
-            marque un lieu sans événement dans la période. La flèche pleine va du lieu quitté
-            au lieu rejoint&nbsp;; le trait pointillé va d’une naissance à un décès.
-          </p>
+        <div className="carte pointer-events-none absolute left-4 top-4 hidden max-w-xs p-3 text-xs text-encre-douce sm:block">
+          <LegendeCouleurs nbActifs={nbActifs} debut={debut} fin={fin} />
         </div>
 
         {/* --- Légende dynamique de bas de carte : pays → région → ville */}
-        <div className="carte pointer-events-none absolute right-2 top-2 max-w-[min(100%,14rem)] p-2 text-xs text-encre-douce sm:right-4 sm:top-4 sm:max-w-xs sm:p-3">
-          <p className="text-encre">
-            <span className="uppercase tracking-wider text-encre-tres-douce">
-              {niveauLegende === 'pays'
-                ? 'Par pays'
-                : niveauLegende === 'region'
-                  ? 'Par région'
-                  : 'Par ville'}
-            </span>
-          </p>
-          {groupesLegende.length === 0 ? (
-            <p className="mt-1 text-encre-tres-douce">
-              Aucun lieu de ce niveau n’est visible dans la période.
-            </p>
-          ) : (
-            <ul className="mt-1 flex flex-col gap-0.5">
-              {groupesLegende.slice(0, 8).map((groupe) => (
-                <li key={groupe.libelle} className="flex items-baseline justify-between gap-3">
-                  <span className="truncate text-encre">{groupe.libelle}</span>
-                  <span className="tabular-nums text-encre-douce">
-                    {groupe.nombre}
-                    <span className="text-encre-tres-douce"> · {groupe.evenements} évt</span>
-                  </span>
-                </li>
-              ))}
-              {groupesLegende.length > 8 && (
-                <li className="text-encre-tres-douce">
-                  et {groupesLegende.length - 8} autre{groupesLegende.length - 8 > 1 ? 's' : ''}
-                </li>
-              )}
-            </ul>
-          )}
-          <p className="mt-2 text-encre-tres-douce">
-            Zoomer descend d’un cran : pays, puis région, puis ville.
-          </p>
+        <div className="carte pointer-events-none absolute right-4 top-4 hidden max-w-xs p-3 text-xs text-encre-douce sm:block">
+          <LegendeNiveau niveau={niveauLegende} groupes={groupesLegende} />
         </div>
 
         {/* --- Commandes ------------------------------------------------- */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-2 p-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-3 sm:p-4">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-2 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-3 sm:p-4">
           <div className="carte pointer-events-auto w-full max-w-sm p-3">
             <CurseurPeriode
               anneeMin={donnees.anneeMin}
@@ -745,6 +716,86 @@ function PointLieu({
         </text>
       )}
     </g>
+  );
+}
+
+function LegendeCouleurs({
+  nbActifs,
+  debut,
+  fin,
+}: {
+  nbActifs: number;
+  debut: number;
+  fin: number;
+}) {
+  return (
+    <>
+      <p className="mb-2 text-encre">
+        <span className="tabular-nums">{nbActifs}</span> lieu{nbActifs > 1 ? 'x' : ''} entre{' '}
+        <span className="tabular-nums">{debut}</span> et <span className="tabular-nums">{fin}</span>
+      </p>
+      <ul className="flex flex-col gap-1">
+        <li className="flex items-center gap-2">
+          <Pastille couleur={COULEUR_COTE.paternelle} /> Côté paternel
+        </li>
+        <li className="flex items-center gap-2">
+          <Pastille couleur={COULEUR_COTE.maternelle} /> Côté maternel
+        </li>
+        <li className="flex items-center gap-2">
+          <Pastille couleur={COULEUR_COTE.commune} /> Les deux branches
+        </li>
+      </ul>
+      <p className="mt-2 text-encre-tres-douce">
+        La taille du point dit le nombre d’événements. Un cercle vide et pointillé marque un lieu
+        sans événement dans la période. La flèche pleine va du lieu quitté au lieu rejoint&nbsp;;
+        le trait pointillé va d’une naissance à un décès.
+      </p>
+    </>
+  );
+}
+
+type GroupeLegende = { libelle: string; nombre: number; evenements: number };
+
+function LegendeNiveau({
+  niveau,
+  groupes,
+}: {
+  niveau: NiveauLegende;
+  groupes: GroupeLegende[];
+}) {
+  return (
+    <>
+      <p className="text-encre">
+        <span className="uppercase tracking-wider text-encre-tres-douce">
+          {niveau === 'pays' ? 'Par pays' : niveau === 'region' ? 'Par région' : 'Par ville'}
+        </span>
+      </p>
+      {groupes.length === 0 ? (
+        <p className="mt-1 text-encre-tres-douce">
+          Aucun lieu de ce niveau n’est visible dans la période.
+        </p>
+      ) : (
+        <ul className="mt-1 flex flex-col gap-0.5">
+          {groupes.slice(0, 8).map((groupe) => (
+            <li key={groupe.libelle} className="flex items-baseline justify-between gap-3">
+              <span className="truncate text-encre">{groupe.libelle}</span>
+              <span className="tabular-nums text-encre-douce">
+                {groupe.nombre}
+                <span className="text-encre-tres-douce"> · {groupe.evenements} évt</span>
+              </span>
+            </li>
+          ))}
+          {groupes.length > 8 && (
+            <li className="text-encre-tres-douce">
+              et {groupes.length - 8} autre{groupes.length - 8 > 1 ? 's' : ''}
+            </li>
+          )}
+        </ul>
+      )}
+      <p className="mt-2 text-encre-tres-douce">
+        Zoomer descend d’un cran : pays, puis région, puis ville.
+      </p>
+    </>
   );
 }
 

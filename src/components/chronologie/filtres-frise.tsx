@@ -1,6 +1,6 @@
 'use client';
 
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import type { TypeEvenement } from '@/lib/types-base';
 import {
   accorderPluriel,
@@ -98,6 +98,17 @@ export function FiltresFrise({
 
   const retenus = typesPresents.length - filtres.typesEcartes.length;
   const chercheEnLibre = filtres.personneId !== null || filtres.lieu !== null;
+  const [filtresOuverts, setFiltresOuverts] = useState(false);
+
+  const filtresActifs =
+    (filtres.cote !== 'toutes' ? 1 : 0) +
+    (filtres.typesEcartes.length > 0 ? 1 : 0) +
+    (filtres.masquerHistoire ? 1 : 0) +
+    (filtres.personneId !== null ? 1 : 0) +
+    (filtres.lieu !== null ? 1 : 0) +
+    (filtres.marquants ? 1 : 0) +
+    (filtres.seulementEtayes ? 1 : 0) +
+    (filtres.vue !== 'chronologique' ? 1 : 0);
 
   const basculerType = (type: TypeEvenement) => {
     const ecartes = filtres.typesEcartes.includes(type)
@@ -109,6 +120,33 @@ export function FiltresFrise({
   return (
     <div className="sticky top-0 z-10 border-b border-bordure bg-fond">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-3 px-4 py-3 sm:px-6">
+        <div className="flex items-center gap-3 sm:hidden">
+          <button
+            type="button"
+            onClick={() => setFiltresOuverts((ouvert) => !ouvert)}
+            aria-expanded={filtresOuverts}
+            aria-controls="chronologie-filtres-detail"
+            className="flex min-h-11 flex-1 items-center justify-between gap-2 rounded-[var(--rayon-petit)] border border-bordure bg-fond-carte px-3 py-2 text-sm"
+          >
+            <span className="font-medium text-encre">Filtres</span>
+            <span className="flex items-center gap-2 text-encre-douce">
+              {filtresActifs > 0 && (
+                <span className="rounded-full bg-accent px-2 py-0.5 text-xs text-accent-contraste">
+                  {filtresActifs}
+                </span>
+              )}
+              <span aria-hidden>{filtresOuverts ? '▴' : '▾'}</span>
+            </span>
+          </button>
+          <p aria-live="polite" className="shrink-0 text-sm tabular-nums text-encre-douce">
+            <strong className="font-medium text-encre">{comptes.affichees}</strong>
+          </p>
+        </div>
+
+        <div
+          id="chronologie-filtres-detail"
+          className={`flex flex-col gap-3 ${filtresOuverts ? '' : 'hidden'} sm:flex`}
+        >
         {/* --- Vue, côté de la famille, décompte ------------------------------- */}
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
           <fieldset className="flex flex-wrap items-center gap-1.5">
@@ -153,7 +191,7 @@ export function FiltresFrise({
 
           <p
             aria-live="polite"
-            className="ml-auto text-sm text-encre-douce tabular-nums"
+            className="ml-auto hidden text-sm text-encre-douce tabular-nums sm:block"
           >
             <strong className="font-medium text-encre">
               {accorderPluriel(comptes.affichees, 'entrée affichée', 'entrées affichées')}
@@ -368,6 +406,7 @@ export function FiltresFrise({
             )}
           </nav>
         )}
+        </div>
       </div>
     </div>
   );
