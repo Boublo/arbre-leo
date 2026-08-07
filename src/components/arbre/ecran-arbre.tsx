@@ -26,10 +26,11 @@ import {
 } from '@/lib/layout-arbre';
 import {
   lireFiltreBrancheEclateInitial,
+  lireMasquerLiensLointainsInitial,
   lireProfondeurEclateInitiale,
   ReglagesModeEclate,
 } from '@/components/arbre/reglage-profondeur-eclate';
-import { urlImpressionArbre } from '@/lib/arbre-impression';
+import { urlImpressionArbre, profondeurEclateVersImpression } from '@/lib/arbre-impression';
 
 const CLE_MODE_ARBRE = 'arbre-mode';
 const MODES_ARBRE: ModeArbre[] = ['ascendance', 'famille', 'descendance', 'eclate'];
@@ -95,10 +96,13 @@ export function EcranArbre({
 
   const [profondeurEclate, setProfondeurEclate] = useState(PROFONDEUR_ECLATE_DEFAUT);
   const [filtreBrancheEclate, setFiltreBrancheEclate] = useState<FiltreBrancheEclate>('tous');
+  const [masquerLiensLointains, setMasquerLiensLointains] = useState(false);
+  const [banniereEclateOuverte, setBanniereEclateOuverte] = useState(false);
 
   useEffect(() => {
     setProfondeurEclate(lireProfondeurEclateInitiale());
     setFiltreBrancheEclate(lireFiltreBrancheEclateInitial());
+    setMasquerLiensLointains(lireMasquerLiensLointainsInitial());
   }, []);
 
   useEffect(() => {
@@ -116,6 +120,14 @@ export function EcranArbre({
       /* localStorage indisponible */
     }
   }, [filtreBrancheEclate]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('arbre-masquer-liens-lointains-eclate', masquerLiensLointains ? '1' : '0');
+    } catch {
+      /* localStorage indisponible */
+    }
+  }, [masquerLiensLointains]);
 
   useRafraichirPhotosArbre(graphe, setGraphe);
 
@@ -138,7 +150,18 @@ export function EcranArbre({
   }, [dispositionBrute, mode, filtreBrancheEclate, focusId]);
 
   const cleRecadrageEclate =
-    mode === 'eclate' ? `${profondeurEclate}-${filtreBrancheEclate}-${disposition.noeuds.length}` : '';
+    mode === 'eclate'
+      ? `${profondeurEclate}-${filtreBrancheEclate}-${masquerLiensLointains}-${disposition.noeuds.length}`
+      : '';
+
+  const lienImprimer = useMemo(() => {
+    if (mode === 'eclate') {
+      return urlImpressionArbre(focusId, mode, {
+        profondeur: profondeurEclateVersImpression(profondeurEclate),
+      });
+    }
+    return urlImpressionArbre(focusId, mode);
+  }, [focusId, mode, profondeurEclate]);
 
   const focus = donnees.personnes.get(focusId) ?? null;
 
@@ -223,12 +246,12 @@ export function EcranArbre({
 
       if (evenement.key === 'p' || evenement.key === 'P') {
         evenement.preventDefault();
-        router.push(urlImpressionArbre(focusId, mode));
+        router.push(lienImprimer);
       }
     }
     window.addEventListener('keydown', surTouche);
     return () => window.removeEventListener('keydown', surTouche);
-  }, [guideOuvert, focusId, mode, router]);
+  }, [guideOuvert, lienImprimer, router]);
 
   if (!focus && chargementFocus) {
     return (
@@ -258,6 +281,7 @@ export function EcranArbre({
         onFocus={changerFocus}
         onChercher={() => setPaletteOuverte(true)}
         onOuvrirGuide={ouvrirGuide}
+        lienImprimer={lienImprimer}
       />
 
       {mode === 'eclate' && (
@@ -265,19 +289,37 @@ export function EcranArbre({
           role="status"
           className="shrink-0 border-b border-bordure bg-fond-doux px-3 py-2.5 sm:px-4"
         >
-          <p className="text-center text-xs text-encre-douce sm:text-left">
-            Mode « {LIBELLE_MODE.eclate.titre} » : les parentés proches sont en barres de fratrie ;
-            les liens lointains sont atténués et peuvent se croiser — préférez «{' '}
-            {LIBELLE_MODE.famille.titre} » pour lire une branche.
-          </p>
-          <div className="mt-2 flex justify-center sm:justify-start">
-            <ReglagesModeEclate
-              profondeur={profondeurEclate}
-              onProfondeur={setProfondeurEclate}
-              filtreBranche={filtreBrancheEclate}
-              onFiltreBranche={setFiltreBrancheEclate}
-              nombrePersonnes={disposition.noeuds.length}
-            />
+          <button
+            type="button"
+            onClick={() => setBanniereEclateOuverte((v) => !v)}
+            aria-expanded={banniereEclateOuverte}
+            className="flex w-full items-center justify-between gap-2 text-left sm:hidden"
+          >
+            <span className="text-xs font-medium text-encre">
+              Mode « {LIBELLE_MODE.eclate.titre} » — réglages
+            </span>
+            <span className="text-encre-douce" aria-hidden>
+              {banniereEclateOuverte ? '▴' : '▾'}
+            </span>
+          </button>
+
+          <div className={banniereEclateOuverte ? 'mt-2' : 'hidden sm:block'}>
+            <p className="text-center text-xs text-encre-douce sm:text-left">
+              Mode « {LIBELLE_MODE.eclate.titre} » : les parentés proches sont en barres de fratrie ;
+              les liens lointains sont atténués et peuvent se croiser — préférez «{' '}
+              {LIBELLE_MODE.famille.titre} » pour lire une branche.
+            </p>
+            <div className="mt-2 flex justify-center sm:justify-start">
+              <ReglagesModeEclate
+                profondeur={profondeurEclate}
+                onProfondeur={setProfondeurEclate}
+                filtreBranche={filtreBrancheEclate}
+                onFiltreBranche={setFiltreBrancheEclate}
+                masquerLiensLointains={masquerLiensLointains}
+                onMasquerLiensLointains={setMasquerLiensLointains}
+                nombrePersonnes={disposition.noeuds.length}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -316,6 +358,7 @@ export function EcranArbre({
             etapeGuide={etapeGuide}
             noeudSuggestion={noeudSuggestion}
             cleRecadrageEclate={cleRecadrageEclate}
+            masquerLiensLointains={masquerLiensLointains}
           />
         </div>
 

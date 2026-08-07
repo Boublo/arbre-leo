@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { SelecteurPersonne } from '@/components/arbre/selecteur-personne';
 import { LIBELLE_MODE, type ModeArbre } from '@/lib/layout-arbre';
-import { urlImpressionArbre } from '@/lib/arbre-impression';
 import type { PersonneRecherche } from '@/lib/arbre-graphe';
 import type { PersonneArbre } from '@/lib/arbre';
 
@@ -23,6 +22,7 @@ export function BarreOutilsArbre({
   onFocus,
   onChercher,
   onOuvrirGuide,
+  lienImprimer,
 }: {
   focus: PersonneArbre;
   focusId: string;
@@ -33,6 +33,7 @@ export function BarreOutilsArbre({
   onFocus: (id: string) => void;
   onChercher: () => void;
   onOuvrirGuide: () => void;
+  lienImprimer: string;
 }) {
   const [deployee, setDeployee] = useState(false);
 
@@ -103,7 +104,7 @@ export function BarreOutilsArbre({
               Sa fiche
             </Link>
             <Link
-              href={urlImpressionArbre(focusId, mode)}
+              href={lienImprimer}
               className="lien-discret"
               data-guide="imprimer"
             >
@@ -171,7 +172,7 @@ export function BarreOutilsArbre({
           <Link href={`/personne/${focusId}`} className="lien-discret">
             Sa fiche
           </Link>
-          <Link href={urlImpressionArbre(focusId, mode)} className="lien-discret" data-guide="imprimer">
+          <Link href={lienImprimer} className="lien-discret" data-guide="imprimer">
             Imprimer{' '}
             <kbd className="ml-0.5 rounded border border-bordure bg-fond-doux px-1 text-[10px]">P</kbd>
           </Link>

@@ -1,4 +1,4 @@
-import type { Disposition, NoeudArbre } from '@/lib/layout-arbre';
+import { RANG_MAX_ECLATE, type Disposition, type NoeudArbre } from '@/lib/layout-arbre';
 
 /** Profondeur maximale affichée (nombre de rangs depuis la personne choisie). */
 export type ProfondeurImpression = 2 | 3 | 4 | 5 | 8 | 'tout';
@@ -55,6 +55,16 @@ export function urlImpressionArbre(
     { personne: personneId, mode },
     { ...OPTIONS_IMPRESSION_DEFAUT, ...partiel }
   );
+}
+
+/** Reprend la profondeur du mode « Tout » pour préremplir la page imprimable. */
+export function profondeurEclateVersImpression(profondeurEclate: number): ProfondeurImpression {
+  if (profondeurEclate >= RANG_MAX_ECLATE) return 'tout';
+  if (profondeurEclate >= 8) return 8;
+  if (profondeurEclate >= 5) return 5;
+  if (profondeurEclate >= 4) return 4;
+  if (profondeurEclate >= 3) return 3;
+  return 2;
 }
 
 export function urlOptionsImpression(

@@ -43,15 +43,19 @@ export function LiensArbre({
   disposition,
   donnees,
   noeudParId,
+  masquerLiensLointains = false,
 }: {
   disposition: Disposition;
   donnees: DonneesArbre;
   noeudParId: Map<string, NoeudArbre>;
+  masquerLiensLointains?: boolean;
 }) {
   const segments = useMemo(
     () =>
-      planifierLiens(donnees, disposition.liens, noeudParId, disposition.mode).segments,
-    [donnees, disposition.liens, disposition.mode, noeudParId]
+      planifierLiens(donnees, disposition.liens, noeudParId, disposition.mode, {
+        masquerLiensLointains,
+      }).segments,
+    [donnees, disposition.liens, disposition.mode, noeudParId, masquerLiensLointains]
   );
 
   return (
