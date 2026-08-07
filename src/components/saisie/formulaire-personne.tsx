@@ -154,6 +154,15 @@ export function FormulairePersonne({
         idLieux={idLieux}
       />
 
+      <DateEvenement
+        prefixe="inhumation"
+        legende="Son inhumation"
+        aide="Cimetière ou lieu de repos. Utile pour commémorer et retrouver la tombe sur la carte."
+        valeurs={depart.inhumation}
+        idLieux={idLieux}
+        aideLieu="Le nom du cimetière ou de la commune où repose la personne."
+      />
+
       <Bloc legende="Ce qu’elle faisait, où elle vivait" aide="Facultatif l’un comme l’autre.">
         <Champ
           label="Profession"
@@ -252,6 +261,7 @@ function fusionner(valeurs: ValeursDepart, saisie?: Record<string, string>): Val
     presumeVivant: saisie.presumeVivant === 'oui',
     naissance: lireDate('naissance', saisie, base.naissance),
     deces: lireDate('deces', saisie, base.deces),
+    inhumation: lireDate('inhumation', saisie, base.inhumation),
     profession: mot('profession', base.profession),
     residence: mot('residence', base.residence),
     notes: mot('notes', base.notes),

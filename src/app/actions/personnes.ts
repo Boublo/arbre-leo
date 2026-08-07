@@ -158,6 +158,7 @@ const schemaPersonne = z
     presumeVivant: z.boolean(),
     naissance: schemaDate('naissance'),
     deces: schemaDate('décès'),
+    inhumation: schemaDate('inhumation'),
     profession: z.string().trim().max(200, 'La profession dépasse 200 caractères.').optional(),
     residence: z.string().trim().max(200, 'La résidence dépasse 200 caractères.').optional(),
     notes: z.string().trim().max(20000, 'Les notes dépassent 20 000 caractères.').optional(),
@@ -194,6 +195,7 @@ function analyser(donnees: FormData) {
     presumeVivant: donnees.get('presumeVivant') !== null,
     naissance: lireDate(donnees, 'naissance'),
     deces: lireDate(donnees, 'deces'),
+    inhumation: lireDate(donnees, 'inhumation'),
     profession: champ(donnees, 'profession'),
     residence: champ(donnees, 'residence'),
     notes: champ(donnees, 'notes'),
@@ -421,14 +423,14 @@ function composerEvenements(
   v: PersonneValide,
   personneId: string,
   utilisateurId: string,
-  lieux: { naissance: string | null; deces: string | null; residence: string | null }
+  lieux: { naissance: string | null; deces: string | null; inhumation: string | null; residence: string | null }
 ): NouvelEvenement[] {
   const preuve = meilleurePreuve(v.preuves);
   const socle = { personne_id: personneId, niveau_preuve: preuve, cree_par: utilisateurId };
   const evenements: NouvelEvenement[] = [];
 
   const vie = (
-    type: 'naissance' | 'deces',
+    type: 'naissance' | 'deces' | 'inhumation',
     saisie: PersonneValide['naissance'],
     lieuId: string | null
   ) => {
@@ -451,6 +453,7 @@ function composerEvenements(
 
   vie('naissance', v.naissance, lieux.naissance);
   vie('deces', v.deces, lieux.deces);
+  vie('inhumation', v.inhumation, lieux.inhumation);
 
   const sansDate = {
     annee: null,
@@ -720,7 +723,7 @@ export async function enregistrerPersonne(
       sexe: v.sexe,
       notes: v.notes ?? null,
       niveaux_preuve: v.preuves,
-      presume_vivant: resoudrePresumeVivant(v.presumeVivant, v.deces),
+      presume_vivant: resoudrePresumeVivant(v.presumeVivant, v.deces, v.inhumation),
       ...(branches.length > 0 ? { branches } : {}),
       cree_par: user.id,
     })
@@ -809,7 +812,7 @@ export async function modifierPersonne(
       sexe: v.sexe,
       notes: v.notes ?? null,
       niveaux_preuve: v.preuves,
-      presume_vivant: resoudrePresumeVivant(v.presumeVivant, v.deces),
+      presume_vivant: resoudrePresumeVivant(v.presumeVivant, v.deces, v.inhumation),
       modifie_par: user.id,
     })
     .eq('id', id)
@@ -832,7 +835,7 @@ export async function modifierPersonne(
     .from('evenements')
     .delete()
     .eq('personne_id', id)
-    .in('type', ['naissance', 'deces', 'profession', 'residence']);
+    .in('type', ['naissance', 'deces', 'inhumation', 'profession', 'residence']);
 
   if (erreurNettoyage) {
     soucis.push(`Les anciennes dates n’ont pas pu être remplacées. ${traduireErreur(erreurNettoyage.message)}`);
@@ -871,17 +874,39 @@ export async function modifierPersonne(
 async function resoudreLieux(
   supabase: ClientServeur,
   v: PersonneValide
-): Promise<{ naissance: string | null; deces: string | null; residence: string | null; erreur?: string }> {
+): Promise<{
+  naissance: string | null;
+  deces: string | null;
+  inhumation: string | null;
+  residence: string | null;
+  erreur?: string;
+}> {
   const naissance = await resoudreLieu(supabase, v.naissance.lieu);
-  if (naissance.erreur) return { naissance: null, deces: null, residence: null, erreur: naissance.erreur };
+  if (naissance.erreur) {
+    return { naissance: null, deces: null, inhumation: null, residence: null, erreur: naissance.erreur };
+  }
 
   const deces = await resoudreLieu(supabase, v.deces.lieu);
-  if (deces.erreur) return { naissance: null, deces: null, residence: null, erreur: deces.erreur };
+  if (deces.erreur) {
+    return { naissance: null, deces: null, inhumation: null, residence: null, erreur: deces.erreur };
+  }
+
+  const inhumation = await resoudreLieu(supabase, v.inhumation.lieu);
+  if (inhumation.erreur) {
+    return { naissance: null, deces: null, inhumation: null, residence: null, erreur: inhumation.erreur };
+  }
 
   const residence = await resoudreLieu(supabase, v.residence);
-  if (residence.erreur) return { naissance: null, deces: null, residence: null, erreur: residence.erreur };
+  if (residence.erreur) {
+    return { naissance: null, deces: null, inhumation: null, residence: null, erreur: residence.erreur };
+  }
 
-  return { naissance: naissance.id, deces: deces.id, residence: residence.id };
+  return {
+    naissance: naissance.id,
+    deces: deces.id,
+    inhumation: inhumation.id,
+    residence: residence.id,
+  };
 }
 
 // ---------------------------------------------------------------------------

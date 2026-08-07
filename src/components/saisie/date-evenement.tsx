@@ -34,7 +34,7 @@ export function DateEvenement({
   idLieux,
   aideLieu,
 }: {
-  prefixe: 'naissance' | 'deces';
+  prefixe: 'naissance' | 'deces' | 'inhumation';
   legende: string;
   aide?: string;
   valeurs: ValeursDateSaisie;

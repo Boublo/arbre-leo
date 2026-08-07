@@ -50,7 +50,7 @@ export function ReperesRang({
         aria-expanded={ouverts}
         aria-label={ouverts ? 'Masquer les repères de génération' : 'Afficher les repères de génération'}
         onClick={() => setOuverts((v) => !v)}
-        className="pointer-events-auto absolute left-2 top-2 z-10 grid h-9 w-9 place-items-center rounded-full border border-bordure bg-fond-carte/95 text-xs text-encre-douce shadow-[var(--ombre-douce)] backdrop-blur-sm sm:hidden"
+        className="pointer-events-auto absolute left-2 top-2 z-10 grid h-11 w-11 place-items-center rounded-full border border-bordure bg-fond-carte/95 text-xs text-encre-douce shadow-[var(--ombre-douce)] backdrop-blur-sm sm:hidden"
       >
         {ouverts ? '◂' : 'Gen'}
       </button>

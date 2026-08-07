@@ -57,6 +57,7 @@ export type ValeursPersonne = {
   presumeVivant: boolean;
   naissance: ValeursDateSaisie;
   deces: ValeursDateSaisie;
+  inhumation: ValeursDateSaisie;
   profession: string;
   residence: string;
   notes: string;
@@ -78,6 +79,7 @@ export const PERSONNE_VIDE: ValeursPersonne = {
   presumeVivant: true,
   naissance: DATE_VIDE,
   deces: DATE_VIDE,
+  inhumation: DATE_VIDE,
   profession: '',
   residence: '',
   notes: '',
@@ -286,13 +288,14 @@ export async function chargerValeursPersonne(id: string): Promise<ValeursPersonn
       .from('evenements')
       .select('id, type, annee, mois, jour, qualificatif, precision_date, detail, lieu_id, lieux(libelle)')
       .eq('personne_id', id)
-      .in('type', ['naissance', 'deces', 'profession', 'residence']),
+      .in('type', ['naissance', 'deces', 'inhumation', 'profession', 'residence']),
     supabase.from('filiations').select('union_id').eq('enfant_id', id).maybeSingle(),
   ]);
 
   const evenements = (evenementsRes.data ?? []) as unknown as LigneEvenement[];
   const naissance = evenements.find((e) => e.type === 'naissance');
   const deces = evenements.find((e) => e.type === 'deces');
+  const inhumation = evenements.find((e) => e.type === 'inhumation');
   const profession = evenements.find((e) => e.type === 'profession');
   const residence = evenements.find((e) => e.type === 'residence');
 
@@ -319,6 +322,7 @@ export async function chargerValeursPersonne(id: string): Promise<ValeursPersonn
     presumeVivant: personne.presume_vivant,
     naissance: versValeursDate(naissance),
     deces: versValeursDate(deces),
+    inhumation: versValeursDate(inhumation),
     profession: profession?.detail ?? '',
     residence: residence?.lieux?.libelle ?? residence?.detail ?? '',
     notes: personne.notes ?? '',

@@ -22,13 +22,15 @@ export function personneEstVivante(
   return true;
 }
 
-/** À l'enregistrement : un décès saisi force le retrait du statut vivant. */
+/** À l'enregistrement : un décès ou une inhumation saisis retirent le statut vivant. */
 export function resoudrePresumeVivant(
   presumeVivant: boolean,
-  deces: { precision: string; annee?: number; mois?: number; jour?: number }
+  ...finDeVie: Array<{ precision: string; annee?: number; mois?: number; jour?: number }>
 ): boolean {
-  if (deces.precision !== 'inconnue' && (deces.annee ?? deces.mois ?? deces.jour)) {
-    return false;
+  for (const evenement of finDeVie) {
+    if (evenement.precision !== 'inconnue' && (evenement.annee ?? evenement.mois ?? evenement.jour)) {
+      return false;
+    }
   }
   return presumeVivant;
 }

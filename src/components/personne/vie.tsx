@@ -33,7 +33,7 @@ export function ViePersonne({ evenements }: { evenements: EvenementFiche[] }) {
 function LigneEvenement({ evenement: e }: { evenement: EvenementFiche }) {
   const titre = e.type === 'autre' && e.libelle ? e.libelle : LIBELLE_EVENEMENT[e.type];
   const sousTitre = e.libelle && e.libelle !== titre ? e.libelle : null;
-  const marquant = e.type === 'naissance' || e.type === 'deces';
+  const marquant = e.type === 'naissance' || e.type === 'deces' || e.type === 'inhumation';
 
   return (
     <li className="relative pb-6 pl-6 last:pb-0">
