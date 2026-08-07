@@ -11,6 +11,7 @@ import {
   type PisteVue,
 } from '@/components/recherches/vocabulaire';
 import { creerClientServeur } from '@/lib/supabase/server';
+import { listerUnionsSansEnfant } from '@/lib/unions-sans-enfant';
 
 export const metadata: Metadata = { title: 'Chantiers de recherche' };
 
@@ -21,11 +22,12 @@ export default async function PageRecherches() {
   const supabase = await creerClientServeur();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const [chantiersRes, personnesRes, membresRes, moiRes] = await Promise.all([
+  const [chantiersRes, personnesRes, membresRes, moiRes, unionsSansEnfant] = await Promise.all([
     supabase.from('chantiers_recherche').select('*'),
     supabase.from('personnes').select('id, nom_complet, prenoms, nom, branches, niveaux_preuve'),
     supabase.from('membres').select('id, nom_affiche').eq('statut', 'valide'),
     user ? supabase.from('membres').select('role').eq('id', user.id).maybeSingle() : null,
+    listerUnionsSansEnfant(supabase),
   ]);
 
   // Une table absente ou une politique plus stricte que prévu ne doit pas
@@ -156,6 +158,7 @@ export default async function PageRecherches() {
 
         <ZoneOuverture
           pistes={pistes}
+          unionsSansEnfant={unionsSansEnfant}
           personnes={personnes.map((p) => ({ id: p.id, nom: p.nom }))}
           membres={membres}
           peutContribuer={peutContribuer}

@@ -5,7 +5,9 @@ import { ouvrirChantier, type EtatChantier } from '@/app/actions/chantiers';
 import { Champ, ZoneTexte, BoutonEnvoi, Alerte } from '@/components/ui/champs';
 import { ListeDeroulante } from '@/components/recherches/controles';
 import { PistesAOuvrir } from '@/components/recherches/pistes-a-ouvrir';
+import { UnionsSansEnfant } from '@/components/recherches/unions-sans-enfant';
 import { BRANCHES, COLONNES, PRIORITES, type PisteVue } from '@/components/recherches/vocabulaire';
+import { dateMariageLisible, libelleCouple, type UnionSansEnfant } from '@/lib/unions-sans-enfant';
 
 /**
  * L'ouverture d'un chantier, et à côté les pistes qui n'attendent que ça.
@@ -18,11 +20,13 @@ import { BRANCHES, COLONNES, PRIORITES, type PisteVue } from '@/components/reche
  */
 export function ZoneOuverture({
   pistes,
+  unionsSansEnfant,
   personnes,
   membres,
   peutContribuer,
 }: {
   pistes: PisteVue[];
+  unionsSansEnfant: UnionSansEnfant[];
   personnes: { id: string; nom: string }[];
   membres: { id: string; nom: string }[];
   peutContribuer: boolean;
@@ -32,6 +36,35 @@ export function ZoneOuverture({
 
   /** Valeur à réafficher : ce qui a été refusé, sinon rien. */
   const saisi = (nom: string, defaut = '') => etat.saisie?.[nom] ?? defaut;
+
+  function amorcerDepuisUnion(union: UnionSansEnfant) {
+    const champs = formulaire.current?.elements;
+    if (!champs) return;
+
+    const titre = champs.namedItem('titre');
+    const objectif = champs.namedItem('objectif');
+    const personne = champs.namedItem('personneId');
+    const branche = champs.namedItem('branche');
+
+    const couple = libelleCouple(union);
+    const date = dateMariageLisible(union);
+    const cible = union.conjointA ?? union.conjointB;
+
+    if (titre instanceof HTMLInputElement) {
+      titre.value = `Descendance de ${couple}`;
+      titre.focus();
+      titre.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+    if (objectif instanceof HTMLTextAreaElement) {
+      objectif.value = `Retrouver les actes de naissance des enfants de ${couple}${
+        date ? ` (mariage ${date})` : ''
+      }. Commencer par les tables décennales et les registres de l’état civil du lieu du mariage.`;
+    }
+    if (personne instanceof HTMLSelectElement && cible) personne.value = cible.id;
+    if (branche instanceof HTMLSelectElement && union.branches.length === 1) {
+      branche.value = union.branches[0];
+    }
+  }
 
   function amorcerDepuisPiste(piste: PisteVue) {
     const champs = formulaire.current?.elements;
@@ -62,6 +95,7 @@ export function ZoneOuverture({
   if (!peutContribuer) {
     return (
       <div className="flex flex-col gap-3 lg:max-w-lg">
+        <UnionsSansEnfant unions={unionsSansEnfant} />
         <PistesAOuvrir pistes={pistes} />
         <p className="text-sm text-encre-tres-douce">
           Votre compte est en lecture seule. Demandez à un administrateur de la famille de vous
@@ -209,7 +243,10 @@ export function ZoneOuverture({
         </form>
       </section>
 
-      <PistesAOuvrir pistes={pistes} onOuvrir={amorcerDepuisPiste} />
+      <div className="flex flex-col gap-4">
+        <UnionsSansEnfant unions={unionsSansEnfant} onOuvrirChantier={amorcerDepuisUnion} />
+        <PistesAOuvrir pistes={pistes} onOuvrir={amorcerDepuisPiste} />
+      </div>
     </div>
   );
 }
