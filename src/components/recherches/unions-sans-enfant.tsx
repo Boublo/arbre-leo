@@ -44,6 +44,7 @@ export function UnionsSansEnfant({
         {unions.map((union) => {
           const branche = brancheLisible(union.branches[0] ?? null);
           const date = dateMariageLisible(union);
+          const piste = pisteUnion(union);
           const lien =
             union.conjointA && union.conjointB ? (
               <span className="text-sm">
@@ -85,8 +86,8 @@ export function UnionsSansEnfant({
                 {date && (
                   <span className="text-xs text-encre-tres-douce">Mariage {date}</span>
                 )}
-                {pisteUnion(union) && (
-                  <span className="text-xs leading-snug text-encre-tres-douce">{pisteUnion(union)}</span>
+                {piste && (
+                  <span className="text-xs leading-snug text-encre-tres-douce">{piste}</span>
                 )}
               </div>
 
