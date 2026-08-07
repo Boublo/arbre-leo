@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { creerClientServeur } from '@/lib/supabase/server';
 import { personneEstVivante } from '@/lib/vivant';
 import { formaterDate, lieuCourt } from '@/lib/arbre';
@@ -221,6 +222,18 @@ type DateDeVie = Pick<Evenement, 'personne_id' | 'type' | 'annee'>;
 // Chargement
 // ---------------------------------------------------------------------------
 
+/** Erreur Supabase sur la fiche : redirection vers /erreur au lieu de planter la page. */
+function abandonnerChargementFiche(
+  id: string,
+  erreur: { code?: string; message?: string }
+): never {
+  console.error('[chargerFiche]', id, erreur.code, erreur.message);
+  if (erreur.code === '42501' || erreur.message?.toLowerCase().includes('permission denied')) {
+    redirect('/erreur?code=session');
+  }
+  redirect('/erreur?code=fiche');
+}
+
 /** Le nom seul, pour le titre de l'onglet : inutile de charger toute la fiche. */
 export async function chargerNomPersonne(id: string): Promise<string | null> {
   if (!estIdentifiant(id)) return null;
@@ -247,7 +260,7 @@ export async function chargerFiche(id: string): Promise<Fiche | null> {
     .eq('id', id)
     .maybeSingle();
 
-  if (error) throw new Error(`Fiche illisible : ${error.message}`);
+  if (error) abandonnerChargementFiche(id, error);
   if (!personne) return null;
 
   // --- Ce qui ne dépend que de la personne ----------------------------------

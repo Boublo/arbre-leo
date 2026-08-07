@@ -58,9 +58,9 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
   const [fiche, donneesArbre, recits, droits, peutDeposerPhotos] = await Promise.all([
     chargerFiche(id),
     chargerArbre({ signerPhotosPour: 'aucun' }).catch(() => ARBRE_VIDE),
-    chargerRecitsPourPersonne(id),
+    chargerRecitsPourPersonne(id).catch(() => []),
     lireDroitsSaisie(),
-    peutDeposerPhotoAlbum(id),
+    peutDeposerPhotoAlbum(id).catch(() => false),
   ]);
 
   if (!fiche) notFound();
