@@ -69,7 +69,7 @@ Le résumé ne contient ni nom complet, ni UUID, ni extrait de source, ni chemin
 | QLT-005 | attention | même nom, prénoms et année de naissance | doublon possible, jamais fusion automatique |
 | QLT-006 | attention | fait historique hors période de vie | vérifier le rattachement ou l’interprétation |
 | QLT-007 | attention | chantier sans réponse au-delà du délai | suivi de recherche à relancer |
-| QLT-008 | info | couverture naissance / preuve | indicateur de maturité, pas de qualité individuelle |
+| QLT-008 | info | couverture naissance / preuve | livrée dans le résumé agrégé ; indicateur de maturité, pas de qualité individuelle |
 | QLT-009 | critique | filiation pointant vers une union absente | livrée dans le contrôle du graphe |
 | QLT-010 | critique | union ou filiation créant un cycle | livrée dans le contrôle du graphe |
 

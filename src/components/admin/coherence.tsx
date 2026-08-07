@@ -51,6 +51,7 @@ export function CoherenceAdmin({ rapport }: { rapport: RapportCoherence }) {
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <CarteCompte libelle="Personnes" valeur={rapport.comptes.personnes} />
         <CarteCompte libelle="Avec naissance" valeur={rapport.comptes.avecNaissance} />
+        <CarteCompte libelle="Avec preuve forte" valeur={rapport.couverture.preuveActeOuAnom} />
         <CarteCompte libelle="Critiques" valeur={critiques.length} accent="erreur" />
         <CarteCompte libelle="Doublons" valeur={rapport.doublons.length} accent="alerte" />
       </ul>

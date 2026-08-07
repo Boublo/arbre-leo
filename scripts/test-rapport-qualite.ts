@@ -6,7 +6,7 @@
  * Les noms, dates et identifiants ci-dessous sont inventés. Ce test vérifie
  * que les alertes restent de simples signaux lisibles, jamais des corrections.
  */
-import { analyserCoherence } from '../src/lib/coherence';
+import { analyserCoherence, resumerQualite } from '../src/lib/coherence';
 import type { DonneesArbre, PersonneArbre } from '../src/lib/arbre';
 
 function personne(
@@ -16,6 +16,7 @@ function personne(
   deces: number | null = null,
   unions: string[] = [],
   issuDe: string | null = null,
+  niveauxPreuve: PersonneArbre['niveauxPreuve'] = [],
 ): PersonneArbre {
   return {
     id,
@@ -26,7 +27,7 @@ function personne(
     surnom: null,
     sexe: 'inconnu',
     branches: [],
-    niveauxPreuve: [],
+    niveauxPreuve,
     presumeVivant: false,
     notes: null,
     photoId: null,
@@ -43,7 +44,7 @@ function personne(
 
 const donnees: DonneesArbre = {
   personnes: new Map([
-    ['chronologie', personne('chronologie', 'Cas chronologique', 1980, 1970)],
+    ['chronologie', personne('chronologie', 'Cas chronologique', 1980, 1970, [], null, ['acte'])],
     ['parent-tardif', personne('parent-tardif', 'Parent tardif', 1990, null, ['u-tardif'])],
     ['enfant-tot', personne('enfant-tot', 'Enfant trop tôt', 1980, null, [], 'u-tardif')],
     ['parent-age', personne('parent-age', 'Parent âgé', 1900, null, ['u-age'])],
@@ -115,6 +116,17 @@ if (rapport.doublons.length !== 1 || rapport.doublons[0]?.personneIds.length !==
 
 if (!rapport.anomalies.some((anomalie) => anomalie.severite === 'critique')) {
   throw new Error('Le rapport devrait distinguer au moins une anomalie critique.');
+}
+
+const resume = resumerQualite(rapport, {
+  genereLe: '2026-08-07T00:00:00.000Z',
+  source: 'ci-fictive',
+});
+if (resume.couverture.naissanceConnue !== 8 || resume.couverture.preuveActeOuAnom !== 1) {
+  throw new Error('La couverture agrégée devrait compter les naissances et preuves fictives.');
+}
+if (resume.statut !== 'bloquant') {
+  throw new Error('Le résumé devrait refléter les anomalies critiques.');
 }
 
 console.log(`OK — rapport qualité fictif : ${rapport.anomalies.length} alertes, ${rapport.doublons.length} doublon potentiel.`);

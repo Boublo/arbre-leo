@@ -15,6 +15,7 @@
 | Limite locale | L’exécution du nouveau script attend l’environnement CI / Node 22 : le binaire local `node_modules/.bin/tsx.cmd` est absent. Les contrôles TypeScript et lint restent validés localement. |
 | Garde-fous de graphe | `QLT-009` (filiation vers une union absente) et `QLT-010` (cycle parent-enfant) sont désormais détectés par `src/lib/coherence.ts`, affichés dans l’administration et couverts par le jeu fictif. |
 | Vérifications | `npm run typecheck` et `npm run lint` passent après ce lot ; le script fictif reste à exécuter dans le CI doté de `tsx`. |
+| Résumé partageable | `resumerQualite` produit un état sans identité familiale : comptes, couverture naissance / preuve forte, occurrences par règle et statut. L’administration affiche le compteur de preuves fortes. |
 
 +## Lot ROADMAP-001 — 7 août 2026
 

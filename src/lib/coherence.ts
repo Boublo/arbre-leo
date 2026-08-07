@@ -42,6 +42,25 @@ export type RapportCoherence = {
     avecDeces: number;
     isolees: number;
   };
+  couverture: {
+    naissanceConnue: number;
+    preuveActeOuAnom: number;
+  };
+};
+
+export type ResumeQualite = {
+  schemaVersion: 1;
+  genereLe: string;
+  source: 'administration' | 'diagnostic-cli' | 'ci-fictive';
+  comptes: RapportCoherence['comptes'];
+  couverture: RapportCoherence['couverture'];
+  anomalies: Record<SeveriteAnomalie, number>;
+  regles: Array<{
+    id: RegleQualite;
+    severite: SeveriteAnomalie;
+    occurrences: number;
+  }>;
+  statut: 'sain' | 'a_revoir' | 'bloquant';
 };
 
 const AGE_PARENT_MIN = 12;
@@ -74,10 +93,14 @@ export function analyserCoherence(donnees: DonneesArbre): RapportCoherence {
   let isolees = 0;
   let avecNaissance = 0;
   let avecDeces = 0;
+  let avecPreuveActeOuAnom = 0;
 
   for (const p of donnees.personnes.values()) {
     if (p.naissance?.annee != null) avecNaissance += 1;
     if (p.deces?.annee != null) avecDeces += 1;
+    if (p.niveauxPreuve.includes('acte') || p.niveauxPreuve.includes('anom')) {
+      avecPreuveActeOuAnom += 1;
+    }
 
     const n = p.naissance?.annee;
     const d = p.deces?.annee;
@@ -265,5 +288,48 @@ export function analyserCoherence(donnees: DonneesArbre): RapportCoherence {
       avecDeces,
       isolees,
     },
+    couverture: {
+      naissanceConnue: avecNaissance,
+      preuveActeOuAnom: avecPreuveActeOuAnom,
+    },
+  };
+}
+
+/**
+ * Produit un état partageable du contrôle sans y inclure de personne, de lieu
+ * ou de source. La date est fournie par l'appelant pour garder les tests purs.
+ */
+export function resumerQualite(
+  rapport: RapportCoherence,
+  options: Pick<ResumeQualite, 'genereLe' | 'source'>
+): ResumeQualite {
+  const anomalies: Record<SeveriteAnomalie, number> = {
+    critique: 0,
+    attention: 0,
+    info: 0,
+  };
+  const regles = new Map<RegleQualite, { severite: SeveriteAnomalie; occurrences: number }>();
+
+  for (const anomalie of rapport.anomalies) {
+    anomalies[anomalie.severite] += 1;
+    const regle = regles.get(anomalie.regleId) ?? {
+      severite: anomalie.severite,
+      occurrences: 0,
+    };
+    regle.occurrences += 1;
+    regles.set(anomalie.regleId, regle);
+  }
+
+  return {
+    schemaVersion: 1,
+    ...options,
+    comptes: rapport.comptes,
+    couverture: rapport.couverture,
+    anomalies,
+    regles: [...regles.entries()]
+      .map(([id, regle]) => ({ id, ...regle }))
+      .sort((a, b) => a.id.localeCompare(b.id)),
+    statut:
+      anomalies.critique > 0 ? 'bloquant' : anomalies.attention > 0 ? 'a_revoir' : 'sain',
   };
 }
