@@ -127,6 +127,7 @@ function LigneAnomalie({ anomalie }: { anomalie: Anomalie }) {
           >
             {style.libelle}
           </span>
+          <span className="text-xs font-medium text-encre-tres-douce">{anomalie.regleId}</span>
           <h3 className="text-sm font-medium text-encre">{anomalie.titre}</h3>
         </div>
         <p className="mt-1 text-sm text-encre-douce">{anomalie.detail}</p>

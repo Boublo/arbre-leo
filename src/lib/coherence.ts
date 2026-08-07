@@ -7,8 +7,18 @@ import type { DonneesArbre, PersonneArbre } from '@/lib/arbre';
 
 export type SeveriteAnomalie = 'critique' | 'attention' | 'info';
 
+export type RegleQualite =
+  | 'QLT-001'
+  | 'QLT-002'
+  | 'QLT-003'
+  | 'QLT-004'
+  | 'QLT-005'
+  | 'QLT-009'
+  | 'QLT-010';
+
 export type Anomalie = {
   id: string;
+  regleId: RegleQualite;
   severite: SeveriteAnomalie;
   titre: string;
   detail: string;
@@ -74,9 +84,21 @@ export function analyserCoherence(donnees: DonneesArbre): RapportCoherence {
     if (n != null && d != null && d < n) {
       anomalies.push({
         id: `deces-avant-naissance:${p.id}`,
+        regleId: 'QLT-001',
         severite: 'critique',
         titre: 'Décès antérieur à la naissance',
         detail: `${p.nomComplet} : naissance ${n}, décès ${d}.`,
+        personneIds: [p.id],
+      });
+    }
+
+    if (p.issuDe && !donnees.unions.has(p.issuDe)) {
+      anomalies.push({
+        id: `filiation-sans-union:${p.id}:${p.issuDe}`,
+        regleId: 'QLT-009',
+        severite: 'critique',
+        titre: 'Filiation rattachée à une union absente',
+        detail: `${p.nomComplet} référence un foyer introuvable dans le graphe chargé.`,
         personneIds: [p.id],
       });
     }
@@ -92,6 +114,7 @@ export function analyserCoherence(donnees: DonneesArbre): RapportCoherence {
       isolees += 1;
       anomalies.push({
         id: `isole:${p.id}`,
+        regleId: 'QLT-004',
         severite: 'info',
         titre: 'Personne isolée',
         detail: `${p.nomComplet} n’a ni parents, ni enfants, ni union connus.`,
@@ -109,6 +132,7 @@ export function analyserCoherence(donnees: DonneesArbre): RapportCoherence {
       if (ne < np) {
         anomalies.push({
           id: `enfant-avant-parent:${p.id}:${parentId}`,
+          regleId: 'QLT-002',
           severite: 'critique',
           titre: 'Enfant né avant le parent',
           detail: `${p.nomComplet} (${ne}) avant ${parent.nomComplet} (${np}).`,
@@ -121,6 +145,7 @@ export function analyserCoherence(donnees: DonneesArbre): RapportCoherence {
       if (ecart < AGE_PARENT_MIN || ecart > AGE_PARENT_MAX) {
         anomalies.push({
           id: `ecart-age:${p.id}:${parentId}`,
+          regleId: 'QLT-003',
           severite: 'attention',
           titre: 'Écart d’âge parent–enfant inhabituel',
           detail: `${parent.nomComplet} → ${p.nomComplet} : ${ecart} ans (attendu ${AGE_PARENT_MIN}–${AGE_PARENT_MAX}).`,
@@ -128,6 +153,66 @@ export function analyserCoherence(donnees: DonneesArbre): RapportCoherence {
         });
       }
     }
+  }
+
+  const descendants = new Map<string, Set<string>>();
+  const ajouterLienParentEnfant = (parentId: string | null, enfantId: string) => {
+    if (!parentId || !donnees.personnes.has(parentId) || !donnees.personnes.has(enfantId)) return;
+    const enfants = descendants.get(parentId) ?? new Set<string>();
+    enfants.add(enfantId);
+    descendants.set(parentId, enfants);
+  };
+
+  for (const [parentId, enfants] of donnees.enfants) {
+    for (const enfantId of enfants) ajouterLienParentEnfant(parentId, enfantId);
+  }
+  for (const union of donnees.unions.values()) {
+    for (const enfantId of union.enfants) {
+      ajouterLienParentEnfant(union.conjointA, enfantId);
+      ajouterLienParentEnfant(union.conjointB, enfantId);
+    }
+  }
+
+  const etats = new Map<string, 'en-cours' | 'termine'>();
+  const chemin: string[] = [];
+  const cyclesVus = new Set<string>();
+  const cleCycle = (ids: string[]) =>
+    ids
+      .map((_, debut) => [...ids.slice(debut), ...ids.slice(0, debut)].join(':'))
+      .sort()[0]!;
+  const visiter = (personneId: string) => {
+    etats.set(personneId, 'en-cours');
+    chemin.push(personneId);
+
+    for (const enfantId of descendants.get(personneId) ?? []) {
+      if (etats.get(enfantId) === 'en-cours') {
+        const debut = chemin.indexOf(enfantId);
+        const cycle = chemin.slice(debut);
+        const cle = cleCycle(cycle);
+        if (!cyclesVus.has(cle)) {
+          cyclesVus.add(cle);
+          anomalies.push({
+            id: `cycle-filiation:${cle}`,
+            regleId: 'QLT-010',
+            severite: 'critique',
+            titre: 'Cycle de filiation détecté',
+            detail: `Le graphe relie circulairement ${cycle
+              .map((id) => donnees.personnes.get(id)?.nomComplet ?? id)
+              .join(' → ')}.`,
+            personneIds: cycle,
+          });
+        }
+      } else if (!etats.has(enfantId)) {
+        visiter(enfantId);
+      }
+    }
+
+    chemin.pop();
+    etats.set(personneId, 'termine');
+  };
+
+  for (const personneId of donnees.personnes.keys()) {
+    if (!etats.has(personneId)) visiter(personneId);
   }
 
   // Doublons : même prénoms + nom + année de naissance
@@ -152,6 +237,7 @@ export function analyserCoherence(donnees: DonneesArbre): RapportCoherence {
     });
     anomalies.push({
       id: `doublon:${cle}`,
+      regleId: 'QLT-005',
       severite: 'attention',
       titre: 'Doublon potentiel',
       detail: `${liste.length} fiches pour « ${liste[0]!.nomComplet} » né(e) en ${annee}.`,

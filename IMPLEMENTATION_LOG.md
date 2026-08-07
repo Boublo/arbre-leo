@@ -13,6 +13,8 @@
 | Vérification Supabase | Projet principal actif. La branche isolée existante `e2e` est sans données, sans table `arbre` et en état `MIGRATIONS_FAILED` : aucun exercice n’y a été lancé. Une branche neuve sans données est préférable ; sa création est soumise à la confirmation de coût Supabase. |
 | Test synthétique | Ajout de `scripts/test-rapport-qualite.ts` : décès avant naissance, enfant avant parent, écart d’âge, isolement et doublon potentiel. Le jeu est entièrement fictif et vérifie l’absence de fusion automatique. |
 | Limite locale | L’exécution du nouveau script attend l’environnement CI / Node 22 : le binaire local `node_modules/.bin/tsx.cmd` est absent. Les contrôles TypeScript et lint restent validés localement. |
+| Garde-fous de graphe | `QLT-009` (filiation vers une union absente) et `QLT-010` (cycle parent-enfant) sont désormais détectés par `src/lib/coherence.ts`, affichés dans l’administration et couverts par le jeu fictif. |
+| Vérifications | `npm run typecheck` et `npm run lint` passent après ce lot ; le script fictif reste à exécuter dans le CI doté de `tsx`. |
 
 +## Lot ROADMAP-001 — 7 août 2026
 

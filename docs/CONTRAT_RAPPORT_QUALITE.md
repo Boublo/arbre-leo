@@ -70,10 +70,10 @@ Le résumé ne contient ni nom complet, ni UUID, ni extrait de source, ni chemin
 | QLT-006 | attention | fait historique hors période de vie | vérifier le rattachement ou l’interprétation |
 | QLT-007 | attention | chantier sans réponse au-delà du délai | suivi de recherche à relancer |
 | QLT-008 | info | couverture naissance / preuve | indicateur de maturité, pas de qualité individuelle |
-| QLT-009 | critique | filiation pointant vers une union absente | à ajouter au contrôle du graphe |
-| QLT-010 | critique | union ou filiation créant un cycle | à ajouter au contrôle du graphe |
+| QLT-009 | critique | filiation pointant vers une union absente | livrée dans le contrôle du graphe |
+| QLT-010 | critique | union ou filiation créant un cycle | livrée dans le contrôle du graphe |
 
-Les règles QLT-009 et QLT-010 sont des prérequis directs du futur moteur d’ajout ; elles doivent être testées sur données fictives avant ce moteur.
+Les règles QLT-009 et QLT-010 sont des prérequis directs du futur moteur d’ajout. Elles sont couvertes par le jeu fictif `scripts/test-rapport-qualite.ts`, sans correction automatique.
 
 ## Seuils et statut
 

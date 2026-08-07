@@ -74,7 +74,7 @@ Les couches `B` à `G` doivent être utilisables **sans IA**. L’IA, si elle es
 | Phase | ID | Sortie | Dépendances | Statut |
 | --- | --- | --- | --- | --- |
 | 0 | GOV-001 | Gouvernance, tests reproductibles et reprise agent | aucune | démarré : contrat de reprise livré |
-| 1 | OPS-001 / DATA-001 | Sauvegarde-restauration exercée et rapport de qualité non destructif | GOV-001 | spécifications livrées ; exercice et tests à faire |
+| 1 | OPS-001 / DATA-001 | Sauvegarde-restauration exercée et rapport de qualité non destructif | GOV-001 | partiel : QLT-001 à 005, 009 et 010 livrés sur données fictives ; exercice isolé, CI et QLT-006 à 008 restent à faire |
 | 2 | EXP-002 / EXP-003 | Récit par génération et voyage dans le temps v0 | DATA-001 | à concevoir |
 | 3 | UX-002 / UX-003 | Recherche globale et fiche orientée vers l’exploration suivante | tests UI authentifiés | à concevoir |
 | 4 | ADD-001 | Prototype déterministe : ajouter un frère / une sœur avec aperçu | DATA-001, jeux synthétiques | à concevoir |
