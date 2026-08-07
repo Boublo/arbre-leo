@@ -45,7 +45,7 @@ export default async function PageParente({ searchParams }: ParametresParente) {
   const aBrut = premier(parametres.a);
   const bBrut = premier(parametres.b);
 
-  const donnees = await chargerArbre();
+  const donnees = await chargerArbre({ signerPhotosPour: 'aucun' });
 
   // Un identifiant absent, mal formé ou inconnu de la base — souvent parce
   // que la fiche est masquée par les politiques de lecture — est traité

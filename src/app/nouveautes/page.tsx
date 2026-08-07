@@ -97,7 +97,7 @@ export default async function PageNouveautes() {
 
   const [donnees, personnesRes, sourcesRes, souvenirsRes, commentairesRes] =
     await Promise.all([
-      chargerArbre(),
+      chargerArbre({ signerPhotosPour: 'aucun' }),
       supabase
         .from('personnes')
         .select('id, cree_le')

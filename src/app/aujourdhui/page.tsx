@@ -51,7 +51,7 @@ function libelleDate(date: Date): string {
 }
 
 export default async function PageCesJoursCi() {
-  const donnees = await chargerArbre();
+  const donnees = await chargerArbre({ signerPhotosPour: 'aucun' });
 
   // Server Component asynchrone : la lecture de l'heure est faite à chaque
   // requête et non pendant un rendu React — la règle de pureté ne s'applique pas.

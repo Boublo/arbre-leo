@@ -77,6 +77,14 @@ export type DonneesArbre = {
   enfants: Map<string, string[]>;
 };
 
+/** Graphe vide quand le chargement échoue ou est interrompu (timeout, etc.). */
+export const ARBRE_VIDE: DonneesArbre = {
+  personnes: new Map(),
+  unions: new Map(),
+  parents: new Map(),
+  enfants: new Map(),
+};
+
 // ---------------------------------------------------------------------------
 // Mise en forme
 // ---------------------------------------------------------------------------
