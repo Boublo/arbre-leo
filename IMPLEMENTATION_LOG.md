@@ -1,5 +1,26 @@
 # Journal d’exécution
 
+## Lot UX-MEDIA-002 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Conserver le contexte de lecture d’un album et rendre les repères vérifiés d’une photo directement explorables. |
+| Commits | `ab46e82` (navigation par période), `557ceb5` (personnes et lieu liés). |
+| Correction | Une vignette transmet l’année de son album ; précédent/suivant reste dans cette période et le retour active l’onglet Album. La fiche photo expose les personnes explicitement rattachées au média et son lieu, sans déduction ni écriture. |
+| Conditions | Le lieu n’est un lien que lorsqu’il possède des coordonnées ; les personnes absentes des résultats RLS ne sont pas affichées. |
+| Vérifications | `npm.cmd run typecheck`, `npm.cmd run lint` et contrôle des différences passent. Aucun test authentifié, écriture, migration, permission ou URL signée supplémentaire. |
+| Rollback | Retirer le contexte des URL de vignette, le bloc de navigation et le bloc de repères ; aucune donnée persistante à restaurer. |
+
+## Lot MAP-LINKS-001 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Rendre effectifs les liens existants vers un lieu de la carte. |
+| Commit | `ed3e769`. |
+| Correction | La route `/carte?lieu=…` valide que le lieu fait partie des points situés, puis ouvre son panneau au chargement. Une navigation interne vers un autre lien profond remonte proprement le composant. |
+| Vérifications | `npm.cmd run typecheck`, `npm.cmd run lint` et contrôle des différences passent. |
+| Rollback | Retirer le paramètre `lieuInitialId` de `EcranCarte` et le passage de paramètre depuis la route carte. |
+
 ## Lot OPS-DATA-001 — 7 août 2026
 
 | Champ | Détail |
