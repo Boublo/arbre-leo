@@ -10,6 +10,7 @@
 | Décision | Pas d’exercice sur la production, pas de données réelles dans Git, pas de correction automatique. Les règles de filiation orpheline et cycle sont ajoutées au contrat comme prérequis du moteur d’ajout. |
 | Suite | Faire valider les documents, créer une cible de test isolée, exécuter l’exercice de restauration et couvrir le contrat par un jeu de données fictif. |
 | Impact | Documentation uniquement ; aucune base, règle RLS, migration, dépendance, route ou donnée familiale n’est modifiée. |
+| Vérification Supabase | Projet principal actif. La branche isolée existante `e2e` est sans données, sans table `arbre` et en état `MIGRATIONS_FAILED` : aucun exercice n’y a été lancé. Une branche neuve sans données est préférable ; sa création est soumise à la confirmation de coût Supabase. |
 
 +## Lot ROADMAP-001 — 7 août 2026
 
