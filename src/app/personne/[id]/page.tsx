@@ -25,6 +25,7 @@ import { NavigationContextuelle } from '@/components/decouverte/navigation-conte
 import { BarreScroll } from '@/components/interactions/barre-scroll';
 import { RaccourciAccueil } from '@/components/interactions/raccourci-accueil';
 import { ResumeBrancheFiche } from '@/components/personne/resume-branche';
+import { ProchaineEtapeFiche } from '@/components/personne/prochaine-etape';
 import { personneEstVivante } from '@/lib/vivant';
 import { ARBRE_VIDE } from '@/lib/arbre';
 import {
@@ -148,6 +149,19 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
           <FriseFiche fiche={fiche} />
 
           {resumeBranche ? <ResumeBrancheFiche resume={resumeBranche} /> : null}
+
+          <ProchaineEtapeFiche
+            personneId={fiche.personne.id}
+            contenu={{
+              evenements: fiche.evenements.length,
+              sources: fiche.sources.length,
+              faits: fiche.faits.length,
+              parente: compteurs.parente,
+              souvenirs: fiche.souvenirs.length,
+              recits: recits.length,
+              photos: fiche.medias.length,
+            }}
+          />
 
           <BarreDeSaisie
             personneId={fiche.personne.id}

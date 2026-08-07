@@ -18,6 +18,7 @@
 | Résumé partageable | `resumerQualite` produit un état sans identité familiale : comptes, couverture naissance / preuve forte, occurrences par règle et statut. L’administration affiche le compteur de preuves fortes. |
 | Relance de recherche | `QLT-007` réemploie le seuil commun de 60 jours, remonte les demandes sans réponse dans l’administration et renvoie vers `/recherches`. Aucun chantier n’est modifié automatiquement. |
 | Faits historiques | `QLT-006` remonte dans l’administration un rattachement antérieur à la naissance ou postérieur de plus de cinq ans au décès. Les dates et rattachements sont uniquement lus. |
+| Exploration de fiche | `UX-003` ajoute une porte « À explorer maintenant » : elle choisit de façon déterministe l’album, les souvenirs, les repères de vie ou la parenté déjà présents, via les onglets existants. |
 
 +## Lot ROADMAP-001 — 7 août 2026
 
