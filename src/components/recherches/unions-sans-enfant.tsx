@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {
   dateMariageLisible,
   libelleCouple,
+  pisteUnion,
   urlAjoutEnfant,
   type UnionSansEnfant,
 } from '@/lib/unions-sans-enfant';
@@ -83,6 +84,9 @@ export function UnionsSansEnfant({
                 </span>
                 {date && (
                   <span className="text-xs text-encre-tres-douce">Mariage {date}</span>
+                )}
+                {pisteUnion(union) && (
+                  <span className="text-xs leading-snug text-encre-tres-douce">{pisteUnion(union)}</span>
                 )}
               </div>
 

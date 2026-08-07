@@ -90,6 +90,12 @@ export async function listerUnionsSansEnfant(
     if (unionsAvecEnfants.has(u.id)) continue;
 
     const mariage = mariages.get(u.id) ?? null;
+
+    // Union fantôme (un seul conjoint, pas de mariage enregistré) : ce n'est pas
+    // un couple à compléter mais une hypothèse de filiation en attente de preuve.
+    const coupleComplet = u.conjoint_a && u.conjoint_b;
+    if (!coupleComplet && !mariage?.annee) continue;
+
     const anneeRef = mariage?.annee ?? anneeCourante;
 
     const ageA = ageDe(u.conjoint_a, anneeRef);
@@ -133,6 +139,17 @@ export async function listerUnionsSansEnfant(
     const nomB = b.conjointA?.nom ?? b.conjointB?.nom ?? '';
     return nomA.localeCompare(nomB, 'fr');
   });
+}
+
+/** Extrait la première piste utile des notes d'union (ligne [ACTE], [ANOM], etc.). */
+export function pisteUnion(union: UnionSansEnfant): string | null {
+  if (!union.notes?.trim()) return null;
+  const ligne = union.notes
+    .split('\n')
+    .map((l) => l.trim())
+    .find((l) => l.length > 0 && !l.startsWith('[RATTACHEMENT'));
+  if (!ligne) return null;
+  return ligne.length > 140 ? `${ligne.slice(0, 137)}…` : ligne;
 }
 
 /** Libellé lisible d'un couple pour l'affichage. */
