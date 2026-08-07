@@ -362,9 +362,10 @@ Fusionnée sur `main` via PR #60 (`ca2bd05`).
 ## Ordre de correction recommandé (restant)
 
 ```
-1. Prod  Appliquer migrations 0020–0029 sur Supabase (si pas encore faites)
-2. Prod  Vérifier variables rappels Vercel (RESEND_API_KEY, CRON_SECRET, etc.)
-3. Prod  Valider déploiement Vercel après merge #60
+✓ Prod  Migrations 0020–0029 appliquées sur Supabase (PixelForge)
+✓ Prod  Déploiement Vercel post-roadmap (#60) + fix cron proxy (#61)
+□ Prod  Variables rappels Vercel : RESEND_API_KEY, RAPPELS_EMAIL_FROM, CRON_SECRET, SUPABASE_SERVICE_ROLE_KEY
+□ Prod  Smoke test authentifié : fiche personne, /arbre, /recits
 ```
 
 Les items C1–C3, H1–H4, M1–M6 de l’audit initial sont corrigés dans le code.
