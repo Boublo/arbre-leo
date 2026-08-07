@@ -11,6 +11,7 @@ import { ViePersonne } from '@/components/personne/vie';
 import { ParentePersonne } from '@/components/personne/parente';
 import { NotesPersonne } from '@/components/personne/notes';
 import { SourcesPersonne } from '@/components/personne/sources';
+import { LienAvecMoi } from '@/components/personne/lien-avec-moi';
 import { MediasPersonne } from '@/components/personne/medias';
 import { SouvenirsPersonne } from '@/components/personne/souvenirs';
 import { RecitsQuiLaMentionnent } from '@/components/personne/recits';
@@ -32,6 +33,8 @@ import {
 } from '@/lib/arbre-contexte-fiche';
 import { chargerRecitsPourPersonne } from '@/lib/recits';
 import { resumerBranche } from '@/lib/resume-branche';
+import { calculerParente } from '@/lib/parente';
+import { creerClientServeur } from '@/lib/supabase/server';
 
 /**
  * La fiche complète d'une personne.
@@ -56,10 +59,15 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
   const { id } = await params;
   if (!estIdentifiant(id)) notFound();
 
+  const supabase = await creerClientServeur();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   // La fiche vient de plusieurs tables ; l'arbre sert au contexte (parenté,
   // mini-arbre). Pas de signatures photo ici — elles figent la page et peuvent
   // faire expirer le rendu serveur sur Vercel.
-  const [fiche, donneesArbre, donneesResumeBranche, recits, droits, peutDeposerPhotos] =
+  const [fiche, donneesArbre, donneesResumeBranche, recits, droits, peutDeposerPhotos, membreRes] =
     await Promise.all([
       chargerFiche(id),
       chargerContexteFiche(id).catch(() => ARBRE_VIDE),
@@ -67,11 +75,27 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
       chargerRecitsPourPersonne(id).catch(() => []),
       lireDroitsSaisie(),
       peutDeposerPhotoAlbum(id).catch(() => false),
+      user
+        ? supabase
+            .from('membres')
+            .select('personne_id, statut')
+            .eq('id', user.id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
     ]);
 
   if (!fiche) notFound();
 
   const resumeBranche = resumerBranche(donneesResumeBranche, id);
+  const personneDuMembre =
+    membreRes.data?.statut === 'valide' ? membreRes.data.personne_id : null;
+  const lienAvecMoi =
+    personneDuMembre && donneesArbre.personnes.has(personneDuMembre)
+      ? calculerParente(donneesArbre, fiche.personne.id, personneDuMembre)
+      : null;
+  const peutAfficherLienAvecMoi =
+    lienAvecMoi !== null &&
+    (lienAvecMoi.ancetreCommun !== null || lienAvecMoi.lien === 'la même personne');
 
   const compteurs: Compteurs = {
     vue: fiche.evenements.length + fiche.sources.length + fiche.faits.length,
@@ -116,6 +140,10 @@ export default async function PagePersonne({ params }: PageProps<'/personne/[id]
           />
 
           <EnTetePersonne fiche={fiche} />
+
+          {peutAfficherLienAvecMoi && lienAvecMoi && (
+            <LienAvecMoi resultat={lienAvecMoi} />
+          )}
 
           <FriseFiche fiche={fiche} />
 

@@ -70,7 +70,7 @@ Les fichiers protégés par `CONVENTIONS.md` et les migrations ne sont pas conce
 
 ### Statut
 
-**Conçu, non implémenté dans ce lot.** La conception précède volontairement le code, conformément au démarrage demandé pour la phase 3 et à la baseline de tests actuelle.
+**Implémenté dans le lot EXP-001.** L’encart n’ajoute aucune donnée, ne s’affiche que pour un membre validé rattaché à une personne visible, et reste absent lorsque le lien n’est pas établi.
 
 ## Phases suivantes
 

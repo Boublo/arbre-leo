@@ -1,5 +1,19 @@
 # Journal d’exécution
 
+## Lot EXP-001 — 7 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| ID roadmap | `EXP-001` — relation avec moi sur la fiche personne. |
+| Problème | Les visiteurs devaient déduire seuls le lien entre leur propre fiche et une personne consultée. |
+| Cause vérifiée | Le moteur `calculerParente` et le rattachement facultatif `membres.personne_id` existaient, mais ils n’étaient pas composés sur la fiche. |
+| Fichiers modifiés | `src/app/personne/[id]/page.tsx`, `src/components/personne/lien-avec-moi.tsx`, `IMMERSIVE_ROADMAP.md`, `IMPLEMENTATION_LOG.md`. |
+| Correction | Calcul serveur non persistant, limité au membre validé et aux personnes déjà visibles dans son graphe ; affichage absent sans lien établi. |
+| Tests | `npm run typecheck` et `npm run lint` passent après le patch ; aucun test ne lit ni ne modifie de données de production. |
+| Impact | Une information dérivée, sans nouvelle requête de média, migration, écriture ou élargissement de permission. |
+| Risques | Le vocabulaire du moteur de parenté doit conserver ses tests synthétiques avant extension aux liens par alliance. |
+| Rollback | Retirer le composant et son appel dans la fiche ; aucune donnée persistante à restaurer. |
+
 ## Lot VISION-001 — 7 août 2026
 
 | Champ | Détail |
