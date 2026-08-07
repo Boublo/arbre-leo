@@ -72,6 +72,7 @@ export function VueArbre({
   guideTermine = false,
   etapeGuide = null,
   noeudSuggestion = null,
+  cleRecadrageEclate = '',
 }: {
   donnees: DonneesArbre;
   disposition: Disposition;
@@ -83,6 +84,8 @@ export function VueArbre({
   guideTermine?: boolean;
   etapeGuide?: string | null;
   noeudSuggestion?: string | null;
+  /** Change quand les réglages du mode éclaté bougent — force un recadrage. */
+  cleRecadrageEclate?: string;
 }) {
   const [transform, setTransform] = useState({ x: 0, y: 0, k: 1 });
   const [tailleVue, setTailleVue] = useState({ largeur: 0, hauteur: 0 });
@@ -186,6 +189,22 @@ export function VueArbre({
       return;
     }
 
+    // Mode « Tout » large : montrer l'ensemble d'abord, la personne choisie reste repérable.
+    if (mode === 'eclate' && disposition.noeuds.length > 14) {
+      const marge = width < 1024 ? 32 : 90;
+      const k = Math.min(
+        (width - marge * 2) / Math.max(disposition.largeur, 1),
+        (height - marge * 2) / Math.max(disposition.hauteur + HAUTEUR_NOEUD, 1),
+        1.1
+      );
+      appliquerTransform(
+        zoomIdentity
+          .translate((width - disposition.largeur * k) / 2, (height - disposition.hauteur * k) / 2)
+          .scale(k)
+      );
+      return;
+    }
+
     if (!noeudFocus) return;
 
     const k = width < 1024 ? 1.05 : 1.0;
@@ -226,7 +245,7 @@ export function VueArbre({
     if (tailleVue.largeur <= 0 || tailleVue.hauteur <= 0) return;
     const minuteur = setTimeout(recadrer, 60);
     return () => clearTimeout(minuteur);
-  }, [recadrer, disposition.racineId, disposition.mode, tailleVue.largeur, tailleVue.hauteur]);
+  }, [recadrer, disposition.racineId, disposition.mode, cleRecadrageEclate, tailleVue.largeur, tailleVue.hauteur]);
 
   const zoomer = useCallback((facteur: number) => {
     const svg = svgRef.current;
@@ -391,25 +410,30 @@ export function VueArbre({
             {disposition.noeuds.map((noeud) => {
               const personne = donnees.personnes.get(noeud.personneId);
               if (!personne) return null;
+              const opacite =
+                disposition.mode === 'eclate'
+                  ? opaciteNoeudEclate(noeud, disposition, focusId)
+                  : 1;
               return (
-                <CarteNoeud
-                  key={noeud.personneId}
-                  noeud={noeud}
-                  personne={personne}
-                  estFocus={noeud.personneId === focusId}
-                  selectionne={personneSelectionnee === noeud.personneId}
-                  detaille={detaille}
-                  invitationGuide={
-                    etapeGuide === 'explorer' && noeud.personneId === noeudSuggestion
-                  }
-                  onClick={() => onSelection(noeud.personneId)}
-                  onDoubleClick={() => onRecentrer(noeud.personneId)}
-                  onMenu={(evenement) => ouvrirMenu(noeud.personneId, evenement)}
-                  onAjouterEnfant={(p) => {
-                    const cle = p.sexe === 'F' ? 'mere' : 'pere';
-                    router.push(`/personne/nouvelle?${cle}=${p.id}`);
-                  }}
-                />
+                <g key={noeud.personneId} opacity={opacite}>
+                  <CarteNoeud
+                    noeud={noeud}
+                    personne={personne}
+                    estFocus={noeud.personneId === focusId}
+                    selectionne={personneSelectionnee === noeud.personneId}
+                    detaille={detaille}
+                    invitationGuide={
+                      etapeGuide === 'explorer' && noeud.personneId === noeudSuggestion
+                    }
+                    onClick={() => onSelection(noeud.personneId)}
+                    onDoubleClick={() => onRecentrer(noeud.personneId)}
+                    onMenu={(evenement) => ouvrirMenu(noeud.personneId, evenement)}
+                    onAjouterEnfant={(p) => {
+                      const cle = p.sexe === 'F' ? 'mere' : 'pere';
+                      router.push(`/personne/nouvelle?${cle}=${p.id}`);
+                    }}
+                  />
+                </g>
               );
             })}
           </g>
@@ -536,7 +560,22 @@ export function VueArbre({
 function ancreVerticale(mode: ModeArbre): number {
   if (mode === 'ascendance') return 0.3;
   if (mode === 'descendance') return 0.55;
+  if (mode === 'eclate') return 0.38;
   return 0.42;
+}
+
+/** Atténue les personnes éloignées en degrés de parenté pour faire ressortir l'entourage proche. */
+function opaciteNoeudEclate(
+  noeud: NoeudArbre,
+  disposition: Disposition,
+  focusId: string
+): number {
+  if (noeud.personneId === focusId) return 1;
+  const delta = Math.abs(noeud.rang - disposition.rangRacine);
+  if (delta <= 1) return 1;
+  if (delta === 2) return 0.9;
+  if (delta === 3) return 0.78;
+  return 0.62;
 }
 
 function BoutonRond({

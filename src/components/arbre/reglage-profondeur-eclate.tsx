@@ -1,55 +1,98 @@
 'use client';
 
+import type { FiltreBrancheEclate } from '@/lib/layout-arbre';
+import { LIBELLE_COTE } from '@/lib/branches';
 import { PROFONDEUR_ECLATE_DEFAUT, RANG_MAX_ECLATE } from '@/lib/layout-arbre';
 
 export const NIVEAUX_PROFONDEUR_ECLATE = [6, 8, 10, 12, RANG_MAX_ECLATE] as const;
+
+export const FILTRES_BRANCHE_ECLATE: FiltreBrancheEclate[] = [
+  'tous',
+  'paternelle',
+  'maternelle',
+];
 
 export function libelleProfondeurEclate(niveau: number): string {
   return niveau >= RANG_MAX_ECLATE ? 'Tout l’entourage' : `${niveau} degrés`;
 }
 
+export function libelleFiltreBranche(filtre: FiltreBrancheEclate): string {
+  if (filtre === 'tous') return 'Les deux côtés';
+  return LIBELLE_COTE[filtre];
+}
+
 /**
- * Limite le nombre de couches en mode « Tout » pour garder l’arbre lisible.
+ * Réglages du mode « Tout » : étendue et filtre par branche.
  */
-export function ReglageProfondeurEclate({
-  valeur,
-  onChange,
+export function ReglagesModeEclate({
+  profondeur,
+  onProfondeur,
+  filtreBranche,
+  onFiltreBranche,
   nombrePersonnes,
 }: {
-  valeur: number;
-  onChange: (niveau: number) => void;
+  profondeur: number;
+  onProfondeur: (niveau: number) => void;
+  filtreBranche: FiltreBrancheEclate;
+  onFiltreBranche: (filtre: FiltreBrancheEclate) => void;
   nombrePersonnes: number;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-encre-douce">
-      <span className="shrink-0 font-medium text-encre">Étendue</span>
-      <div className="flex flex-wrap gap-1">
-        {NIVEAUX_PROFONDEUR_ECLATE.map((niveau) => (
-          <button
-            key={niveau}
-            type="button"
-            onClick={() => onChange(niveau)}
-            className={`rounded-[var(--rayon-petit)] px-2.5 py-1 transition ${
-              valeur === niveau
-                ? 'bg-accent text-accent-contraste'
-                : 'border border-bordure bg-fond-carte hover:bg-fond-doux'
-            }`}
-            title={
-              niveau >= RANG_MAX_ECLATE
-                ? 'Afficher tout l’entourage connu'
-                : `Limiter à ${niveau} degrés de parenté depuis la personne choisie`
-            }
-          >
-            {libelleProfondeurEclate(niveau)}
-          </button>
-        ))}
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-encre-douce">
+        <span className="shrink-0 font-medium text-encre">Étendue</span>
+        <div className="flex flex-wrap gap-1">
+          {NIVEAUX_PROFONDEUR_ECLATE.map((niveau) => (
+            <button
+              key={niveau}
+              type="button"
+              onClick={() => onProfondeur(niveau)}
+              className={boutonClasse(profondeur === niveau)}
+              title={
+                niveau >= RANG_MAX_ECLATE
+                  ? 'Afficher tout l’entourage connu'
+                  : `Limiter à ${niveau} degrés de parenté depuis la personne choisie`
+              }
+            >
+              {libelleProfondeurEclate(niveau)}
+            </button>
+          ))}
+        </div>
       </div>
-      <span className="text-encre-tres-douce">
-        {nombrePersonnes} personne{nombrePersonnes > 1 ? 's' : ''}
-        {valeur === PROFONDEUR_ECLATE_DEFAUT ? '' : ''}
-      </span>
+
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-encre-douce">
+        <span className="shrink-0 font-medium text-encre">Branche</span>
+        <div className="flex flex-wrap gap-1">
+          {FILTRES_BRANCHE_ECLATE.map((filtre) => (
+            <button
+              key={filtre}
+              type="button"
+              onClick={() => onFiltreBranche(filtre)}
+              className={boutonClasse(filtreBranche === filtre)}
+              title={
+                filtre === 'tous'
+                  ? 'Afficher paternel et maternel'
+                  : `Ne garder que le côté ${filtre === 'paternelle' ? 'paternel' : 'maternel'}`
+              }
+            >
+              {libelleFiltreBranche(filtre)}
+            </button>
+          ))}
+        </div>
+        <span className="text-encre-tres-douce">
+          {nombrePersonnes} personne{nombrePersonnes > 1 ? 's' : ''}
+        </span>
+      </div>
     </div>
   );
+}
+
+function boutonClasse(actif: boolean): string {
+  return `rounded-[var(--rayon-petit)] px-2.5 py-1 transition ${
+    actif
+      ? 'bg-accent text-accent-contraste'
+      : 'border border-bordure bg-fond-carte hover:bg-fond-doux'
+  }`;
 }
 
 export function lireProfondeurEclateInitiale(): number {
@@ -64,3 +107,19 @@ export function lireProfondeurEclateInitiale(): number {
   }
   return PROFONDEUR_ECLATE_DEFAUT;
 }
+
+export function lireFiltreBrancheEclateInitial(): FiltreBrancheEclate {
+  if (typeof window === 'undefined') return 'tous';
+  try {
+    const sauve = localStorage.getItem('arbre-filtre-branche-eclate');
+    if (sauve && FILTRES_BRANCHE_ECLATE.includes(sauve as FiltreBrancheEclate)) {
+      return sauve as FiltreBrancheEclate;
+    }
+  } catch {
+    /* localStorage indisponible */
+  }
+  return 'tous';
+}
+
+/** @deprecated Utiliser ReglagesModeEclate */
+export const ReglageProfondeurEclate = ReglagesModeEclate;
