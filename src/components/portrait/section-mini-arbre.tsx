@@ -25,12 +25,14 @@ export function SectionMiniArbre({
           Parents, conjoint et enfants en un coup d’œil. Cliquez sur une case pour
           ouvrir une fiche, ou l’arbre pour tout déplier.
         </p>
-        <Link
-          href={`/arbre?personne=${encodeURIComponent(focusId)}`}
-          className="mt-3 inline-block text-sm font-medium text-accent transition hover:underline"
-        >
-          Voir dans l’arbre →
-        </Link>
+        <p className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm font-medium text-accent">
+          <Link href={`/arbre?personne=${encodeURIComponent(focusId)}`} className="transition hover:underline">
+            Voir dans l’arbre →
+          </Link>
+          <Link href={`/histoire/famille?personne=${encodeURIComponent(focusId)}`} className="transition hover:underline">
+            Remonter les générations →
+          </Link>
+        </p>
       </div>
       <div className="shrink-0 sm:w-[min(100%,18rem)]">
         <MiniArbre focusId={focusId} donnees={donnees} />

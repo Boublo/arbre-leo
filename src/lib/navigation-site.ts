@@ -17,6 +17,7 @@ export const GROUPES_NAVIGATION = [
     id: 'raconter',
     titre: 'Raconter',
     liens: [
+      { href: '/histoire/famille', libelle: 'Notre histoire' },
       { href: '/recits', libelle: 'Récits' },
       { href: '/histoire', libelle: 'La grande Histoire' },
       { href: '/aujourdhui', libelle: 'Ces jours-ci' },
