@@ -44,12 +44,29 @@ function birthYear(person) {
   return eventOf(person, 'naissance')?.date?.year ?? null;
 }
 
-function isLikelyAlive(person) {
+function isLikelyAlive(person, yearsOfChildren, yearsOfUnions) {
   const death = eventOf(person, 'deces') ?? eventOf(person, 'inhumation');
   if (death) return false;
   const year = birthYear(person);
-  if (year === null) return null; // indéterminé : à traiter comme sensible
-  return THIS_YEAR - year < PRESUMED_LIFESPAN;
+  if (year !== null) return THIS_YEAR - year < PRESUMED_LIFESPAN;
+
+  // Une personne sans année de naissance reste protégée, sauf lorsqu'un indice
+  // généalogique objectif établit qu'elle aurait aujourd'hui plus de 110 ans.
+  // Une naissance d'enfant il y a 98 ans ou plus implique au minimum 12 ans
+  // pour le parent : il ne peut donc raisonnablement plus être vivant.
+  const oldestChild = Math.min(...(yearsOfChildren.get(person.id) ?? []));
+  if (Number.isFinite(oldestChild) && THIS_YEAR - oldestChild >= PRESUMED_LIFESPAN - 12) {
+    return false;
+  }
+
+  // Même raisonnement pour une union datée : un mariage ancien établit que la
+  // personne avait déjà atteint un âge minimal à cette date.
+  const oldestUnion = Math.min(...(yearsOfUnions.get(person.id) ?? []));
+  if (Number.isFinite(oldestUnion) && THIS_YEAR - oldestUnion >= PRESUMED_LIFESPAN - 12) {
+    return false;
+  }
+
+  return null; // indéterminé : à traiter comme sensible
 }
 
 /** Clé de rapprochement : nom normalisé + année de naissance si connue. */
@@ -211,7 +228,30 @@ for (const family of finalFamilies) {
 // Confidentialité et profondeur généalogique
 // ---------------------------------------------------------------------------
 
-const living = [...mergedPersons.values()].filter((p) => isLikelyAlive(p) !== false);
+const yearsOfChildren = new Map();
+const yearsOfUnions = new Map();
+for (const family of finalFamilies) {
+  const marriageYear = family.events.find((event) => event.type === 'mariage')?.date?.year ?? null;
+  for (const parentId of [family.husband, family.wife]) {
+    if (!parentId) continue;
+    const years = yearsOfChildren.get(parentId) ?? [];
+    for (const childId of family.children) {
+      const year = mergedPersons.has(childId) ? birthYear(mergedPersons.get(childId)) : null;
+      if (year !== null) years.push(year);
+    }
+    yearsOfChildren.set(parentId, years);
+
+    if (marriageYear !== null) {
+      const unions = yearsOfUnions.get(parentId) ?? [];
+      unions.push(marriageYear);
+      yearsOfUnions.set(parentId, unions);
+    }
+  }
+}
+
+const living = [...mergedPersons.values()].filter(
+  (p) => isLikelyAlive(p, yearsOfChildren, yearsOfUnions) !== false
+);
 
 const parentsOf = new Map();
 for (const family of finalFamilies) {
