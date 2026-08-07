@@ -96,8 +96,10 @@ Dans le tableau de bord Supabase → **Authentication → URL Configuration** :
    retours à la ligne :
    - `https://arbre.modulyx.eu/**`
    - `https://arbre.modulyx.eu/auth/callback`
-   - `https://arbre-leo-*.vercel.app/**` (previews arbre)
    - URLs Modulyx déjà présentes (ne pas les retirer)
+
+   Les URL `arbre-leo-*.vercel.app` (previews) ne sont plus utilisées : les
+   déploiements Vercel sont limités à la branche `main` (production).
 3. Enregistrer.
 
 Sans cette étape, les liens de confirmation d'inscription envoyés par mail
@@ -153,9 +155,30 @@ personnalisé ne répond pas, laisser `NEXT_PUBLIC_SITE_URL` sur l'URL Vercel
 
 ## 7. Suite
 
-Chaque `git push` sur `main` déclenche un nouveau déploiement de production.
-Les autres branches sont déployées en **preview** sur des URL éphémères, utile
-pour montrer un chantier à la famille avant de le publier.
+Chaque `git push` sur **`main`** déclenche un déploiement **Production** sur
+https://arbre.modulyx.eu.
+
+Les branches de travail (`cursor/*`, PR, etc.) **ne déclenchent plus de
+preview Vercel** : le fichier `vercel.json` limite les builds à `main` et
+ignore les autres branches (`scripts/vercel-build-uniquement-main.sh`). Cela
+évite de consommer les minutes de build sur des URL éphémères inutiles.
+
+La validation avant merge repose sur **GitHub Actions** (`CI`, `Garde-fous
+arbre`) : typecheck, lint, build, Playwright mobile.
+
+### Désactiver les previews (déjà fait dans le dépôt)
+
+```json
+// vercel.json
+{
+  "git": { "deploymentEnabled": { "main": true } },
+  "github": { "silent": true },
+  "ignoreCommand": "bash scripts/vercel-build-uniquement-main.sh"
+}
+```
+
+Si des previews apparaissent encore, vérifier dans Vercel → **Settings → Git**
+que **Preview Deployments** est désactivé ou limité à aucune branche.
 
 Pour importer de nouvelles données ou tourner les scripts de veille et de
 diagnostic, se référer à `MISE-EN-SERVICE.md` : ces opérations tournent en
