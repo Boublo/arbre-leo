@@ -11,8 +11,11 @@ import { createServerClient } from '@supabase/ssr';
  * Depuis Next 16, ce fichier s'appelle `proxy.ts` et non plus `middleware.ts`.
  */
 
-/** Pages accessibles sans être connecté. */
-const PUBLIQUES = ['/connexion', '/inscription', '/auth', '/erreur'];
+/**
+ * Pages accessibles sans être connecté.
+ * Les routes `/api/cron/*` s'authentifient via `CRON_SECRET` dans le handler.
+ */
+const PUBLIQUES = ['/connexion', '/inscription', '/auth', '/erreur', '/api/cron'];
 
 export async function proxy(request: NextRequest) {
   let reponse = NextResponse.next({ request });
