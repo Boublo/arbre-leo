@@ -34,6 +34,7 @@ export async function BarreDeSaisie({
   const urlNouvelleFratrie = construireUrlNouvelEnfant(parentsFratrie.pereId, parentsFratrie.mereId);
   const urlNouveauConjoint = `/personne/nouvelle?conjoint=${encodeURIComponent(personneId)}`;
   const aucunParent = parents.length === 0;
+  const filiationPartielle = parents.length === 1;
   const urlNouveauPere = `/personne/nouvelle?enfant=${encodeURIComponent(personneId)}&sexe=M`;
   const urlNouvelleMere = `/personne/nouvelle?enfant=${encodeURIComponent(personneId)}&sexe=F`;
 
@@ -66,6 +67,11 @@ export async function BarreDeSaisie({
               Ajouter sa mère
             </Link>
           </>
+        )}
+        {filiationPartielle && (
+          <Link href={`/personne/${personneId}/modifier#parents`} className="lien-discret">
+            Rattacher l’autre parent déjà dans l’arbre
+          </Link>
         )}
         {parentsFratrie.libelles.length > 0 && (
           <Link href={urlNouvelleFratrie} className="lien-discret">

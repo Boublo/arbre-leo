@@ -27,6 +27,7 @@
 | Parents sans lien connu | `ADD-002` propose « Ajouter son père » et « Ajouter sa mère » seulement si la fiche n’a aucun parent. L’enfant et le sexe sont préremplis ; une filiation déjà présente n’est jamais déplacée automatiquement. |
 | Homonymes avant création | `ADD-001` signale jusqu’à cinq personnes dont le nom correspond à la saisie. Chaque piste affiche son repère de vie et ouvre la fiche existante ; aucun doublon n’est fusionné ou bloqué automatiquement. |
 | Aperçu du raccourci | `ADD-001` affiche avant le formulaire le parent, le conjoint ou l’enfant proposé par le raccourci suivi. Il s’agit d’une information modifiable : le formulaire et les validations serveur restent la source de vérité. |
+| Filiation à compléter | `ADD-002` affiche, lorsqu’un seul parent est connu, un raccourci vers le formulaire de rattachement. Il ne propose que de relier une personne déjà dans l’arbre et ne déplace aucune filiation automatiquement. |
 
 +## Lot ROADMAP-001 — 7 août 2026
 
