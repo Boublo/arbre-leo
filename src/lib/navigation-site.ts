@@ -26,6 +26,7 @@ export const GROUPES_NAVIGATION = [
     id: 'chercher',
     titre: 'Chercher',
     liens: [
+      { href: '/recherche', libelle: 'Trouver une personne' },
       { href: '/recherches', libelle: 'Recherches' },
       { href: '/archives', libelle: 'Archives' },
       { href: '/parente', libelle: 'Parenté' },
