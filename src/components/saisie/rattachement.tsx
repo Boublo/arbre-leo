@@ -41,7 +41,7 @@ export function Rattachement({
   soiMeme: string | null;
   liens?: LiensExistants;
 }) {
-  const [modeUnion, setModeUnion] = useState(false);
+  const [modeUnion, setModeUnion] = useState(Boolean(valeurs.unionParents));
   const [pereId, setPereId] = useState(valeurs.pereId);
   const [mereId, setMereId] = useState(valeurs.mereId);
   const [conjointId, setConjointId] = useState(valeurs.conjointId);

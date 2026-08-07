@@ -47,20 +47,27 @@ function nomConnu(id: string, personnes: OptionPersonne[]): string | null {
   return personnes.find((personne) => personne.id === id)?.nomComplet ?? null;
 }
 
+function unionConnue(id: string, unions: { id: string }[]): string {
+  return unions.some((union) => union.id === id) ? id : '';
+}
+
 /** Explique le raccourci suivi, sans préjuger des modifications faites ensuite au formulaire. */
 function apercuRattachement(
-  valeurs: { pereId: string; mereId: string; enfants: string[] },
+  valeurs: { pereId: string; mereId: string; unionParents: string; enfants: string[] },
   conjointId: string,
-  personnes: OptionPersonne[]
+  personnes: OptionPersonne[],
+  unions: { id: string; libelle: string }[]
 ): string[] {
   const propositions: string[] = [];
   const pere = nomConnu(valeurs.pereId, personnes);
   const mere = nomConnu(valeurs.mereId, personnes);
   const conjoint = nomConnu(conjointId, personnes);
+  const union = unions.find((foyer) => foyer.id === valeurs.unionParents)?.libelle ?? null;
   const enfants = valeurs.enfants.map((id) => nomConnu(id, personnes)).filter((nom): nom is string => nom !== null);
 
   if (pere) propositions.push(`${pere} est proposé comme père.`);
   if (mere) propositions.push(`${mere} est proposée comme mère.`);
+  if (union) propositions.push(`Le foyer « ${union} » est proposé pour le rattachement.`);
   if (conjoint) propositions.push(`${conjoint} est proposé comme conjoint ou conjointe.`);
   if (enfants.length > 0) propositions.push(`${enfants.join(', ')} est proposé comme enfant de la nouvelle fiche.`);
   return propositions;
@@ -82,11 +89,12 @@ export default async function PageNouvellePersonne({ searchParams }: PageProps<'
     ...PERSONNE_VIDE,
     pereId: connu(premier(parametres.pere), personnes),
     mereId: connu(premier(parametres.mere), personnes),
+    unionParents: unionConnue(premier(parametres.union), unions),
     enfants: [connu(premier(parametres.enfant), personnes)].filter(Boolean),
     sexe: sexeSuggere(premier(parametres.sexe)),
   };
   const conjointId = connu(premier(parametres.conjoint), personnes);
-  const apercu = apercuRattachement(valeurs, conjointId, personnes);
+  const apercu = apercuRattachement(valeurs, conjointId, personnes, unions);
 
   return (
     <>

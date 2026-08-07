@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { chargerParentsPourNouvelEnfant, lireDroitsSaisie } from '@/components/saisie/donnees';
+import { chargerFoyersPourNouvelEnfant, lireDroitsSaisie } from '@/components/saisie/donnees';
 import { construireUrlNouvelEnfant } from '@/lib/url-nouvel-enfant';
 import type { Sexe } from '@/lib/types-base';
 
@@ -28,8 +28,11 @@ export async function BarreDeSaisie({
   const droits = await lireDroitsSaisie();
   if (!droits.peutContribuer) return null;
 
-  const { pereId, mereId } = await chargerParentsPourNouvelEnfant(personneId, sexe);
-  const urlNouvelEnfant = construireUrlNouvelEnfant(pereId, mereId);
+  const foyers = await chargerFoyersPourNouvelEnfant(personneId);
+  const urlEnfantSansFoyer = construireUrlNouvelEnfant(
+    sexe === 'M' || sexe === 'inconnu' ? personneId : '',
+    sexe === 'F' ? personneId : ''
+  );
   const parentsFratrie = parentsPourFratrie(parents);
   const urlNouvelleFratrie = construireUrlNouvelEnfant(parentsFratrie.pereId, parentsFratrie.mereId);
   const urlNouveauConjoint = `/personne/nouvelle?conjoint=${encodeURIComponent(personneId)}`;
@@ -52,9 +55,23 @@ export async function BarreDeSaisie({
       </p>
 
       <span className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-        <Link href={urlNouvelEnfant} className="lien-discret">
-          Ajouter un enfant de {nomComplet}
-        </Link>
+        {foyers.length === 0 && (
+          <Link href={urlEnfantSansFoyer} className="lien-discret">
+            Ajouter un enfant de {nomComplet}
+          </Link>
+        )}
+        {foyers.map((foyer) => (
+          <Link key={foyer.id} href={`/personne/nouvelle?union=${encodeURIComponent(foyer.id)}`} className="lien-discret">
+            {foyer.conjointNomComplet
+              ? `Ajouter un enfant avec ${foyer.conjointNomComplet}`
+              : 'Ajouter un enfant dans ce foyer'}
+          </Link>
+        ))}
+        {foyers.length > 0 && (
+          <Link href={urlEnfantSansFoyer} className="lien-discret">
+            Ajouter un enfant avec un autre parent non renseigné
+          </Link>
+        )}
         <Link href={urlNouveauConjoint} className="lien-discret">
           Ajouter son conjoint ou sa conjointe
         </Link>

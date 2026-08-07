@@ -78,7 +78,7 @@ Les couches `B` à `G` doivent être utilisables **sans IA**. L’IA, si elle es
 | 2 | EXP-002 / EXP-003 | Récit par génération et voyage dans le temps v0 | DATA-001 | livré côté code : générations et porte temporelle vers la chronologie de lignée |
 | 3 | UX-002 / UX-003 | Recherche globale et fiche orientée vers l’exploration suivante | tests UI authentifiés | livré côté code : recherche RLS et UX-003 ; tests UI authentifiés à faire |
 | 4 | ADD-001 | Prototype déterministe : ajouter un frère / une sœur avec aperçu | DATA-001, jeux synthétiques | partiel : raccourci avec parents préremplis, aperçu de lien et signal d’homonymes livrés ; aperçu complet à concevoir |
-| 5 | ADD-002 | Étendre l’ajout guidé aux parents, enfants et conjoints | ADD-001 validé | partiel : enfant, conjoint, père ou mère préremplis si aucun parent n’est connu ; raccourci sûr pour rattacher l’autre parent déjà saisi |
+| 5 | ADD-002 | Étendre l’ajout guidé aux parents, enfants et conjoints | ADD-001 validé | partiel : enfant rattaché à un foyer explicitement choisi, conjoint, père ou mère préremplis si aucun parent n’est connu ; raccourci sûr pour rattacher l’autre parent déjà saisi |
 | 6 | ADD-003 | Construction de branche et mode expert | ADD-002, UX de révision | à faire |
 | 7 | COP-001 | Copilote conversationnel en mode proposition locale | ADD-003, décision confidentialité | à faire |
 | 8 | COP-002 | Extraction de document / OCR optionnelle | COP-001, accord explicite fournisseur | à faire |

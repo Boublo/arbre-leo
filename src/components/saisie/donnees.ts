@@ -439,6 +439,33 @@ export async function chargerParentsPourNouvelEnfant(
   return { pereId, mereId };
 }
 
+/** Un foyer connu est préférable à un conjoint choisi arbitrairement pour ajouter un enfant. */
+export async function chargerFoyersPourNouvelEnfant(
+  personneId: string
+): Promise<{ id: string; conjointNomComplet: string | null }[]> {
+  if (!estIdentifiant(personneId)) return [];
+
+  const supabase = await creerClientServeur();
+  const { data: foyers } = await supabase
+    .from('unions')
+    .select('id, conjoint_a, conjoint_b')
+    .or(`conjoint_a.eq.${personneId},conjoint_b.eq.${personneId}`);
+
+  const autresIds = [...new Set((foyers ?? [])
+    .map((foyer) => (foyer.conjoint_a === personneId ? foyer.conjoint_b : foyer.conjoint_a))
+    .filter((id): id is string => Boolean(id)))];
+
+  const { data: autres } = autresIds.length > 0
+    ? await supabase.from('personnes').select('id, nom_complet, prenoms, nom').in('id', autresIds)
+    : { data: [] as { id: string; nom_complet: string | null; prenoms: string | null; nom: string | null }[] };
+  const nomsParId = new Map((autres ?? []).map((personne) => [personne.id, nomLisible(personne)]));
+
+  return (foyers ?? []).map((foyer) => {
+    const autreId = foyer.conjoint_a === personneId ? foyer.conjoint_b : foyer.conjoint_a;
+    return { id: foyer.id, conjointNomComplet: autreId ? nomsParId.get(autreId) ?? null : null };
+  });
+}
+
 export type LiensRompus = {
   parents: number;
   unions: number;
