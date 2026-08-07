@@ -342,14 +342,29 @@ La redirection vers `/attente` conserve désormais `?suite=` (ex. `/arbre?person
 | Chronologie / Carte | ★★★★☆ | Solide |
 | Souvenirs / Récits | ★★★★☆ | Solide |
 | Export / Parenté / Admin | ★★★★☆ | OK |
-| Performance globale | ★★★☆☆ | `chargerArbre()` partout |
+| Performance globale | ★★★★☆ | Fiches et `/arbre` en chargement ciblé (v1.2–v1.3) |
+
+---
+
+## Roadmap audit incrémental (août 2026) — **terminée**
+
+Fusionnée sur `main` via PR #60 (`ca2bd05`).
+
+```
+✓ v1.1  B1 résilience chargerFiche, B2 error boundary fiche, B8 landmark /arbre
+✓ v1.2  B3 sous-graphe fiche, B4 résumé de branche allégé
+✓ v1.3  B5 sous-graphe /arbre (ascendance complète), B6 PhotoSignee (next/image)
+✓ v2.0  B7 liseré CarteRecit, B8 navigation thèmes, B9 sommaire + impression
+```
 
 ---
 
 ## Ordre de correction recommandé (restant)
 
 ```
-1. Prod  Appliquer migrations 0020–0023 + variables rappels Vercel
+1. Prod  Appliquer migrations 0020–0029 sur Supabase (si pas encore faites)
+2. Prod  Vérifier variables rappels Vercel (RESEND_API_KEY, CRON_SECRET, etc.)
+3. Prod  Valider déploiement Vercel après merge #60
 ```
 
 Les items C1–C3, H1–H4, M1–M6 de l’audit initial sont corrigés dans le code.
