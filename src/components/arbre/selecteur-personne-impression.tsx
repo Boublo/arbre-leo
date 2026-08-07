@@ -1,43 +1,41 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { SelecteurPersonne } from '@/components/arbre/selecteur-personne';
+import type { PersonneArbre } from '@/lib/arbre';
 import { urlOptionsImpression, type OptionsImpressionArbre } from '@/lib/arbre-impression';
+import type { PersonneRecherche } from '@/lib/arbre-graphe';
 import type { ModeArbre } from '@/lib/layout-arbre';
 
 /**
  * Changer la personne de départ sur la page imprimable sans perdre les réglages.
  */
 export function SelecteurPersonneImpression({
+  focus,
   personnes,
-  focusId,
+  suggestions,
   mode,
   options,
 }: {
-  personnes: { id: string; nom: string }[];
-  focusId: string;
+  focus: PersonneArbre;
+  personnes: PersonneRecherche[];
+  suggestions: PersonneRecherche[];
   mode: ModeArbre;
   options: OptionsImpressionArbre;
 }) {
   const router = useRouter();
 
   return (
-    <label className="arbre-impr-selecteur">
+    <div className="arbre-impr-selecteur">
       <span className="arbre-impr-selecteur-label">Partir de</span>
-      <select
-        className="arbre-impr-selecteur-choix"
-        value={focusId}
-        onChange={(e) => {
-          router.push(
-            urlOptionsImpression({ personne: e.target.value, mode }, options)
-          );
+      <SelecteurPersonne
+        personnes={personnes}
+        suggestions={suggestions}
+        choisie={focus}
+        onChoix={(id) => {
+          router.push(urlOptionsImpression({ personne: id, mode }, options));
         }}
-      >
-        {personnes.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.nom}
-          </option>
-        ))}
-      </select>
-    </label>
+      />
+    </div>
   );
 }

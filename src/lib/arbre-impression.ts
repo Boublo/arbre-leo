@@ -73,6 +73,13 @@ export function urlOptionsImpression(
 }
 
 /**
+ * Distance en générations depuis la personne choisie (symétrique ascendance/descendance).
+ */
+function deltaDepuisRacine(noeud: NoeudArbre, rangRacine: number): number {
+  return Math.abs(noeud.rang - rangRacine);
+}
+
+/**
  * Réduit la disposition aux N premiers rangs autour de la personne choisie.
  * Les liens et unions ne gardent que les nœuds encore présents.
  */
@@ -83,9 +90,13 @@ export function filtrerDisposition(
 ): Disposition {
   if (profondeur === 'tout') return disposition;
 
+  const { rangRacine } = disposition;
   const ids = new Set(
     disposition.noeuds
-      .filter((n) => n.personneId === racineId || n.rang <= profondeur)
+      .filter(
+        (n) =>
+          n.personneId === racineId || deltaDepuisRacine(n, rangRacine) <= profondeur
+      )
       .map((n) => n.personneId)
   );
 
@@ -149,20 +160,29 @@ export type TrancheImpression = {
  * multi-pages. Chaque tranche ne garde que les liens internes.
  */
 export function decouperDispositionParPages(disposition: Disposition): TrancheImpression[] {
-  if (disposition.rangMax <= RANGS_PAR_PAGE) {
+  const { rangRacine } = disposition;
+  const maxDelta = Math.max(
+    ...disposition.noeuds.map((n) => deltaDepuisRacine(n, rangRacine)),
+    0
+  );
+
+  if (maxDelta < RANGS_PAR_PAGE) {
     return [{ disposition, libelle: '', index: 0, total: 1 }];
   }
 
   const tranches: TrancheImpression[] = [];
-  const nbPages = Math.ceil((disposition.rangMax + 1) / RANGS_PAR_PAGE);
+  const nbPages = Math.ceil((maxDelta + 1) / RANGS_PAR_PAGE);
 
   for (let page = 0; page < nbPages; page++) {
-    const rangDebut = page * RANGS_PAR_PAGE;
-    const rangFin = Math.min(rangDebut + RANGS_PAR_PAGE - 1, disposition.rangMax);
+    const deltaDebut = page * RANGS_PAR_PAGE;
+    const deltaFin = Math.min(deltaDebut + RANGS_PAR_PAGE - 1, maxDelta);
 
     const ids = new Set(
       disposition.noeuds
-        .filter((n) => n.rang >= rangDebut && n.rang <= rangFin)
+        .filter((n) => {
+          const d = deltaDepuisRacine(n, rangRacine);
+          return d >= deltaDebut && d <= deltaFin;
+        })
         .map((n) => n.personneId)
     );
 
@@ -187,10 +207,7 @@ export function decouperDispositionParPages(disposition: Disposition): TrancheIm
         largeur: recalculerEtendue(noeuds, 'x'),
         hauteur: recalculerEtendue(noeuds, 'y'),
       },
-      libelle:
-        rangDebut === rangFin
-          ? `Génération ${rangDebut}`
-          : `Générations ${rangDebut} à ${rangFin}`,
+      libelle: libelleTranche(deltaDebut, deltaFin),
       index: tranches.length,
       total: 0,
     });
@@ -198,4 +215,13 @@ export function decouperDispositionParPages(disposition: Disposition): TrancheIm
 
   const total = tranches.length;
   return tranches.map((t) => ({ ...t, total }));
+}
+
+function libelleTranche(deltaDebut: number, deltaFin: number): string {
+  if (deltaDebut === 0 && deltaFin === 0) return 'Personne choisie';
+  if (deltaDebut === 0) return `Jusqu’à ${deltaFin} génération${deltaFin > 1 ? 's' : ''}`;
+  if (deltaDebut === deltaFin) {
+    return `Génération ${deltaDebut}`;
+  }
+  return `Générations ${deltaDebut} à ${deltaFin}`;
 }

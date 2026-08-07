@@ -66,6 +66,10 @@ export function ArbreImprimable({ donnees, racineId, mode, options }: Props) {
       : [{ disposition, libelle: '', index: 0, total: 1 } satisfies TrancheImpression];
 
   const nbPersonnes = compterPersonnes(disposition);
+  const maxDelta = Math.max(
+    ...disposition.noeuds.map((n) => Math.abs(n.rang - disposition.rangRacine)),
+    0
+  );
   const noms = new Map(
     disposition.noeuds.map((n) => {
       const p = donnees.personnes.get(n.personneId);
@@ -78,8 +82,8 @@ export function ArbreImprimable({ donnees, racineId, mode, options }: Props) {
   return (
     <>
       <p className="arbre-impr-stats">
-        {nbPersonnes} personne{nbPersonnes > 1 ? 's' : ''} · {disposition.rangMax + 1} rang
-        {disposition.rangMax > 0 ? 's' : ''} · {LIBELLE_MODE[mode].titre}
+        {nbPersonnes} personne{nbPersonnes > 1 ? 's' : ''} · {maxDelta + 1} génération
+        {maxDelta > 0 ? 's' : ''} · {LIBELLE_MODE[mode].titre}
         {options.profondeur !== 'tout' ? ` · ${options.profondeur} générations max` : ''}
         {tranches.length > 1 ? ` · ${tranches.length} pages` : ''}
       </p>
@@ -100,6 +104,12 @@ export function ArbreImprimable({ donnees, racineId, mode, options }: Props) {
               )}
             </p>
           )}
+          {tranche.index > 0 &&
+            !tranche.disposition.noeuds.some((n) => n.personneId === racineId) && (
+              <p className="arbre-impr-tranche-suite">
+                Suite autour de {focus.nomComplet} — la personne choisie figure sur la page 1
+              </p>
+            )}
           <SvgArbrePage
             donnees={donnees}
             disposition={tranche.disposition}

@@ -22,10 +22,14 @@ export function conseilsImpression(
 ): ConseilImpression[] {
   const base = { personne: personneId, mode };
   const conseils: ConseilImpression[] = [];
+  const maxDelta = Math.max(
+    ...disposition.noeuds.map((n) => Math.abs(n.rang - disposition.rangRacine)),
+    0
+  );
 
-  if (disposition.rangMax > RANGS_PAR_PAGE && options.decoupage === 'complet') {
+  if (maxDelta >= RANGS_PAR_PAGE && options.decoupage === 'complet') {
     conseils.push({
-      texte: `Cet arbre compte ${disposition.rangMax + 1} rangs : le découpage en plusieurs pages sera plus lisible à l'impression.`,
+      texte: `Cet arbre s’étend sur ${maxDelta + 1} générations depuis la personne choisie : le découpage en plusieurs pages sera plus lisible à l’impression.`,
       lien: urlOptionsImpression(base, { ...options, decoupage: 'pages' }),
       libelleLien: 'Découper en plusieurs pages',
     });

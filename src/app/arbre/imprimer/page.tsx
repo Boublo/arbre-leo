@@ -6,9 +6,10 @@ import { ArbreImprimable } from '@/components/arbre/arbre-imprimable';
 import { ConseilsImpressionArbre } from '@/components/arbre/conseils-impression-arbre';
 import { OptionsImpressionArbre } from '@/components/arbre/options-impression-arbre';
 import { SelecteurPersonneImpression } from '@/components/arbre/selecteur-personne-impression';
-import { chargerArbre, personneOuDefaut } from '@/lib/arbre';
+import { chargerArbre, derniersEnfants, personneOuDefaut } from '@/lib/arbre';
 import { conseilsImpression } from '@/lib/arbre-impression-conseils';
 import { filtrerDisposition, parserOptionsImpression, urlOptionsImpression } from '@/lib/arbre-impression';
+import { versPersonneRecherche } from '@/lib/arbre-graphe';
 import { disposerArbre, LIBELLE_MODE, type ModeArbre } from '@/lib/layout-arbre';
 
 export const dynamic = 'force-dynamic';
@@ -78,9 +79,14 @@ export default async function PageArbreImprimer({
     focus.id
   );
   const conseils = conseilsImpression(disposition, options, focus.id, mode);
-  const personnesListe = [...donnees.personnes.values()]
-    .map((p) => ({ id: p.id, nom: p.nomComplet }))
-    .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'));
+  const recherchePersonnes = [...donnees.personnes.values()].map(versPersonneRecherche);
+  const suggestions = derniersEnfants(donnees).map(versPersonneRecherche);
+  const nomFichier =
+    focus.nomComplet
+      .replace(/[^a-zA-Z0-9àâäéèêëïîôùûüç\-\s]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .toLowerCase() || 'famille';
 
   return (
     <div className="imprimer-racine" data-format={formatPage}>
@@ -95,8 +101,9 @@ export default async function PageArbreImprimer({
 
       <div className="arbre-impr-barre-reglages no-imprimer">
         <SelecteurPersonneImpression
-          personnes={personnesListe}
-          focusId={focus.id}
+          focus={focus}
+          personnes={recherchePersonnes}
+          suggestions={suggestions}
           mode={mode}
           options={options}
         />
@@ -114,6 +121,11 @@ export default async function PageArbreImprimer({
             {vieResume ? ` · ${vieResume}` : ''}
           </p>
           <p className="arbre-impr-aide">{LIBELLE_MODE[mode].aide}</p>
+          <p className="arbre-impr-liens-connexes no-imprimer">
+            <Link href={`/personne/${focus.id}/imprimer`} className="arbre-impr-lien-connexe">
+              Fiche imprimable de {focus.prenoms ?? focus.nomComplet.split(' ')[0]}
+            </Link>
+          </p>
         </header>
 
         <ArbreImprimable
@@ -136,18 +148,24 @@ export default async function PageArbreImprimer({
   if(btnPrint)btnPrint.addEventListener('click',function(){window.print();});
   var btnSvg=document.querySelector('[data-telecharger-svg]');
   if(btnSvg)btnSvg.addEventListener('click',function(){
-    var svg=document.querySelector('.arbre-impr-svg');
-    if(!svg)return;
-    var clone=svg.cloneNode(true);
-    clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
-    var src=new XMLSerializer().serializeToString(clone);
-    var blob=new Blob([src],{type:'image/svg+xml;charset=utf-8'});
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');
-    a.href=url;
-    a.download='arbre-${focus.nomComplet.replace(/[^a-zA-Z0-9àâäéèêëïîôùûüç\\-\\s]/g,'').trim().replace(/\\s+/g,'-').toLowerCase() || 'famille'}.svg';
-    a.click();
-    URL.revokeObjectURL(url);
+    var svgs=document.querySelectorAll('.arbre-impr-svg');
+    if(!svgs.length)return;
+    var base='arbre-${nomFichier}';
+    function telecharger(svg,index){
+      var clone=svg.cloneNode(true);
+      clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
+      var src=new XMLSerializer().serializeToString(clone);
+      var blob=new Blob([src],{type:'image/svg+xml;charset=utf-8'});
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement('a');
+      a.href=url;
+      a.download=base+(svgs.length>1?'-part-'+(index+1):'')+'.svg';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    svgs.forEach(function(svg,i){
+      window.setTimeout(function(){telecharger(svg,i);},i*300);
+    });
   });
 })();
           `.trim(),
@@ -223,6 +241,10 @@ function stylesImprimables(format: 'landscape' | 'portrait'): string {
     gap: 0.5rem 0.75rem;
     padding: 0.75rem 1.25rem 0;
   }
+  .arbre-impr-selecteur > :last-child {
+    flex: 1;
+    min-width: min(100%, 320px);
+  }
   .arbre-impr-selecteur-label {
     font-size: 0.72rem;
     text-transform: uppercase;
@@ -240,6 +262,15 @@ function stylesImprimables(format: 'landscape' | 'portrait'): string {
     background: #ffffff;
     color: #333333;
   }
+  .arbre-impr-liens-connexes {
+    margin: 0.5rem 0 0;
+    font-size: 0.82rem;
+  }
+  .arbre-impr-lien-connexe {
+    color: #3d5a80;
+    text-decoration: underline;
+  }
+  .arbre-impr-lien-connexe:hover { color: #1a365d; }
   .arbre-impr-options {
     padding: 0.75rem 1.25rem;
     display: flex;
@@ -386,6 +417,12 @@ function stylesImprimables(format: 'landscape' | 'portrait'): string {
   .arbre-impr-tranche-num {
     font-weight: 400;
     color: #666666;
+  }
+  .arbre-impr-tranche-suite {
+    font-size: 0.78rem;
+    color: #666666;
+    font-style: italic;
+    margin: 0 0 0.5rem;
   }
   .arbre-impr-svg {
     display: block;
