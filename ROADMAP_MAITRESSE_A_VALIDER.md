@@ -73,8 +73,8 @@ Les couches `B` à `G` doivent être utilisables **sans IA**. L’IA, si elle es
 
 | Phase | ID | Sortie | Dépendances | Statut |
 | --- | --- | --- | --- | --- |
-| 0 | GOV-001 | Gouvernance, tests reproductibles et reprise agent | aucune | à valider |
-| 1 | OPS-001 / DATA-001 | Sauvegarde-restauration exercée et rapport de qualité non destructif | GOV-001 | à faire |
+| 0 | GOV-001 | Gouvernance, tests reproductibles et reprise agent | aucune | démarré : contrat de reprise livré |
+| 1 | OPS-001 / DATA-001 | Sauvegarde-restauration exercée et rapport de qualité non destructif | GOV-001 | spécifications livrées ; exercice et tests à faire |
 | 2 | EXP-002 / EXP-003 | Récit par génération et voyage dans le temps v0 | DATA-001 | à concevoir |
 | 3 | UX-002 / UX-003 | Recherche globale et fiche orientée vers l’exploration suivante | tests UI authentifiés | à concevoir |
 | 4 | ADD-001 | Prototype déterministe : ajouter un frère / une sœur avec aperçu | DATA-001, jeux synthétiques | à concevoir |
@@ -88,8 +88,8 @@ Les couches `B` à `G` doivent être utilisables **sans IA**. L’IA, si elle es
 
 **But :** rendre le travail reproductible, relisible et réversible.
 
-- Terminer `OPS-001` : runbook de sauvegarde et exercice de restauration isolé.
-- Terminer `DATA-001` : rapport de cohérence avec seuils et jeux de données fictifs.
+- Terminer `OPS-001` : [runbook de sauvegarde/restauration](docs/RUNBOOK_SAUVEGARDE_RESTAURATION.md) et exercice de restauration isolé.
+- Terminer `DATA-001` : [contrat de rapport qualité](docs/CONTRAT_RAPPORT_QUALITE.md), seuils et jeux de données fictifs.
 - Rejouer CI/E2E sous Node 22 ; ne pas modifier les dépendances pour contourner un environnement local dégradé.
 - Créer une session de démonstration sans données familiales réelles pour les tests UI mobile, tablette et desktop.
 - Mesurer les requêtes et le poids du graphe avant toute optimisation de performance.

@@ -1,5 +1,16 @@
 # Journal d’exécution
 
+## Lot OPS-DATA-001 — 7 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Démarrage de la phase de fiabilité : protocole de restauration isolée et contrat de rapport de qualité. |
+| Fichiers | `docs/RUNBOOK_SAUVEGARDE_RESTAURATION.md`, `docs/CONTRAT_RAPPORT_QUALITE.md`, `ROADMAP_MAITRESSE_A_VALIDER.md`, `IMPLEMENTATION_LOG.md`. |
+| Vérifications | Contrôles existants relus dans `src/lib/coherence.ts`, `scripts/diagnostic.mjs` et l’administration ; ils sont déterministes et en lecture seule. |
+| Décision | Pas d’exercice sur la production, pas de données réelles dans Git, pas de correction automatique. Les règles de filiation orpheline et cycle sont ajoutées au contrat comme prérequis du moteur d’ajout. |
+| Suite | Faire valider les documents, créer une cible de test isolée, exécuter l’exercice de restauration et couvrir le contrat par un jeu de données fictif. |
+| Impact | Documentation uniquement ; aucune base, règle RLS, migration, dépendance, route ou donnée familiale n’est modifiée. |
+
 +## Lot ROADMAP-001 — 7 août 2026
 
 | Champ | Détail |
