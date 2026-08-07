@@ -46,6 +46,10 @@ export type Membre = {
   valide_par: string | null;
   valide_le: string | null;
   motif_refus: string | null;
+  rappels_email: boolean;
+  rappels_naissance: boolean;
+  rappels_deces: boolean;
+  rappels_mariage: boolean;
   cree_le: string;
   modifie_le: string;
 };
@@ -291,7 +295,11 @@ export type TypeNotification =
   | 'nouvelle_personne'
   | 'demande_portrait_carte'
   | 'portrait_carte_accepte'
-  | 'portrait_carte_refuse';
+  | 'portrait_carte_refuse'
+  | 'anniversaire_naissance'
+  | 'anniversaire_deces'
+  | 'anniversaire_mariage'
+  | 'rappel_ephemerides';
 
 export type StatutDemandePortrait = 'en_attente' | 'acceptee' | 'refusee';
 
@@ -321,6 +329,13 @@ export type Notification = {
   cree_le: string;
 };
 
+export type RappelEnvoye = {
+  membre_id: string;
+  canal: 'email' | 'in_app';
+  date_calendaire: string;
+  cree_le: string;
+};
+
 // --- Assemblage ------------------------------------------------------------
 
 export type BaseDeDonnees = {
@@ -345,6 +360,7 @@ export type BaseDeDonnees = {
       chantiers_recherche: Table<ChantierRecherche, 'titre'>;
       commentaires: Table<Commentaire, 'auteur_id' | 'texte'>;
       notifications: Table<Notification, 'destinataire_id' | 'type' | 'titre'>;
+      rappels_envoyes: Table<RappelEnvoye, 'membre_id' | 'canal' | 'date_calendaire'>;
       demandes_portrait_carte: Table<
         DemandePortraitCarte,
         'personne_id' | 'media_id' | 'demandeur_id'

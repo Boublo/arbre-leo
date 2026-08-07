@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/rappels-anniversaires",
+      "schedule": "0 6 * * *"
+    }
+  ]
+}

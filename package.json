@@ -23,6 +23,8 @@
     "arbre:verifier-config-prod": "node scripts/verifier-config-prod.mjs",
     "arbre:verif": "npm run arbre:verifier",
     "arbre:diag": "node scripts/diagnostic.mjs",
+    "arbre:rappels": "node scripts/rappels-anniversaires.mjs",
+    "arbre:test-rappels": "npx tsx scripts/test-rappels-anniversaires.ts",
     "test": "npm run typecheck && npm run arbre:verifier",
     "typecheck": "next typegen && tsc --noEmit"
   },

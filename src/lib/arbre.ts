@@ -1,8 +1,9 @@
 import { cache } from 'react';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { PRENOM_RACINE } from '@/lib/branches';
 import { creerClientServeur } from '@/lib/supabase/server';
 import { personneEstVivante } from '@/lib/vivant';
-import type { Evenement, NiveauPreuve, Sexe, TypeEvenement } from '@/lib/types-base';
+import type { BaseDeDonnees, Evenement, NiveauPreuve, Sexe, TypeEvenement } from '@/lib/types-base';
 
 /**
  * Chargement de l'arbre et vocabulaire de présentation.
@@ -34,6 +35,7 @@ export type PersonneArbre = {
   photoUrl: string | null;
   naissance: EvenementResume | null;
   deces: EvenementResume | null;
+  inhumation: EvenementResume | null;
   profession: string | null;
   /** Identifiants des unions dont cette personne est l'un des conjoints. */
   unions: string[];
@@ -55,6 +57,7 @@ export type EvenementResume = {
   texte: string;
   lieu: string | null;
   lieuCourt: string | null;
+  lieuId: string | null;
 };
 
 export type UnionArbre = {
@@ -121,7 +124,15 @@ export function lieuCourt(libelle: string | null): string | null {
 
 type LigneEvenement = Pick<
   Evenement,
-  'annee' | 'mois' | 'jour' | 'annee_fin' | 'qualificatif' | 'date_texte' | 'type' | 'detail'
+  | 'annee'
+  | 'mois'
+  | 'jour'
+  | 'annee_fin'
+  | 'qualificatif'
+  | 'date_texte'
+  | 'type'
+  | 'detail'
+  | 'lieu_id'
 > & { lieux: { libelle: string } | null };
 
 function resumer(e: LigneEvenement | undefined): EvenementResume | null {
@@ -134,6 +145,7 @@ function resumer(e: LigneEvenement | undefined): EvenementResume | null {
     texte: formaterDate(e),
     lieu: libelle,
     lieuCourt: lieuCourt(libelle),
+    lieuId: e.lieu_id,
   };
 }
 
@@ -142,7 +154,7 @@ function resumer(e: LigneEvenement | undefined): EvenementResume | null {
 // ---------------------------------------------------------------------------
 
 /** Événements retenus pour l'affichage de l'arbre : le reste est chargé à la fiche. */
-const TYPES_RESUME: TypeEvenement[] = ['naissance', 'deces', 'profession', 'mariage'];
+const TYPES_RESUME: TypeEvenement[] = ['naissance', 'deces', 'inhumation', 'profession', 'mariage'];
 
 export type OptionsChargementArbre = {
   /**
@@ -230,14 +242,23 @@ function optionsDepuisCle(cle: string): OptionsChargementArbre {
 }
 
 const chargerArbreEnCache = cache(async (cleSignature: string): Promise<DonneesArbre> => {
-  return chargerArbreInterne(optionsDepuisCle(cleSignature));
+  const supabase = await creerClientServeur();
+  return chargerArbreInterne(supabase, optionsDepuisCle(cleSignature));
 });
 
+/** Charge l'arbre avec un client Supabase donné (service role pour les crons). */
+export async function chargerArbreAvecClient(
+  supabase: SupabaseClient<BaseDeDonnees, 'arbre'>,
+  options: OptionsChargementArbre = {}
+): Promise<DonneesArbre> {
+  return chargerArbreInterne(supabase, options);
+}
+
 async function chargerArbreInterne(
+  supabase: SupabaseClient<BaseDeDonnees, 'arbre'>,
   options: OptionsChargementArbre = {}
 ): Promise<DonneesArbre> {
   const signerPhotosPour = options.signerPhotosPour ?? 'tous';
-  const supabase = await creerClientServeur();
 
   const [personnesRes, unionsRes, filiationsRes, evenementsRes] = await Promise.all([
     supabase
@@ -247,7 +268,7 @@ async function chargerArbreInterne(
     supabase.from('filiations').select('union_id, enfant_id'),
     supabase
       .from('evenements')
-      .select('personne_id, union_id, type, annee, mois, jour, annee_fin, qualificatif, date_texte, detail, lieux(libelle)')
+      .select('personne_id, union_id, type, annee, mois, jour, annee_fin, qualificatif, date_texte, detail, lieu_id, lieux(libelle)')
       .in('type', TYPES_RESUME),
   ]);
 
@@ -385,6 +406,7 @@ async function chargerArbreInterne(
       photoUrl: chemin ? urlParChemin.get(chemin) ?? null : null,
       naissance: resumer(evts.find((e) => e.type === 'naissance')),
       deces: resumer(evts.find((e) => e.type === 'deces')),
+      inhumation: resumer(evts.find((e) => e.type === 'inhumation')),
       profession: profession?.detail ?? null,
       unions: unionsParPersonne.get(p.id) ?? [],
       issuDe: issuDe.get(p.id) ?? null,

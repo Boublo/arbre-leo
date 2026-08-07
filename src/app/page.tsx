@@ -15,6 +15,8 @@ import { CartePortrait } from '@/components/decouverte/carte-portrait';
 import { AccueilPersonnel } from '@/components/decouverte/accueil-personnel';
 import { Vignette } from '@/components/portrait/vignette';
 import { portraitDePersonne } from '@/components/portrait/types';
+import { LigneCommemoration } from '@/components/ephemerides/ligne-commemoration';
+import { lieuCommemoration } from '@/lib/lieu-commemoration';
 import {
   ephemeridesDeCeJour,
   prochainesEphemerides,
@@ -589,15 +591,18 @@ function ApercuEphemeride({ ephemeride }: { ephemeride: Ephemeride }) {
     );
   }
 
+  const lieu = lieuCommemoration(p);
+
   return (
     <article className="carte flex h-full flex-col gap-2 p-4">
       <p className="text-[0.68rem] font-medium uppercase tracking-[0.09em] text-encre-tres-douce">
         Décès · {libelleAnneesApercu(ephemeride.annees)}
       </p>
       <Vignette personne={portraitDePersonne(p)} photoUrl={p.photoUrl} />
-      <p className="mt-auto text-xs text-encre-tres-douce">
+      <p className="text-xs text-encre-tres-douce">
         {feminin ? 'Décédée' : 'Décédé'} le {dateEcrite}.
       </p>
+      {lieu && <LigneCommemoration lieu={lieu} feminin={feminin} />}
     </article>
   );
 }

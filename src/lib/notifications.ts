@@ -12,6 +12,10 @@ export const LIBELLE_TYPE_NOTIFICATION: Record<TypeNotification, string> = {
   demande_portrait_carte: 'Portrait carte',
   portrait_carte_accepte: 'Portrait accepté',
   portrait_carte_refuse: 'Portrait écarté',
+  anniversaire_naissance: 'Anniversaire',
+  anniversaire_deces: 'En mémoire',
+  anniversaire_mariage: 'Mariage',
+  rappel_ephemerides: 'Ces jours-ci',
 };
 
 export const ICONE_TYPE_NOTIFICATION: Record<TypeNotification, string> = {
@@ -26,6 +30,10 @@ export const ICONE_TYPE_NOTIFICATION: Record<TypeNotification, string> = {
   demande_portrait_carte: '🪪',
   portrait_carte_accepte: '✓',
   portrait_carte_refuse: '✕',
+  anniversaire_naissance: '🎂',
+  anniversaire_deces: '🕯',
+  anniversaire_mariage: '💍',
+  rappel_ephemerides: '📅',
 };
 
 export type NotificationAffichee = {
