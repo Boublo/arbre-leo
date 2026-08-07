@@ -73,6 +73,7 @@ export function VueArbre({
   etapeGuide = null,
   noeudSuggestion = null,
   cleRecadrageEclate = '',
+  masquerLiensLointains = false,
 }: {
   donnees: DonneesArbre;
   disposition: Disposition;
@@ -86,6 +87,7 @@ export function VueArbre({
   noeudSuggestion?: string | null;
   /** Change quand les réglages du mode éclaté bougent — force un recadrage. */
   cleRecadrageEclate?: string;
+  masquerLiensLointains?: boolean;
 }) {
   const [transform, setTransform] = useState({ x: 0, y: 0, k: 1 });
   const [tailleVue, setTailleVue] = useState({ largeur: 0, hauteur: 0 });
@@ -239,6 +241,27 @@ export function VueArbre({
     );
   }, [appliquerTransform, disposition.largeur, disposition.hauteur]);
 
+  /** Recentre la vue sur la personne choisie (utile en mode « Tout » large). */
+  const centrerSurFocus = useCallback(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    const { width, height } = svg.getBoundingClientRect();
+    if (width === 0 || height === 0) return;
+
+    const noeudFocus = noeudParId.get(focusId);
+    if (!noeudFocus) return;
+
+    const k = width < 1024 ? 1.05 : 1.0;
+    const cx = noeudFocus.x;
+    const cy = noeudFocus.y + HAUTEUR_NOEUD / 2;
+    const anchorY = ancreVerticale(disposition.mode);
+
+    appliquerTransform(
+      zoomIdentity.translate(width / 2 - cx * k, height * anchorY - cy * k).scale(k)
+    );
+  }, [appliquerTransform, disposition.mode, focusId, noeudParId]);
+
   // Recadrer à chaque changement de focus/mode et dès que le cadre a une taille
   // (le panneau en position absolue peut mesurer 0×0 au premier rendu).
   useEffect(() => {
@@ -332,6 +355,8 @@ export function VueArbre({
   const prenomFocus = focus?.prenoms?.split(' ')[0] ?? focus?.nomComplet ?? '';
   const detaille = transform.k > 0.32;
   const personneMenu = menu ? donnees.personnes.get(menu.personneId) ?? null : null;
+  const arbreEclateLarge =
+    disposition.mode === 'eclate' && disposition.noeuds.length > 14;
 
   const surClavierArbre = useCallback(
     (e: React.KeyboardEvent<SVGSVGElement>) => {
@@ -403,7 +428,12 @@ export function VueArbre({
 
         <g ref={groupeRef}>
           {/* Filiations et unions — tracé unifié (pedigree + orthogonaux) */}
-          <LiensArbre disposition={disposition} donnees={donnees} noeudParId={noeudParId} />
+          <LiensArbre
+            disposition={disposition}
+            donnees={donnees}
+            noeudParId={noeudParId}
+            masquerLiensLointains={masquerLiensLointains}
+          />
 
           {/* Personnes */}
           <g>
@@ -496,6 +526,14 @@ export function VueArbre({
               <BoutonRond titre="Voir tout l’arbre" onClick={toutVoir}>
                 ⤢
               </BoutonRond>
+              {arbreEclateLarge && (
+                <BoutonRond
+                  titre={`Recentrer sur ${prenomFocus}`}
+                  onClick={centrerSurFocus}
+                >
+                  ⊙
+                </BoutonRond>
+              )}
             </div>
             <button
               type="button"

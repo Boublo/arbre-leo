@@ -446,11 +446,17 @@ function parentsVisibles(
  * Pedigree pour les couples avec enfants visibles sur rang adjacent ;
  * connecteur orthogonal pour le reste.
  */
+export type OptionsPlanLiens = {
+  /** En mode éclaté : ne pas tracer les connecteurs orthogonaux atténués. */
+  masquerLiensLointains?: boolean;
+};
+
 export function planifierLiens(
   donnees: DonneesArbre,
   liens: LienArbre[],
   noeudParId: Map<string, NoeudArbre>,
-  mode: 'ascendance' | 'descendance' | 'famille' | 'eclate'
+  mode: 'ascendance' | 'descendance' | 'famille' | 'eclate',
+  options: OptionsPlanLiens = {}
 ): PlanLiens {
   const segments: SegmentLien[] = [];
   const enfantsParUnion = new Set<string>();
@@ -560,7 +566,7 @@ export function planifierLiens(
     segments.push(segmentOrthogonal(enfant, parent, lien.id, lien.reprise));
   }
 
-  if (mode === 'eclate') {
+  if (mode === 'eclate' && !options.masquerLiensLointains) {
     segments.push(...segmentsOrthogonauxEclate(liens, noeudParId, enfantsParUnion));
   }
 

@@ -29,12 +29,16 @@ export function ReglagesModeEclate({
   onProfondeur,
   filtreBranche,
   onFiltreBranche,
+  masquerLiensLointains,
+  onMasquerLiensLointains,
   nombrePersonnes,
 }: {
   profondeur: number;
   onProfondeur: (niveau: number) => void;
   filtreBranche: FiltreBrancheEclate;
   onFiltreBranche: (filtre: FiltreBrancheEclate) => void;
+  masquerLiensLointains: boolean;
+  onMasquerLiensLointains: (masquer: boolean) => void;
   nombrePersonnes: number;
 }) {
   return (
@@ -83,6 +87,18 @@ export function ReglagesModeEclate({
           {nombrePersonnes} personne{nombrePersonnes > 1 ? 's' : ''}
         </span>
       </div>
+
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-encre-douce">
+        <span className="shrink-0 font-medium text-encre">Liens</span>
+        <button
+          type="button"
+          onClick={() => onMasquerLiensLointains(!masquerLiensLointains)}
+          className={boutonClasse(masquerLiensLointains)}
+          title="Masquer les connecteurs atténués entre parentés éloignées"
+        >
+          {masquerLiensLointains ? 'Liens lointains masqués' : 'Masquer liens lointains'}
+        </button>
+      </div>
     </div>
   );
 }
@@ -119,6 +135,15 @@ export function lireFiltreBrancheEclateInitial(): FiltreBrancheEclate {
     /* localStorage indisponible */
   }
   return 'tous';
+}
+
+export function lireMasquerLiensLointainsInitial(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return localStorage.getItem('arbre-masquer-liens-lointains-eclate') === '1';
+  } catch {
+    return false;
+  }
 }
 
 /** @deprecated Utiliser ReglagesModeEclate */
