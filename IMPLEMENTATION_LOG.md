@@ -21,6 +21,7 @@
 | Exploration de fiche | `UX-003` ajoute une porte « À explorer maintenant » : elle choisit de façon déterministe l’album, les souvenirs, les repères de vie ou la parenté déjà présents, via les onglets existants. |
 | Recherche globale | `UX-002` ajoute `/recherche`, alimentée par l’index léger déjà filtré côté serveur par RLS. La page n’expose ni notes, ni sources, ni médias, ni fiches invisibles. |
 | Récit par génération | `EXP-002` ajoute `/histoire/famille` : depuis une personne choisie, les ascendants connus sont groupés par génération et renvoient vers leurs fiches. Les lacunes restent explicitement affichées. |
+| Voyage dans le temps | `EXP-003` relie « Notre histoire » à la chronologie de lignée existante, avec une période calculée uniquement depuis les années connues. Aucun événement n’est déduit. |
 
 +## Lot ROADMAP-001 — 7 août 2026
 

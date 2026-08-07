@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Navigation } from '@/components/navigation';
 import { ParcoursGenerations } from '@/components/histoire/parcours-generations';
+import { PorteTemps } from '@/components/histoire/porte-temps';
 import { generationsAscendance } from '@/lib/generations';
 import { chargerGrapheArbreFocus } from '@/lib/arbre-contexte-fiche';
 
@@ -51,6 +52,7 @@ export default async function PageHistoireFamille({
             En remontant depuis {personneFocus.nomComplet}, voici les générations que l’arbre relie aujourd’hui.
           </p>
         </header>
+        <PorteTemps personneId={personneId} generations={generations} />
         <ParcoursGenerations generations={generations} />
       </main>
     </>
