@@ -46,10 +46,17 @@ type PointCarte = {
  * les positions sont recalculées ici afin que les points et les noms gardent
  * leur taille quel que soit l'agrandissement.
  */
-export function EcranCarte({ donnees }: { donnees: DonneesCarte }) {
+export function EcranCarte({
+  donnees,
+  lieuInitialId = null,
+}: {
+  donnees: DonneesCarte;
+  /** Lien profond ?lieu=… : ouvre directement le panneau du lieu demandé. */
+  lieuInitialId?: string | null;
+}) {
   const [debut, setDebut] = useState(donnees.anneeMin);
   const [fin, setFin] = useState(donnees.anneeMax);
-  const [selectionId, setSelectionId] = useState<string | null>(null);
+  const [selectionId, setSelectionId] = useState<string | null>(lieuInitialId);
   const [survolId, setSurvolId] = useState<string | null>(null);
   const [montrerDeplacements, setMontrerDeplacements] = useState(true);
   const [montrerFlux, setMontrerFlux] = useState(false);

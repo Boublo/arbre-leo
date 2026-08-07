@@ -521,9 +521,12 @@ function coteDominant(parCote: Record<Cote, number>): Cote {
 
 const pluriel = (nombre: number) => (nombre > 1 ? 's' : '');
 
-export default async function PageCarte() {
+export default async function PageCarte({ searchParams }: PageProps<'/carte'>) {
+  const parametres = await searchParams;
   const { carte, nbLieux, manquants, nbEvenementsSansLieuSitue } = await chargerCarte();
   const nbSitues = carte.lieux.length;
+  const lieuDemande = premier(parametres.lieu);
+  const lieuInitialId = carte.lieux.some((lieu) => lieu.id === lieuDemande) ? lieuDemande : null;
 
   return (
     <>
@@ -538,7 +541,11 @@ export default async function PageCarte() {
           </p>
         </div>
 
-        <EcranCarte donnees={carte} />
+        <EcranCarte
+          key={lieuInitialId ?? 'carte'}
+          donnees={carte}
+          lieuInitialId={lieuInitialId}
+        />
 
         <footer className="shrink-0 border-t border-bordure px-4 py-2.5 text-xs text-encre-douce">
           <p>
@@ -589,4 +596,9 @@ export default async function PageCarte() {
       </main>
     </>
   );
+}
+
+function premier(valeur: string | string[] | undefined): string | null {
+  if (Array.isArray(valeur)) return valeur[0] ?? null;
+  return valeur ?? null;
 }
