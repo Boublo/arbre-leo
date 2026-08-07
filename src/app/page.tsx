@@ -57,7 +57,7 @@ export default async function PageAccueil() {
 
   const [donnees, lieuxRes, actesRes, evtLieuxRes, souvenirRes, chapitre, recitVedette, membreRes] =
     await Promise.all([
-      chargerArbre(),
+      chargerArbre({ signerPhotosPour: 'aucun' }),
       supabase.from('lieux').select('pays_actuel, pays'),
       supabase
         .from('evenements')

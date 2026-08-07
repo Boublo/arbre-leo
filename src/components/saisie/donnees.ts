@@ -131,7 +131,8 @@ export async function lireDroitsSaisie(): Promise<DroitsSaisie> {
 export async function peutDeposerPhotoAlbum(personneId: string): Promise<boolean> {
   if (!estIdentifiant(personneId)) return false;
   const supabase = await creerClientServeur();
-  const { data } = await supabase.rpc('peut_deposer_photo_album', { p_personne_id: personneId });
+  const { data, error } = await supabase.rpc('peut_deposer_photo_album', { p_personne_id: personneId });
+  if (error) return false;
   return data === true;
 }
 

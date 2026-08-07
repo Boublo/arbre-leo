@@ -17,7 +17,7 @@ import { RecitsQuiLaMentionnent } from '@/components/personne/recits';
 import { FaitsPersonne } from '@/components/personne/faits';
 import { CommentairesPersonne } from '@/components/personne/commentaires';
 import { BarreDeSaisie } from '@/components/saisie/lien-ajout';
-import { lireDroitsSaisie, peutDeposerPhotoAlbum } from '@/components/saisie/donnees';
+import { lireDroitsSaisie, peutDeposerPhotoAlbum, estIdentifiant } from '@/components/saisie/donnees';
 import { BarreParente } from '@/components/portrait/barre-parente';
 import { SectionMiniArbre } from '@/components/portrait/section-mini-arbre';
 import { NavigationContextuelle } from '@/components/decouverte/navigation-contextuelle';
@@ -25,7 +25,7 @@ import { BarreScroll } from '@/components/interactions/barre-scroll';
 import { RaccourciAccueil } from '@/components/interactions/raccourci-accueil';
 import { ResumeBrancheFiche } from '@/components/personne/resume-branche';
 import { personneEstVivante } from '@/lib/vivant';
-import { chargerArbre } from '@/lib/arbre';
+import { ARBRE_VIDE, chargerArbre } from '@/lib/arbre';
 import { chargerRecitsPourPersonne } from '@/lib/recits';
 import { resumerBranche } from '@/lib/resume-branche';
 
@@ -50,13 +50,14 @@ export async function generateMetadata({ params }: PageProps<'/personne/[id]'>):
 
 export default async function PagePersonne({ params }: PageProps<'/personne/[id]'>) {
   const { id } = await params;
+  if (!estIdentifiant(id)) notFound();
 
-  // La fiche vient de plusieurs tables ; l'arbre entier sert au contexte
-  // (parenté immédiate, tirage d'un membre au hasard). Les deux appels sont
-  // indépendants, on les mène en parallèle.
+  // La fiche vient de plusieurs tables ; l'arbre sert au contexte (parenté,
+  // mini-arbre). Pas de signatures photo ici — elles figent la page et peuvent
+  // faire expirer le rendu serveur sur Vercel.
   const [fiche, donneesArbre, recits, droits, peutDeposerPhotos] = await Promise.all([
     chargerFiche(id),
-    chargerArbre(),
+    chargerArbre({ signerPhotosPour: 'aucun' }).catch(() => ARBRE_VIDE),
     chargerRecitsPourPersonne(id),
     lireDroitsSaisie(),
     peutDeposerPhotoAlbum(id),

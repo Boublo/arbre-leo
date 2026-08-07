@@ -86,7 +86,7 @@ export async function chargerPhotoPersonne(
     .from(BUCKET_MEDIAS)
     .createSignedUrl(media.chemin, DUREE_LIEN_SIGNE);
 
-  const { data: demandePortrait } = await supabase
+  const { data: demandePortrait, error: erreurDemandePortrait } = await supabase
     .from('demandes_portrait_carte')
     .select('statut, motif_refus')
     .eq('personne_id', personneId)
@@ -94,6 +94,10 @@ export async function chargerPhotoPersonne(
     .order('cree_le', { ascending: false })
     .limit(1)
     .maybeSingle();
+
+  if (erreurDemandePortrait) {
+    console.error('demandes_portrait_carte:', erreurDemandePortrait.message);
+  }
 
   const m = media as Media;
   const fiche: MediaFiche = {
