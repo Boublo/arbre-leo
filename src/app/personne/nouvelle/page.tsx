@@ -43,6 +43,29 @@ function sexeSuggere(valeur: string): 'M' | 'F' | 'inconnu' {
   return valeur === 'M' || valeur === 'F' ? valeur : 'inconnu';
 }
 
+function nomConnu(id: string, personnes: OptionPersonne[]): string | null {
+  return personnes.find((personne) => personne.id === id)?.nomComplet ?? null;
+}
+
+/** Explique le raccourci suivi, sans préjuger des modifications faites ensuite au formulaire. */
+function apercuRattachement(
+  valeurs: { pereId: string; mereId: string; enfants: string[] },
+  conjointId: string,
+  personnes: OptionPersonne[]
+): string[] {
+  const propositions: string[] = [];
+  const pere = nomConnu(valeurs.pereId, personnes);
+  const mere = nomConnu(valeurs.mereId, personnes);
+  const conjoint = nomConnu(conjointId, personnes);
+  const enfants = valeurs.enfants.map((id) => nomConnu(id, personnes)).filter((nom): nom is string => nom !== null);
+
+  if (pere) propositions.push(`${pere} est proposé comme père.`);
+  if (mere) propositions.push(`${mere} est proposée comme mère.`);
+  if (conjoint) propositions.push(`${conjoint} est proposé comme conjoint ou conjointe.`);
+  if (enfants.length > 0) propositions.push(`${enfants.join(', ')} est proposé comme enfant de la nouvelle fiche.`);
+  return propositions;
+}
+
 export default async function PageNouvellePersonne({ searchParams }: PageProps<'/personne/nouvelle'>) {
   const droits = await lireDroitsSaisie();
 
@@ -63,6 +86,7 @@ export default async function PageNouvellePersonne({ searchParams }: PageProps<'
     sexe: sexeSuggere(premier(parametres.sexe)),
   };
   const conjointId = connu(premier(parametres.conjoint), personnes);
+  const apercu = apercuRattachement(valeurs, conjointId, personnes);
 
   return (
     <>
@@ -81,13 +105,23 @@ export default async function PageNouvellePersonne({ searchParams }: PageProps<'
 
         <div className="mt-8">
           {droits.peutContribuer ? (
-            <FormulairePersonne
-              mode="creation"
-              valeurs={{ ...valeurs, conjointId }}
-              personnes={personnes}
-              unions={unions}
-              lieux={lieux}
-            />
+            <>
+              {apercu.length > 0 && (
+                <div className="mb-6">
+                  <Alerte ton="info">
+                    <span className="font-medium text-encre">Lien proposé : </span>
+                    {apercu.join(' ')} Vous pouvez modifier ou retirer ces choix avant l’enregistrement.
+                  </Alerte>
+                </div>
+              )}
+              <FormulairePersonne
+                mode="creation"
+                valeurs={{ ...valeurs, conjointId }}
+                personnes={personnes}
+                unions={unions}
+                lieux={lieux}
+              />
+            </>
           ) : (
             <Alerte ton="info">
               Votre compte peut lire l’arbre mais pas encore l’écrire. Demandez à un administrateur
