@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { GrilleLiens, LienFiche, ListePreuves, Rien, Section } from '@/components/personne/blocs';
 import { LIBELLE_EVENEMENT } from '@/components/personne/vocabulaire';
 import type { Fiche, Foyer, LienPersonne, MembreFratrie } from '@/components/personne/donnees';
@@ -17,10 +18,20 @@ export function ParentePersonne({ fiche }: { fiche: Fiche }) {
     <Section titre="Sa parenté">
       {vide ? (
         <Rien>
-          Personne n’est encore rattaché à cette fiche : ni parents, ni union, ni enfants.
+          Personne n’est encore rattaché à cette fiche : ni parents, ni union, ni enfants.{' '}
+          <Link href={`/personne/${fiche.personne.id}/modifier#parents`} className="lien-discret">
+            Désigner ses parents
+          </Link>
         </Rien>
       ) : (
         <div className="flex flex-col gap-6">
+          {parents.length === 0 && (
+            <p className="text-sm text-encre-douce">
+              <Link href={`/personne/${fiche.personne.id}/modifier#parents`} className="lien-discret">
+                Désigner ses parents
+              </Link>
+            </p>
+          )}
           {parents.length > 0 && (
             <Groupe titre="Parents" precision={natureFiliation && `Filiation ${natureFiliation}`}>
               <GrilleLiens>

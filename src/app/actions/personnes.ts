@@ -66,7 +66,7 @@ function champ(donnees: FormData, nom: string): string | undefined {
 }
 
 /** Les champs répétés — preuves, enfants — repartent joints par une virgule. */
-const CHAMPS_MULTIPLES = new Set(['preuves', 'enfants']);
+const CHAMPS_MULTIPLES = new Set(['preuves', 'enfants', 'detacherEnfants']);
 
 function relire(donnees: FormData): Record<string, string> {
   const saisie: Record<string, string> = {};
@@ -172,6 +172,9 @@ const schemaPersonne = z
     enfants: z
       .array(z.uuid('Un des enfants désignés n’est pas dans l’arbre.'))
       .max(30, 'Trente enfants d’un coup : reprenez en deux fois.'),
+    detacherEnfants: z
+      .array(z.uuid('Un des enfants à détacher n’est pas dans l’arbre.'))
+      .max(30, 'Trente enfants d’un coup : reprenez en deux fois.'),
     detacherParents: z.boolean(),
   })
   .superRefine((v, ctx) => {
@@ -208,6 +211,7 @@ function analyser(donnees: FormData) {
     conjointId: champ(donnees, 'conjointId'),
     foyerEnfants: champ(donnees, 'foyerEnfants'),
     enfants: donnees.getAll('enfants').map((v) => String(v)),
+    detacherEnfants: donnees.getAll('detacherEnfants').map((v) => String(v)),
     detacherParents: donnees.get('detacherParents') !== null,
   });
 }
@@ -550,6 +554,22 @@ async function rattacher(
   }
 
   // --- Les enfants ---------------------------------------------------------
+
+  if (v.detacherEnfants.length > 0) {
+    const foyersPersonne = unions
+      .filter((u) => u.conjoint_a === personneId || u.conjoint_b === personneId)
+      .map((u) => u.id);
+    if (foyersPersonne.length > 0) {
+      const { error } = await supabase
+        .from('filiations')
+        .delete()
+        .in('enfant_id', v.detacherEnfants)
+        .in('union_id', foyersPersonne);
+      if (error) {
+        soucis.push(`Les enfants n’ont pas pu être détachés. ${traduireErreur(error.message)}`);
+      }
+    }
+  }
 
   if (v.enfants.length === 0) return soucis;
 
