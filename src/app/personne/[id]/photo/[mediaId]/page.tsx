@@ -7,13 +7,16 @@ import { LIBELLE_MEDIA } from '@/components/personne/vocabulaire';
 import { FormulaireCommentairePhoto } from '@/components/photos/formulaire-commentaire-photo';
 import { BoutonPortraitCarte } from '@/components/photos/bouton-portrait-carte';
 import { PhotoDetailPleinEcran } from '@/components/photos/photo-detail-plein-ecran';
-import { chargerPhotoPersonne } from '@/components/photos/donnees';
+import { chargerNavigationPhotoPersonne, chargerPhotoPersonne } from '@/components/photos/donnees';
 import { lireDroitsSaisie, peutDeposerPhotoAlbum } from '@/components/saisie/donnees';
 import type { CommentaireFiche } from '@/components/personne/donnees';
 
 export const dynamic = 'force-dynamic';
 
-type ParamsPhoto = { params: Promise<{ id: string; mediaId: string }> };
+type ParamsPhoto = {
+  params: Promise<{ id: string; mediaId: string }>;
+  searchParams: Promise<{ contexte?: string; annee?: string }>;
+};
 
 export async function generateMetadata({ params }: ParamsPhoto): Promise<Metadata> {
   const { id, mediaId } = await params;
@@ -25,12 +28,18 @@ export async function generateMetadata({ params }: ParamsPhoto): Promise<Metadat
   };
 }
 
-export default async function PagePhoto({ params }: ParamsPhoto) {
+export default async function PagePhoto({ params, searchParams }: ParamsPhoto) {
   const { id, mediaId } = await params;
-  const [photo, droits, peutDeposer] = await Promise.all([
+  const parametres = await searchParams;
+  const anneeContexte = lireAnneeContexte(parametres);
+  const garderContexteAlbum = parametres.contexte === 'periode' && anneeContexte !== undefined;
+  const [photo, droits, peutDeposer, navigation] = await Promise.all([
     chargerPhotoPersonne(id, mediaId),
     lireDroitsSaisie(),
     peutDeposerPhotoAlbum(id),
+    garderContexteAlbum
+      ? chargerNavigationPhotoPersonne(id, mediaId, anneeContexte)
+      : Promise.resolve(null),
   ]);
   if (!photo) notFound();
 
@@ -43,7 +52,7 @@ export default async function PagePhoto({ params }: ParamsPhoto) {
       <Navigation />
 
       <main id="contenu-principal" className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6">
-        <Link href={`/personne/${id}`} className="lien-discret text-sm">
+        <Link href={`/personne/${id}#photos`} className="lien-discret text-sm">
           ← Album de {nomPersonne}
         </Link>
 
@@ -81,6 +90,37 @@ export default async function PagePhoto({ params }: ParamsPhoto) {
             </p>
           )}
         </figure>
+
+        {navigation && navigation.total > 1 && (
+          <nav
+            className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[var(--rayon-petit)] border border-bordure bg-fond-doux/60 p-3"
+            aria-label="Photos de la même période"
+          >
+            {navigation.precedente ? (
+              <Link
+                href={urlPhotoContexte(id, navigation.precedente.id, parametres.annee!)}
+                className="lien-discret text-sm"
+              >
+                ← Photo précédente
+              </Link>
+            ) : (
+              <span className="text-sm text-encre-tres-douce">Début de la période</span>
+            )}
+            <span className="text-xs text-encre-tres-douce">
+              {navigation.total} photo{navigation.total > 1 ? 's' : ''} {libellePeriode(anneeContexte)}
+            </span>
+            {navigation.suivante ? (
+              <Link
+                href={urlPhotoContexte(id, navigation.suivante.id, parametres.annee!)}
+                className="lien-discret text-sm"
+              >
+                Photo suivante →
+              </Link>
+            ) : (
+              <span className="text-sm text-encre-tres-douce">Fin de la période</span>
+            )}
+          </nav>
+        )}
 
         {media.description && (
           <p className="mt-4 text-sm leading-relaxed text-encre-douce">{media.description}</p>
@@ -123,6 +163,20 @@ export default async function PagePhoto({ params }: ParamsPhoto) {
       </main>
     </>
   );
+}
+
+function lireAnneeContexte(parametres: { contexte?: string; annee?: string }): number | null | undefined {
+  if (parametres.contexte !== 'periode') return undefined;
+  if (parametres.annee === 'sans-date') return null;
+  return parametres.annee && /^\d{4}$/.test(parametres.annee) ? Number(parametres.annee) : undefined;
+}
+
+function urlPhotoContexte(personneId: string, mediaId: string, annee: string): string {
+  return `/personne/${personneId}/photo/${mediaId}?contexte=periode&annee=${annee}`;
+}
+
+function libellePeriode(annee: number | null | undefined): string {
+  return annee === null ? 'sans date' : `de ${annee}`;
 }
 
 function Message({ commentaire: c }: { commentaire: CommentaireFiche }) {

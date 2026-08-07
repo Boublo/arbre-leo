@@ -33,6 +33,12 @@ export type PhotoDetail = {
   commentaires: CommentaireFiche[];
 };
 
+export type NavigationPhoto = {
+  precedente: { id: string; titre: string } | null;
+  suivante: { id: string; titre: string } | null;
+  total: number;
+};
+
 /**
  * Une photo de l’album d’une personne, avec son fil de souvenirs.
  */
@@ -134,6 +140,53 @@ export async function chargerPhotoPersonne(
       : undefined,
     commentaires: assemblerFil(commentaires, nomAuteur),
   };
+}
+
+/** Photos voisines de la même personne et de la même année, sous les RLS existantes. */
+export async function chargerNavigationPhotoPersonne(
+  personneId: string,
+  mediaId: string,
+  annee: number | null,
+): Promise<NavigationPhoto | null> {
+  if (!estIdentifiant(personneId) || !estIdentifiant(mediaId)) return null;
+
+  const supabase = await creerClientServeur();
+  const { data: liens } = await supabase
+    .from('medias_personnes')
+    .select('media_id')
+    .eq('personne_id', personneId);
+  const ids = [...new Set((liens ?? []).map((l) => l.media_id))];
+  if (ids.length === 0) return null;
+
+  const { data: medias } = await supabase
+    .from('medias')
+    .select('id, titre, type, mime, annee, mois, jour')
+    .in('id', ids);
+  const photos = (medias ?? [])
+    .filter((media) => {
+      const estImage = media.mime ? media.mime.startsWith('image/') : media.type === 'photo';
+      return estImage && media.annee === annee;
+    })
+    .sort((a, b) => cleTriPhoto(a) - cleTriPhoto(b) || a.id.localeCompare(b.id));
+
+  const index = photos.findIndex((photo) => photo.id === mediaId);
+  if (index === -1) return null;
+  const etiquette = (photo: (typeof photos)[number]) => photo.titre ?? 'Photo sans titre';
+
+  return {
+    precedente: photos[index - 1]
+      ? { id: photos[index - 1].id, titre: etiquette(photos[index - 1]) }
+      : null,
+    suivante: photos[index + 1]
+      ? { id: photos[index + 1].id, titre: etiquette(photos[index + 1]) }
+      : null,
+    total: photos.length,
+  };
+}
+
+function cleTriPhoto(photo: { annee: number | null; mois: number | null; jour: number | null }): number {
+  if (photo.annee === null) return 9_999_999;
+  return photo.annee * 10_000 + (photo.mois ?? 0) * 100 + (photo.jour ?? 0);
 }
 
 function assemblerFil(

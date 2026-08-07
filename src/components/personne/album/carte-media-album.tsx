@@ -24,8 +24,13 @@ export function CarteMediaAlbum({
   const legende = [media.date, media.lieu, media.role].filter(Boolean).join(' · ');
   const reference = [media.depot, media.cote && `cote ${media.cote}`].filter(Boolean).join(' · ');
   const titre = media.titre ?? `${LIBELLE_MEDIA[media.type]} sans titre`;
+  // La page de détail garde le contexte de l'album : les flèches restent dans
+  // la même année au lieu de changer de période sans prévenir.
+  const contextePhoto = media.annee === null ? 'sans-date' : String(media.annee);
   const href =
-    personneId && media.estImage ? `/personne/${personneId}/photo/${media.id}` : media.url;
+    personneId && media.estImage
+      ? `/personne/${personneId}/photo/${media.id}?contexte=periode&annee=${contextePhoto}`
+      : media.url;
 
   const image =
     media.estImage && media.url ? (
