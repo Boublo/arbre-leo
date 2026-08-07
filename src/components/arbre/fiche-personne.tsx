@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import type { PersonneArbre } from '@/lib/arbre';
+import { urlImpressionArbre } from '@/lib/arbre-impression';
+import type { ModeArbre } from '@/lib/layout-arbre';
 import { coteDesBranches, LIBELLE_COTE, TON_COTE } from '@/lib/branches';
 import { PREUVES, trierParFiabilite } from '@/lib/preuves';
 import { VisionneusePhoto } from '@/components/photos/visionneuse-photo';
@@ -21,6 +23,7 @@ export function FichePersonne({
   onRepartirDIci,
   onFermer,
   peutDeposerPhoto = false,
+  modeArbre = 'ascendance',
 }: {
   personne: PersonneArbre;
   annees: string | null;
@@ -28,6 +31,7 @@ export function FichePersonne({
   onRepartirDIci: () => void;
   onFermer: () => void;
   peutDeposerPhoto?: boolean;
+  modeArbre?: ModeArbre;
 }) {
   const cote = coteDesBranches(personne.branches);
   const initiale = (personne.nomComplet.trim().charAt(0) || '?').toUpperCase();
@@ -197,6 +201,18 @@ export function FichePersonne({
             className="rounded-[var(--rayon-petit)] border border-bordure px-4 py-2.5 text-center text-sm text-encre transition hover:bg-fond-doux"
           >
             Ouvrir sa fiche complète
+          </Link>
+          <Link
+            href={urlImpressionArbre(personne.id, modeArbre)}
+            className="rounded-[var(--rayon-petit)] border border-bordure px-4 py-2.5 text-center text-sm text-encre transition hover:bg-fond-doux"
+          >
+            Imprimer son arbre
+          </Link>
+          <Link
+            href={`/personne/${personne.id}/imprimer`}
+            className="lien-discret text-center text-xs"
+          >
+            Fiche imprimable
           </Link>
           <Link
             href={`/chronologie?personne=${encodeURIComponent(personne.id)}`}

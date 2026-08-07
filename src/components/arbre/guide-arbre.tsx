@@ -78,6 +78,13 @@ function etapesGuide(nomFocus: string): EtapeGuide[] {
       cible: 'chercher',
     },
     {
+      id: 'imprimer',
+      icone: '🖨',
+      titre: 'Imprimer ou partager',
+      texte: 'La vue imprimable prépare un schéma lisible sur papier : réglez la profondeur, le format et lancez l’impression (ou le PDF) depuis votre navigateur. Raccourci : P.',
+      cible: 'imprimer',
+    },
+    {
       id: 'fin',
       icone: '✨',
       titre: 'C’est parti',

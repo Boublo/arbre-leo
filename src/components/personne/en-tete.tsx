@@ -3,6 +3,7 @@ import { Branches, Etiquette, ListePreuves } from '@/components/personne/blocs';
 import { BoutonCopierLien } from '@/components/personne/bouton-copier-lien';
 import { LIBELLE_SEXE, accorder } from '@/components/personne/vocabulaire';
 import type { Fiche } from '@/components/personne/donnees';
+import { urlImpressionArbre } from '@/lib/arbre-impression';
 
 /** L'identité : le nom, ce qu'on l'appelait, et d'où elle vient dans l'arbre. */
 export function EnTetePersonne({ fiche }: { fiche: Fiche }) {
@@ -82,7 +83,13 @@ export function EnTetePersonne({ fiche }: { fiche: Fiche }) {
           href={`/personne/${personne.id}/imprimer`}
           className="lien-discret text-sm"
         >
-          Version imprimable
+          Fiche imprimable
+        </Link>
+        <Link
+          href={urlImpressionArbre(personne.id, 'ascendance')}
+          className="lien-discret text-sm"
+        >
+          Imprimer son arbre
         </Link>
       </div>
     </header>

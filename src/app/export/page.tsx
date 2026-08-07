@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Navigation } from '@/components/navigation';
+import { chargerArbre, personneOuDefaut } from '@/lib/arbre';
+import { urlImpressionArbre } from '@/lib/arbre-impression';
 import { creerClientServeur } from '@/lib/supabase/server';
 
 /**
@@ -105,6 +107,10 @@ export default async function PageExport() {
   const nombrePersonnes = personnesRes.count ?? 0;
   const estAdmin = moiRes?.data?.role === 'admin';
 
+  const donnees = await chargerArbre({ signerPhotosPour: 'aucun' });
+  const focus = personneOuDefaut(donnees, undefined);
+  const lienImpression = focus ? urlImpressionArbre(focus.id, 'ascendance') : '/arbre/imprimer';
+
   return (
     <>
       <Navigation />
@@ -137,6 +143,42 @@ export default async function PageExport() {
               nombrePersonnes={nombrePersonnes}
             />
           ))}
+        </section>
+
+        <section aria-labelledby="impression-titre" className="mt-10">
+          <h2 id="impression-titre" className="text-xl">
+            Vue imprimable de l’arbre
+          </h2>
+          <article className="carte mt-4 flex flex-col gap-4 p-6 sm:p-7">
+            <p className="leading-relaxed text-encre-douce">
+              Pour un poster, un livret de famille ou une réunion, la vue imprimable
+              prépare un schéma lisible sur papier : choisissez la personne de départ,
+              la profondeur, le format paysage ou portrait, puis imprimez ou enregistrez
+              en PDF depuis votre navigateur.
+            </p>
+            <ul className="flex flex-col gap-1.5 text-sm text-encre-douce">
+              <li className="flex gap-2 leading-relaxed">
+                <span aria-hidden className="mt-2 h-1 w-1 shrink-0 rounded-full bg-encre-tres-douce" />
+                <span>Quatre modes de lecture — ascendance, famille, descendance, tout l’entourage.</span>
+              </li>
+              <li className="flex gap-2 leading-relaxed">
+                <span aria-hidden className="mt-2 h-1 w-1 shrink-0 rounded-full bg-encre-tres-douce" />
+                <span>Découpage automatique en plusieurs pages pour les grands arbres.</span>
+              </li>
+              <li className="flex gap-2 leading-relaxed">
+                <span aria-hidden className="mt-2 h-1 w-1 shrink-0 rounded-full bg-encre-tres-douce" />
+                <span>Export SVG et liste alphabétique des personnes affichées.</span>
+              </li>
+            </ul>
+            <p>
+              <Link
+                href={lienImpression}
+                className="inline-flex rounded-[var(--rayon-petit)] bg-accent px-4 py-2.5 font-medium text-accent-contraste transition hover:brightness-110"
+              >
+                Ouvrir la vue imprimable
+              </Link>
+            </p>
+          </article>
         </section>
 
         <aside className="carte mt-10 p-5 text-sm leading-relaxed text-encre-douce">
