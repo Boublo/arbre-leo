@@ -148,6 +148,15 @@
 | Correction | Les filiations qui portaient encore le libellé ordinaire « naturelle » alors que leur union parentale était déjà une hypothèse sont explicitement qualifiées « Hypothèse de filiation — à confirmer par un acte ». |
 | Vérification | Aucune filiation liée à une union hypothétique ne conserve désormais un libellé de filiation établie. |
 | Impact | Données privées uniquement ; aucune information familiale n’est placée dans le dépôt public. |
+
+## Lot DATA-TRACE-003 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Aligner les rattachements explicitement décrits comme hypothèses dans les notes de recherche. |
+| Correction | Les seuls liens concernés sont maintenant affichés comme hypothèses à confirmer par un acte ; les filiations déjà documentées dans les registres restent inchangées. |
+| Vérification | Aucun rattachement directement qualifié d’hypothétique par son foyer ne conserve un libellé de filiation établie. |
+| Impact | Données privées uniquement ; le dépôt public ne contient aucun nom, date ni acte familial. |
 | Garde-fou | Plusieurs couples candidats ne sont plus fusionnés visuellement en une liste qui semblerait attester plusieurs parents. Une filiation établie reste affichée séparément. |
 | Impact | Présentation seulement : aucune donnée publique, règle RLS, route ou permission n’est modifiée. |
 | Vérifications | Contrôle TypeScript et lint à exécuter avant publication. |
