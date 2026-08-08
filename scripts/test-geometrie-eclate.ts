@@ -1,203 +1,97 @@
-/**
- * Test géométrie mode « Tout » (éclaté) — pedigree partiel + couples (AUDIT M3).
- *
- *   npm run arbre:tsx -- scripts/test-geometrie-eclate.ts
- */
+/** Test géométrique synthétique du mode éclaté. */
 import type { DonneesArbre, PersonneArbre } from '../src/lib/arbre';
 import { disposerArbre } from '../src/lib/layout-arbre';
-import {
-  planifierLiens,
-  SEUIL_COUPLE_ADJACENT,
-  SEUIL_PONT_COUPLE,
-} from '../src/lib/geometrie-liens';
+import { planifierLiens, SEUIL_COUPLE_ADJACENT, SEUIL_PONT_COUPLE } from '../src/lib/geometrie-liens';
 
-const U_AIEUX = 'u_aieux';
-const U_PIERRE_SOPHIE = 'u_pierre_sophie';
-const U_PAUL = 'u_paul';
+const U_ASC = 'u_asc';
+const U_FOYER = 'u_foyer';
+const U_BRANCHE = 'u_branche';
 
-function personne(
-  id: string,
-  nom: string,
-  issuDe: string | null,
-  unions: string[] = []
-): PersonneArbre {
+function personne(id: string, libelle: string, issuDe: string | null, unions: string[] = []): PersonneArbre {
   return {
-    id,
-    codeGedcom: null,
-    prenoms: nom,
-    nom: null,
-    nomComplet: nom,
-    surnom: null,
-    sexe: 'M',
-    branches: ['paternelle'],
-    niveauxPreuve: [],
-    presumeVivant: false,
-    notes: null,
-    photoId: null,
-    photoUrl: null,
-    naissance: null,
-    deces: null,
-    profession: null,
-    unions,
-    issuDe,
-    inhumation: null,
-    descendanceIncomplete: false,
+    id, codeGedcom: null, prenoms: libelle, nom: null, nomComplet: libelle,
+    surnom: null, sexe: 'M', branches: ['test'], niveauxPreuve: [], presumeVivant: false,
+    notes: null, photoId: null, photoUrl: null, naissance: null, deces: null,
+    profession: null, unions, issuDe, inhumation: null, descendanceIncomplete: false,
   };
 }
 
-function construireGrapheLaura(): DonneesArbre {
+function construireGraphe(): DonneesArbre {
   const personnes = new Map<string, PersonneArbre>([
-    ['gp1', personne('gp1', 'Aïeul paternel', null, [U_AIEUX])],
-    ['gp2', personne('gp2', 'Aïeule paternelle', null, [U_AIEUX])],
-    ['pierre', personne('pierre', 'Pierre', U_AIEUX, [U_PIERRE_SOPHIE])],
-    ['paul', personne('paul', 'Paul', U_AIEUX, [U_PAUL])],
-    ['sophie', personne('sophie', 'Sophie', null, [U_PIERRE_SOPHIE])],
-    ['laura', personne('laura', 'Laura', U_PIERRE_SOPHIE)],
-    ['leo', personne('leo', 'Léo', U_PIERRE_SOPHIE)],
-    ['julie', personne('julie', 'Julie', U_PAUL)],
+    ['a1', personne('a1', 'Ascendant un', null, [U_ASC])],
+    ['a2', personne('a2', 'Ascendant deux', null, [U_ASC])],
+    ['parent_a', personne('parent_a', 'Parent A', U_ASC, [U_FOYER])],
+    ['parent_b', personne('parent_b', 'Parent B', U_ASC, [U_BRANCHE])],
+    ['conjoint', personne('conjoint', 'Conjoint', null, [U_FOYER])],
+    ['focus', personne('focus', 'Focus', U_FOYER)],
+    ['fratrie', personne('fratrie', 'Fratrie', U_FOYER)],
+    ['cousin', personne('cousin', 'Cousin', U_BRANCHE)],
   ]);
-
   const unions = new Map([
-    [
-      U_AIEUX,
-      {
-        id: U_AIEUX,
-        conjointA: 'gp1',
-        conjointB: 'gp2',
-        enfants: ['pierre', 'paul'],
-        mariage: null,
-      },
-    ],
-    [
-      U_PIERRE_SOPHIE,
-      {
-        id: U_PIERRE_SOPHIE,
-        conjointA: 'pierre',
-        conjointB: 'sophie',
-        enfants: ['laura', 'leo'],
-        mariage: null,
-      },
-    ],
-    [
-      U_PAUL,
-      {
-        id: U_PAUL,
-        conjointA: 'paul',
-        conjointB: null,
-        enfants: ['julie'],
-        mariage: null,
-      },
-    ],
+    [U_ASC, { id: U_ASC, conjointA: 'a1', conjointB: 'a2', enfants: ['parent_a', 'parent_b'], mariage: null }],
+    [U_FOYER, { id: U_FOYER, conjointA: 'parent_a', conjointB: 'conjoint', enfants: ['focus', 'fratrie'], mariage: null }],
+    [U_BRANCHE, { id: U_BRANCHE, conjointA: 'parent_b', conjointB: null, enfants: ['cousin'], mariage: null }],
   ]);
-
   const parents = new Map([
-    ['pierre', ['gp1', 'gp2']],
-    ['paul', ['gp1', 'gp2']],
-    ['laura', ['pierre', 'sophie']],
-    ['leo', ['pierre', 'sophie']],
-    ['julie', ['paul']],
+    ['parent_a', ['a1', 'a2']], ['parent_b', ['a1', 'a2']],
+    ['focus', ['parent_a', 'conjoint']], ['fratrie', ['parent_a', 'conjoint']], ['cousin', ['parent_b']],
   ]);
-
   const enfants = new Map([
-    ['gp1', ['pierre', 'paul']],
-    ['gp2', ['pierre', 'paul']],
-    ['pierre', ['laura', 'leo']],
-    ['sophie', ['laura', 'leo']],
-    ['paul', ['julie']],
-    ['laura', []],
-    ['leo', []],
-    ['julie', []],
+    ['a1', ['parent_a', 'parent_b']], ['a2', ['parent_a', 'parent_b']],
+    ['parent_a', ['focus', 'fratrie']], ['conjoint', ['focus', 'fratrie']],
+    ['parent_b', ['cousin']], ['focus', []], ['fratrie', []], ['cousin', []],
   ]);
-
   return { personnes, unions, parents, enfants };
 }
 
 function echouer(messages: string[]): never {
   console.error('Échec test géométrie éclatée :\n');
-  for (const m of messages) console.error('  • ' + m);
+  for (const message of messages) console.error('  • ' + message);
   process.exit(1);
 }
 
-const donnees = construireGrapheLaura();
-const disposition = disposerArbre(donnees, 'laura', 'eclate');
-const noeudParId = new Map(disposition.noeuds.map((n) => [n.personneId, n]));
-
-const pierre = noeudParId.get('pierre');
-const sophie = noeudParId.get('sophie');
-const laura = noeudParId.get('laura');
-const leo = noeudParId.get('leo');
-const gp1 = noeudParId.get('gp1');
-const gp2 = noeudParId.get('gp2');
-
+const donnees = construireGraphe();
+const disposition = disposerArbre(donnees, 'focus', 'eclate');
+const noeudParId = new Map(disposition.noeuds.map((noeud) => [noeud.personneId, noeud]));
+const parentA = noeudParId.get('parent_a');
+const conjoint = noeudParId.get('conjoint');
+const focus = noeudParId.get('focus');
+const fratrie = noeudParId.get('fratrie');
+const a1 = noeudParId.get('a1');
+const a2 = noeudParId.get('a2');
 const erreurs: string[] = [];
 
-if (!pierre || !sophie || !laura || !leo || !gp1 || !gp2) {
-  echouer(['Nœuds manquants en mode éclaté (Laura focus).']);
-}
-
-// Couples atomiques sur même rangée BFS
-if (pierre!.rang === sophie!.rang) {
-  const dist = Math.abs(pierre!.x - sophie!.x);
-  if (dist > SEUIL_COUPLE_ADJACENT) {
-    erreurs.push(
-      `Couple Pierre–Sophie trop éloignés en éclaté : ${Math.round(dist)} px > ${SEUIL_COUPLE_ADJACENT}`
-    );
-  }
-  if (leo!.rang === pierre!.rang) {
-    const xMin = Math.min(pierre!.x, sophie!.x);
-    const xMax = Math.max(pierre!.x, sophie!.x);
-    if (leo!.x > xMin && leo!.x < xMax) {
-      erreurs.push('Léo intercalé entre Pierre et Sophie en mode éclaté');
-    }
+if (!parentA || !conjoint || !focus || !fratrie || !a1 || !a2) echouer(['Nœuds synthétiques manquants.']);
+if (parentA!.rang === conjoint!.rang) {
+  const distance = Math.abs(parentA!.x - conjoint!.x);
+  if (distance > SEUIL_COUPLE_ADJACENT) erreurs.push(`Couple trop éloigné : ${Math.round(distance)} px`);
+  if (fratrie!.rang === parentA!.rang) {
+    const min = Math.min(parentA!.x, conjoint!.x);
+    const max = Math.max(parentA!.x, conjoint!.x);
+    if (fratrie!.x > min && fratrie!.x < max) erreurs.push('Fratrie intercalée dans le couple');
   }
 }
 
 const { segments } = planifierLiens(donnees, disposition.liens, noeudParId, 'eclate');
-
-const barresFratrie = segments.filter((s) => s.id.startsWith('fratrie-'));
-const couplesHoriz = segments.filter(
-  (s) =>
-    s.id.startsWith('couple-') &&
-    !s.id.includes('stub') &&
-    s.kind === 'line' &&
-    s.y1 === s.y2
+const barresFratrie = segments.filter((segment) => segment.id.startsWith('fratrie-'));
+const couplesHoriz = segments.filter((segment) =>
+  segment.id.startsWith('couple-') && !segment.id.includes('stub') &&
+  segment.kind === 'line' && segment.y1 === segment.y2
 );
-
-if (barresFratrie.length === 0) {
-  erreurs.push(
-    'Aucune barre de fratrie pedigree en mode éclaté — attendu pour unions à rang adjacent (M3)'
-  );
+if (barresFratrie.length === 0) erreurs.push('Aucune barre de fratrie pedigree');
+if (!barresFratrie.find((segment) => segment.id.includes(U_FOYER))) {
+  erreurs.push('Barre de fratrie du foyer manquante');
 }
-
-// Laura (rang 0) est enfant adjacent de Pierre/Sophie (rang 1) → doit être en pedigree
-const fratriePierreSophie = barresFratrie.find((s) => s.id.includes(U_PIERRE_SOPHIE));
-if (!fratriePierreSophie) {
-  erreurs.push(`Barre fratrie manquante pour l'union ${U_PIERRE_SOPHIE} (Laura sous parents)`);
-}
-
-// Pas de pont doré interminable
-for (const seg of couplesHoriz) {
-  if (seg.x1 === undefined || seg.x2 === undefined) continue;
-  const longueur = Math.abs(seg.x2 - seg.x1);
-  if (longueur > SEUIL_PONT_COUPLE) {
-    erreurs.push(`Barre couple ${seg.id} trop longue : ${Math.round(longueur)} px`);
+for (const segment of couplesHoriz) {
+  if (segment.x1 !== undefined && segment.x2 !== undefined && Math.abs(segment.x2 - segment.x1) > SEUIL_PONT_COUPLE) {
+    erreurs.push(`Barre de couple trop longue : ${segment.id}`);
   }
 }
-
-// Encore des L pour les cas non adjacents (ex. Léo même rang que parents)
-const orthogonaux = segments.filter(
-  (s) => s.kind === 'path' && (s.id.includes('->') || s.d)
-);
-if (orthogonaux.length === 0 && disposition.liens.length > 4) {
-  erreurs.push('Attendu : quelques L orthogonaux pour liens non adjacents / implexe');
-}
-
+const orthogonaux = segments.filter((segment) => segment.kind === 'path' && (segment.id.includes('->') || segment.d));
+if (orthogonaux.length === 0 && disposition.liens.length > 4) erreurs.push('Liens orthogonaux attendus manquants');
 if (erreurs.length > 0) echouer(erreurs);
 
-console.log('OK — test géométrie éclatée (pedigree partiel) :');
-console.log(`  • barres fratrie pedigree : ${barresFratrie.length}`);
-console.log(`  • barres couple : ${couplesHoriz.length}`);
-console.log(`  • L orthogonaux restants : ${orthogonaux.length}`);
-console.log(
-  `  • Pierre–Sophie : Δ=${Math.round(Math.abs(pierre!.x - sophie!.x))} px, rang=${pierre!.rang}`
-);
+console.log('OK — test géométrie éclatée synthétique :');
+console.log(`  • barres de fratrie : ${barresFratrie.length}`);
+console.log(`  • barres de couple : ${couplesHoriz.length}`);
+console.log(`  • liens orthogonaux : ${orthogonaux.length}`);

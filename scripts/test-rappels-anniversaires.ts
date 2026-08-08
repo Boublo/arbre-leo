@@ -37,15 +37,15 @@ function personne(partial: Partial<PersonneArbre> & { id: string; nomComplet: st
 // Lieu d'inhumation prioritaire
 const p1 = personne({
   id: 'a',
-  nomComplet: 'Alphonse SUIRE',
-  deces: { annee: 1934, mois: 8, jour: 9, texte: '', lieu: 'Bègues', lieuCourt: 'Bègues', lieuId: null },
+  nomComplet: 'Personne de test',
+  deces: { annee: 1934, mois: 8, jour: 9, texte: '', lieu: 'Lieu de test', lieuCourt: 'Lieu de test', lieuId: null },
   inhumation: {
     annee: 1934,
     mois: 8,
     jour: 10,
     texte: '',
-    lieu: 'Cimetière de Bègues, Landes',
-    lieuCourt: 'Cimetière de Bègues',
+    lieu: 'Cimetière de test',
+    lieuCourt: 'Cimetière de test',
     lieuId: 'lieu-1',
   },
 });
@@ -71,13 +71,13 @@ if (!entrees[0]?.lieuCommemoration?.includes('Cimetière')) {
 }
 
 const html = genererHtmlRappelAnniversaire({
-  prenomDestinataire: 'Marie',
+  prenomDestinataire: 'Destinataire',
   dateLabel: '9 août',
   entrees,
   lienCalendrier: 'https://arbre.modulyx.eu/aujourdhui',
   lienPreferences: 'https://arbre.modulyx.eu/notifications',
 });
-if (!html.includes('Cimetière de Bègues')) {
+if (!html.includes('Cimetière de test')) {
   throw new Error('Le HTML email doit mentionner le cimetière');
 }
 

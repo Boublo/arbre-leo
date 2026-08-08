@@ -292,6 +292,15 @@
 | Garde-fou | Le candidat n’est ni fusionné, ni poussé, ni déployé ; la production et son historique de migrations restent intacts. |
 | Suite | Réconcilier le seul schéma `arbre` sur une cible isolée avant toute décision de publication ou de réécriture d’historique. |
 
+## Lot ROADMAP-GOV-007 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Retirer les exemples personnels résiduels du tip public. |
+| Correction | L’audit technique, les fixtures de géométrie et de rappels, ainsi que les commentaires concernés utilisent désormais des données synthétiques ou génériques. |
+| Vérifications | Garde-fous de l’arbre, géométrie, éclaté, rappels, rapport qualité, typecheck et lint rejoués avec succès ; audit différentiel à rejouer sur le commit final. |
+| Limite | Cette livraison ne réécrit pas l’historique Git et ne modifie aucune donnée Supabase. |
+
 ## Lot ROADMAP-QUALITY-002 — 8 août 2026
 
 | Champ | Détail |

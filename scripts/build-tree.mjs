@@ -108,8 +108,8 @@ const sources = models.flatMap((m) => m.model.sources);
 // ---------------------------------------------------------------------------
 // Rapprochement des doublons inter-branches
 // ---------------------------------------------------------------------------
-// David et Laura apparaissent des deux côtés : chacun est le point de jonction
-// de sa propre branche et le conjoint dans l'autre. On les fond en une personne.
+// Les personnes pivots peuvent apparaître des deux côtés : chacune est le point
+// de jonction de sa propre branche et le conjoint dans l'autre. On les fond.
 
 const byKey = new Map();
 for (const person of persons) {

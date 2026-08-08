@@ -1,201 +1,88 @@
-/**
- * Test géométrique Laura / Léo / Julie — exécute le vrai layout TypeScript.
- *
- *   npm run arbre:tsx -- scripts/test-geometrie-laura.ts
- */
+/** Test géométrique synthétique du mode famille. */
 import type { DonneesArbre, PersonneArbre } from '../src/lib/arbre';
 import { disposerArbre } from '../src/lib/layout-arbre';
 import { planifierLiens, SEUIL_COUPLE_ADJACENT, SEUIL_PONT_COUPLE } from '../src/lib/geometrie-liens';
 
 const SEUIL_RACCORD = 160;
+const U_ASC = 'u_asc';
+const U_FOYER = 'u_foyer';
+const U_BRANCHE = 'u_branche';
 
-const U_AIEUX = 'u_aieux';
-const U_PIERRE_SOPHIE = 'u_pierre_sophie';
-const U_PAUL = 'u_paul';
-
-function personne(
-  id: string,
-  nom: string,
-  issuDe: string | null,
-  unions: string[] = []
-): PersonneArbre {
+function personne(id: string, libelle: string, issuDe: string | null, unions: string[] = []): PersonneArbre {
   return {
-    id,
-    codeGedcom: null,
-    prenoms: nom,
-    nom: null,
-    nomComplet: nom,
-    surnom: null,
-    sexe: 'M',
-    branches: ['paternelle'],
-    niveauxPreuve: [],
-    presumeVivant: false,
-    notes: null,
-    photoId: null,
-    photoUrl: null,
-    naissance: null,
-    deces: null,
-    profession: null,
-    unions,
-    issuDe,
-    inhumation: null,
-    descendanceIncomplete: false,
+    id, codeGedcom: null, prenoms: libelle, nom: null, nomComplet: libelle,
+    surnom: null, sexe: 'M', branches: ['test'], niveauxPreuve: [], presumeVivant: false,
+    notes: null, photoId: null, photoUrl: null, naissance: null, deces: null,
+    profession: null, unions, issuDe, inhumation: null, descendanceIncomplete: false,
   };
 }
 
-function construireGrapheLaura(): DonneesArbre {
+function construireGraphe(): DonneesArbre {
   const personnes = new Map<string, PersonneArbre>([
-    ['gp1', personne('gp1', 'Aïeul paternel', null, [U_AIEUX])],
-    ['gp2', personne('gp2', 'Aïeule paternelle', null, [U_AIEUX])],
-    ['pierre', personne('pierre', 'Pierre', U_AIEUX, [U_PIERRE_SOPHIE])],
-    ['paul', personne('paul', 'Paul', U_AIEUX, [U_PAUL])],
-    ['sophie', personne('sophie', 'Sophie', null, [U_PIERRE_SOPHIE])],
-    ['laura', personne('laura', 'Laura', U_PIERRE_SOPHIE)],
-    ['leo', personne('leo', 'Léo', U_PIERRE_SOPHIE)],
-    ['julie', personne('julie', 'Julie', U_PAUL)],
+    ['a1', personne('a1', 'Ascendant un', null, [U_ASC])],
+    ['a2', personne('a2', 'Ascendant deux', null, [U_ASC])],
+    ['parent_a', personne('parent_a', 'Parent A', U_ASC, [U_FOYER])],
+    ['parent_b', personne('parent_b', 'Parent B', U_ASC, [U_BRANCHE])],
+    ['conjoint', personne('conjoint', 'Conjoint', null, [U_FOYER])],
+    ['focus', personne('focus', 'Focus', U_FOYER)],
+    ['fratrie', personne('fratrie', 'Fratrie', U_FOYER)],
+    ['cousin', personne('cousin', 'Cousin', U_BRANCHE)],
   ]);
-
   const unions = new Map([
-    [
-      U_AIEUX,
-      {
-        id: U_AIEUX,
-        conjointA: 'gp1',
-        conjointB: 'gp2',
-        enfants: ['pierre', 'paul'],
-        mariage: null,
-      },
-    ],
-    [
-      U_PIERRE_SOPHIE,
-      {
-        id: U_PIERRE_SOPHIE,
-        conjointA: 'pierre',
-        conjointB: 'sophie',
-        enfants: ['laura', 'leo'],
-        mariage: null,
-      },
-    ],
-    [
-      U_PAUL,
-      {
-        id: U_PAUL,
-        conjointA: 'paul',
-        conjointB: null,
-        enfants: ['julie'],
-        mariage: null,
-      },
-    ],
+    [U_ASC, { id: U_ASC, conjointA: 'a1', conjointB: 'a2', enfants: ['parent_a', 'parent_b'], mariage: null }],
+    [U_FOYER, { id: U_FOYER, conjointA: 'parent_a', conjointB: 'conjoint', enfants: ['focus', 'fratrie'], mariage: null }],
+    [U_BRANCHE, { id: U_BRANCHE, conjointA: 'parent_b', conjointB: null, enfants: ['cousin'], mariage: null }],
   ]);
-
   const parents = new Map([
-    ['gp1', []],
-    ['gp2', []],
-    ['pierre', ['gp1', 'gp2']],
-    ['paul', ['gp1', 'gp2']],
-    ['sophie', []],
-    ['laura', ['pierre', 'sophie']],
-    ['leo', ['pierre', 'sophie']],
-    ['julie', ['paul']],
+    ['a1', []], ['a2', []], ['parent_a', ['a1', 'a2']], ['parent_b', ['a1', 'a2']],
+    ['conjoint', []], ['focus', ['parent_a', 'conjoint']], ['fratrie', ['parent_a', 'conjoint']], ['cousin', ['parent_b']],
   ]);
-
   const enfants = new Map([
-    ['gp1', ['pierre', 'paul']],
-    ['gp2', ['pierre', 'paul']],
-    ['pierre', ['laura', 'leo']],
-    ['sophie', ['laura', 'leo']],
-    ['paul', ['julie']],
-    ['laura', []],
-    ['leo', []],
-    ['julie', []],
+    ['a1', ['parent_a', 'parent_b']], ['a2', ['parent_a', 'parent_b']],
+    ['parent_a', ['focus', 'fratrie']], ['conjoint', ['focus', 'fratrie']],
+    ['parent_b', ['cousin']], ['focus', []], ['fratrie', []], ['cousin', []],
   ]);
-
   return { personnes, unions, parents, enfants };
 }
 
 function echouer(messages: string[]): never {
-  console.error('Échec test géométrie Laura :\n');
-  for (const m of messages) console.error('  • ' + m);
+  console.error('Échec test géométrie famille :\n');
+  for (const message of messages) console.error('  • ' + message);
   process.exit(1);
 }
 
-const donnees = construireGrapheLaura();
-const disposition = disposerArbre(donnees, 'laura', 'famille');
-const noeudParId = new Map(disposition.noeuds.map((n) => [n.personneId, n]));
-
-const pierre = noeudParId.get('pierre');
-const sophie = noeudParId.get('sophie');
-const laura = noeudParId.get('laura');
-const leo = noeudParId.get('leo');
-const julie = noeudParId.get('julie');
-
+const donnees = construireGraphe();
+const disposition = disposerArbre(donnees, 'focus', 'famille');
+const noeudParId = new Map(disposition.noeuds.map((noeud) => [noeud.personneId, noeud]));
+const parentA = noeudParId.get('parent_a');
+const conjoint = noeudParId.get('conjoint');
+const focus = noeudParId.get('focus');
+const fratrie = noeudParId.get('fratrie');
+const cousin = noeudParId.get('cousin');
+const parentB = noeudParId.get('parent_b');
 const erreurs: string[] = [];
 
-if (!pierre || !sophie || !laura || !leo || !julie) {
-  echouer(['Nœuds manquants dans la disposition famille (Laura focus).']);
-}
-
-const distCouple = Math.abs(pierre!.x - sophie!.x);
-const paul = noeudParId.get('paul');
-
-const { segments } = planifierLiens(
-  donnees,
-  disposition.liens,
-  noeudParId,
-  'famille'
-);
-for (const seg of segments) {
-  if (
-    seg.id.startsWith('couple-') &&
-    seg.kind === 'line' &&
-    seg.x1 !== undefined &&
-    seg.x2 !== undefined &&
-    seg.y1 === seg.y2
-  ) {
-    const longueur = Math.abs(seg.x2 - seg.x1);
-    if (longueur > SEUIL_PONT_COUPLE) {
-      erreurs.push(
-        `Barre dorée horizontale ${seg.id} : ${Math.round(longueur)} px > ${SEUIL_PONT_COUPLE} px`
-      );
-    }
+if (!parentA || !conjoint || !focus || !fratrie || !cousin || !parentB) echouer(['Nœuds synthétiques manquants.']);
+const distanceCouple = Math.abs(parentA!.x - conjoint!.x);
+const { segments } = planifierLiens(donnees, disposition.liens, noeudParId, 'famille');
+for (const segment of segments) {
+  if (segment.id.startsWith('couple-') && segment.kind === 'line' && segment.x1 !== undefined && segment.x2 !== undefined && segment.y1 === segment.y2) {
+    if (Math.abs(segment.x2 - segment.x1) > SEUIL_PONT_COUPLE) erreurs.push(`Barre de couple trop longue : ${segment.id}`);
   }
 }
+if (distanceCouple > SEUIL_COUPLE_ADJACENT) erreurs.push(`Couple trop éloigné : ${Math.round(distanceCouple)} px`);
+const minCouple = Math.min(parentA!.x, conjoint!.x);
+const maxCouple = Math.max(parentA!.x, conjoint!.x);
+if (parentB!.x > minCouple && parentB!.x < maxCouple) erreurs.push('Branche voisine intercalée dans le couple');
 
-// AUDIT M1 : couple atomique — personne entre les époux, distance courte.
-if (distCouple > SEUIL_COUPLE_ADJACENT) {
-  erreurs.push(
-    `Couple Pierre–Sophie trop éloignés : ${Math.round(distCouple)} px > ${SEUIL_COUPLE_ADJACENT} px (doit être collé)`
-  );
-}
-if (paul) {
-  const xMin = Math.min(pierre!.x, sophie!.x);
-  const xMax = Math.max(pierre!.x, sophie!.x);
-  if (paul.x > xMin && paul.x < xMax) {
-    erreurs.push(
-      `Paul (x=${Math.round(paul.x)}) est intercalé entre Pierre et Sophie — couple non atomique`
-    );
-  }
-}
-
-const centreParents = (pierre!.x + sophie!.x) / 2;
-const centreEnfants = (laura!.x + leo!.x) / 2;
-const deltaRaccord = Math.abs(centreParents - centreEnfants);
-if (deltaRaccord > SEUIL_RACCORD) {
-  erreurs.push(
-    `Raccord parents→Laura/Léo : Δx = ${Math.round(deltaRaccord)} px > ${SEUIL_RACCORD} px`
-  );
-}
-
-if (leo!.lien !== 'collateral') {
-  erreurs.push(`Léo devrait être « collateral », obtenu « ${leo!.lien} »`);
-}
-if (julie!.lien !== 'cousin') {
-  erreurs.push(`Julie devrait être « cousin », obtenu « ${julie!.lien} »`);
-}
-
+const centreParents = (parentA!.x + conjoint!.x) / 2;
+const centreEnfants = (focus!.x + fratrie!.x) / 2;
+if (Math.abs(centreParents - centreEnfants) > SEUIL_RACCORD) erreurs.push('Raccord parents-enfants trop long');
+if (fratrie!.lien !== 'collateral') erreurs.push(`Lien fratrie inattendu : ${fratrie!.lien}`);
+if (cousin!.lien !== 'cousin') erreurs.push(`Lien cousin inattendu : ${cousin!.lien}`);
 if (erreurs.length > 0) echouer(erreurs);
 
-console.log('OK — test géométrie Laura (layout réel) :');
-console.log(`  • couple Pierre–Sophie : ${Math.round(distCouple)} px`);
-console.log(`  • raccord parents/enfants : ${Math.round(deltaRaccord)} px`);
-console.log(`  • Léo = ${leo!.lien}, Julie = ${julie!.lien}`);
+console.log('OK — test géométrie famille synthétique :');
+console.log(`  • couple : ${Math.round(distanceCouple)} px`);
+console.log(`  • raccord parents-enfants : ${Math.round(Math.abs(centreParents - centreEnfants))} px`);
+console.log(`  • liens : fratrie=${fratrie!.lien}, cousin=${cousin!.lien}`);
