@@ -6,6 +6,12 @@
 > lecture pour un autre agent. Cette passation reste la référence pour la
 > recherche généalogique et le versement d’une pièce.
 
+> **Arrêt P0 confidentialité :** ce document et certaines migrations historiques
+> font partie du périmètre à assainir. Ne recopier aucun de leurs éléments dans
+> une nouvelle issue, un log, une documentation ou une branche publique ; ne pas
+> modifier les migrations, réécrire Git ou pousser en production sans la
+> validation du propriétaire et le [plan de remédiation](REMEDIATION_CONFIDENTIALITE.md).
+
 Vous reprenez une enquête généalogique en cours. Cette page est faite pour être
 lue en dix minutes : elle dit où nous en sommes, ce qui reste à trouver, et
 surtout **comment verser proprement en base ce que vous découvrirez**.

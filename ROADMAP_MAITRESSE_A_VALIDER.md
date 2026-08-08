@@ -224,6 +224,7 @@ Les identifiants réels sont résolus après l’extraction, exclusivement par l
 | Définir les cas de parent unique / adoption / familles recomposées | Atelier métier avant ADD-002 | extensions de relation |
 | Créer une session de démonstration fictive | Oui, sans données réelles | validations UX et E2E |
 | Définir une politique de conservation des sauvegardes | Oui | OPS-001 |
+| Autoriser le plan P0 de confidentialité | Décision écrite avant toute purge ou réécriture | assainissement du dépôt et future CI de confidentialité |
 
 ## Risques et garde-fous
 
@@ -239,7 +240,7 @@ Les identifiants réels sont résolus après l’extraction, exclusivement par l
 
 ## Guide de reprise pour un autre agent
 
-1. Lire ce fichier, puis [CONVENTIONS.md](CONVENTIONS.md), [docs/PASSATION.md](docs/PASSATION.md) et [IMPLEMENTATION_LOG.md](IMPLEMENTATION_LOG.md).
+1. Lire ce fichier et le [plan P0 de confidentialité](docs/REMEDIATION_CONFIDENTIALITE.md), puis [CONVENTIONS.md](CONVENTIONS.md), [docs/PASSATION.md](docs/PASSATION.md) et [IMPLEMENTATION_LOG.md](IMPLEMENTATION_LOG.md). Le P0 interdit toute modification de migration, réécriture Git ou publication sans validation écrite du propriétaire.
 2. Vérifier `git status --short` et préserver les fichiers non suivis hors périmètre : `docs/emails-supabase.md` et `magic-link-email.html`.
 3. Lire le document spécifique du lot retenu, sans en déduire une autorisation de modifier les fichiers protégés, le schéma ou les données.
 4. Pour un lot d’ajout, lire d’abord `src/lib/types-base.ts`, `src/app/actions/personnes.ts`, `src/components/saisie/rattachement.tsx` et les règles RLS pertinentes.

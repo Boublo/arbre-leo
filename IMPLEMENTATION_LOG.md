@@ -257,6 +257,14 @@
 | Décision | Le branchement CI proposé est retiré : le rendre vert par exception générale aurait caché une fuite historique. Aucune migration ni historique Git n’a été modifié. |
 | Suite | Appliquer le [plan de remédiation](docs/REMEDIATION_CONFIDENTIALITE.md) uniquement après validation explicite du propriétaire. |
 
+## Lot ROADMAP-GOV-003 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Rendre le P0 de confidentialité impossible à manquer lors d’une reprise. |
+| Correction | La passation et la matrice de décisions renvoient maintenant explicitement au plan P0 et à son exigence d’autorisation écrite. |
+| Garde-fou | Aucun élément familial nouveau n’est recopié et aucune migration, révision Git ou donnée de production n’est modifiée. |
+
 ## Lot ROADMAP-QUALITY-002 — 8 août 2026
 
 | Champ | Détail |
