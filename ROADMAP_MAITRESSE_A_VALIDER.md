@@ -77,7 +77,7 @@ Les couches `B` à `G` doivent être utilisables **sans IA**. L’IA, si elle es
 | 1 | OPS-001 / DATA-001 | Sauvegarde-restauration exercée et rapport de qualité non destructif | GOV-001 | partiel : QLT-001 à 010, leur jeu fictif et son exécution locale sont vérifiés ; la CI Node 22 est configurée pour les rejouer. Une branche Supabase de test existe mais son déploiement de migrations est en échec ; elle ne peut pas encore servir à l’exercice de restauration. |
 | 2 | EXP-002 / EXP-003 | Récit par génération et voyage dans le temps v0 | DATA-001 | livré côté code : générations et porte temporelle vers la chronologie de lignée |
 | 3 | UX-002 / UX-003 | Recherche globale et fiche orientée vers l’exploration suivante | tests UI authentifiés | livré côté code : recherche RLS et UX-003 ; tests UI authentifiés à faire |
-| 4 | ADD-001 | Prototype déterministe : ajouter un frère / une sœur avec aperçu | DATA-001, jeux synthétiques | partiel : raccourci avec parents préremplis, aperçu de lien et signal d’homonymes classé par année et lieu livrés ; aperçu complet à concevoir |
+| 4 | ADD-001 | Prototype déterministe : ajouter un frère / une sœur avec aperçu | DATA-001, jeux synthétiques | partiel : raccourci avec parents préremplis, homonymes classés et aperçu dynamique des liens livrés ; le brouillon persistant reste à concevoir |
 | 5 | ADD-002 | Étendre l’ajout guidé aux parents, enfants et conjoints | ADD-001 validé | partiel : enfant rattaché à un foyer explicitement choisi, conjoint, père ou mère préremplis si aucun parent n’est connu ; raccourci sûr pour rattacher l’autre parent déjà saisi |
 | 6 | ADD-003 | Construction de branche et mode expert | ADD-002, UX de révision | partiel : parcours guidé sans écriture groupée livré ; brouillon persistant et mode expert restent à faire |
 | 7 | COP-001 | Copilote conversationnel en mode proposition locale | ADD-003, décision confidentialité | à faire |
@@ -167,6 +167,8 @@ Règles :
 - rôle contributeur, lecteur, administrateur, RLS ;
 - clavier, mobile 390/430 px, tablette, desktop ;
 - aucune donnée familiale réelle dans les tests.
+
+L’aperçu dynamique livré dans le formulaire récapitule parents, foyer, conjoint et enfants avant l’envoi. Il reste local au navigateur et répète qu’une proposition ne confirme aucun lien ni aucune preuve.
 
 #### ADD-002 : extensions déterministes
 

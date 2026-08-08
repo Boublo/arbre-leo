@@ -340,6 +340,15 @@
 | Vérifications | Typecheck, lint et les 14 garde-fous de l’arbre sont réussis. |
 | Suite | Le brouillon persistant, l’écriture groupée et le mode expert restent volontairement hors de ce premier lot. |
 
+## Lot ROADMAP-ADD-005 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Rendre les liens sélectionnés lisibles avant l’enregistrement d’une fiche. |
+| Correction | Le formulaire affiche désormais, en direct, les parents, foyer, conjoint et enfants proposés. |
+| Garde-fou | L’aperçu vit uniquement dans le navigateur et ne crée aucune relation ; il rappelle qu’une proposition ne remplace pas une preuve. |
+| Vérifications | Typecheck, lint et les 14 garde-fous de l’arbre sont réussis. |
+
 ## Lot ROADMAP-QUALITY-002 — 8 août 2026
 
 | Champ | Détail |

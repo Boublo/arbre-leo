@@ -45,11 +45,23 @@ export function Rattachement({
   const [pereId, setPereId] = useState(valeurs.pereId);
   const [mereId, setMereId] = useState(valeurs.mereId);
   const [conjointId, setConjointId] = useState(valeurs.conjointId);
+  const [unionParents, setUnionParents] = useState(valeurs.unionParents);
+  const [enfants, setEnfants] = useState(valeurs.enfants);
 
   const moi = soiMeme ? [soiMeme] : [];
 
   return (
     <div className="flex flex-col gap-6">
+      <ApercuRattachement
+        personnes={personnes}
+        unions={unions}
+        modeUnion={modeUnion}
+        unionParents={unionParents}
+        pereId={pereId}
+        mereId={mereId}
+        conjointId={conjointId}
+        enfants={enfants}
+      />
       <Bloc
         id="parents"
         legende="Ses parents"
@@ -89,7 +101,8 @@ export function Rattachement({
           <Selecteur
             label="Union des parents"
             name="unionParents"
-            defaultValue={valeurs.unionParents}
+            value={unionParents}
+            onChange={(event) => setUnionParents(event.target.value)}
             aide={
               unions.length === 0
                 ? 'Aucune union n’est encore enregistrée dans l’arbre.'
@@ -194,9 +207,66 @@ export function Rattachement({
           personnes={personnes}
           valeurs={valeurs.enfants}
           exclus={[...moi, pereId, mereId, conjointId].filter(Boolean)}
+          onChoix={setEnfants}
         />
       </Bloc>
     </div>
+  );
+}
+
+/** L’aperçu suit la saisie, mais ne déclenche aucune écriture. */
+function ApercuRattachement({
+  personnes,
+  unions,
+  modeUnion,
+  unionParents,
+  pereId,
+  mereId,
+  conjointId,
+  enfants,
+}: {
+  personnes: OptionPersonne[];
+  unions: OptionUnion[];
+  modeUnion: boolean;
+  unionParents: string;
+  pereId: string;
+  mereId: string;
+  conjointId: string;
+  enfants: string[];
+}) {
+  const parId = new Map(personnes.map((personne) => [personne.id, personne]));
+  const lignes: string[] = [];
+  const pere = parId.get(pereId);
+  const mere = parId.get(mereId);
+  const conjoint = parId.get(conjointId);
+  const union = unions.find((foyer) => foyer.id === unionParents);
+  const enfantsChoisis = enfants.map((id) => parId.get(id)).filter((p): p is OptionPersonne => Boolean(p));
+
+  if (modeUnion && union) lignes.push(`Filiation proposée via le foyer ${union.libelle}.`);
+  if (!modeUnion && (pere || mere)) {
+    lignes.push(`Parents proposés : ${[pere?.nomComplet, mere?.nomComplet].filter(Boolean).join(' et ')}.`);
+  }
+  if (conjoint) lignes.push(`Union proposée avec ${conjoint.nomComplet}.`);
+  if (enfantsChoisis.length > 0) {
+    lignes.push(`Enfants à rattacher : ${enfantsChoisis.map((enfant) => enfant.nomComplet).join(', ')}.`);
+  }
+
+  return (
+    <aside className="rounded-[var(--rayon)] border border-accent/30 bg-accent-clair p-4" aria-live="polite">
+      <h2 className="text-sm font-medium text-encre">Aperçu avant enregistrement</h2>
+      {lignes.length > 0 ? (
+        <ul className="mt-2 flex flex-col gap-1 text-sm leading-6 text-encre-douce">
+          {lignes.map((ligne) => <li key={ligne}>{ligne}</li>)}
+        </ul>
+      ) : (
+        <p className="mt-2 text-sm leading-6 text-encre-douce">
+          Aucun rattachement n’est proposé : cette fiche sera créée ou corrigée sans lien familial.
+        </p>
+      )}
+      <p className="mt-2 text-xs leading-5 text-encre-tres-douce">
+        Vérifiez chaque proposition : cet aperçu ne confirme aucun lien et ne remplace pas un acte.
+      </p>
+    </aside>
   );
 }
 

@@ -154,6 +154,7 @@ export function ChoixPersonnesMultiple({
   personnes,
   valeurs = [],
   exclus = [],
+  onChoix,
 }: {
   nom: string;
   label: string;
@@ -161,6 +162,7 @@ export function ChoixPersonnesMultiple({
   personnes: OptionPersonne[];
   valeurs?: string[];
   exclus?: string[];
+  onChoix?: (ids: string[]) => void;
 }) {
   const [selection, setSelection] = useState<string[]>(valeurs);
   const [recherche, setRecherche] = useState('');
@@ -202,6 +204,7 @@ export function ChoixPersonnesMultiple({
         ? precedent.filter((autre) => autre !== id)
         : [...precedent, id];
       synchroniserChampsCaches(suivante);
+      onChoix?.(suivante);
       return suivante;
     });
   }
