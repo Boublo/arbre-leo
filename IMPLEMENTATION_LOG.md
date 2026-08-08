@@ -248,6 +248,15 @@
 | Garde-fou | La CI conserve les variables Supabase factices ; elle ne reçoit aucune donnée ni identifiant familial. |
 | Suite | Vérifier le premier passage distant après publication ; l’exécution locale est déjà verte. |
 
+## Lot ROADMAP-GOV-002 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Auditer l’applicabilité du filtre de confidentialité au dépôt public entier. |
+| Constat | Le filtre relève des données familiales dans des migrations historiques déjà versionnées, ainsi que des fixtures et documents qui demandent une analyse séparée. |
+| Décision | Le branchement CI proposé est retiré : le rendre vert par exception générale aurait caché une fuite historique. Aucune migration ni historique Git n’a été modifié. |
+| Suite | Appliquer le [plan de remédiation](docs/REMEDIATION_CONFIDENTIALITE.md) uniquement après validation explicite du propriétaire. |
+
 ## Lot ROADMAP-QUALITY-002 — 8 août 2026
 
 | Champ | Détail |
