@@ -91,7 +91,7 @@ Les couches `B` à `G` doivent être utilisables **sans IA**. L’IA, si elle es
 - Terminer `OPS-001` : [runbook de sauvegarde/restauration](docs/RUNBOOK_SAUVEGARDE_RESTAURATION.md) et exercice de restauration isolé.
 - Terminer `DATA-001` : [contrat de rapport qualité](docs/CONTRAT_RAPPORT_QUALITE.md), seuils et jeux de données fictifs.
 - Rejouer CI/E2E sous Node 22 ; ne pas modifier les dépendances pour contourner un environnement local dégradé.
-- Le test qualité utilise désormais une dépendance déclarée et un lancement compatible Windows : il passe localement le 8 août et est inclus dans la CI Node 22. Vérifier sa première exécution distante, puis rejouer l’E2E avant de clore DATA-001.
+- Le test qualité et les 14 garde-fous de l’arbre utilisent désormais une dépendance déclarée et un lancement compatible Windows : ils passent localement le 8 août et sont inclus dans la CI Node 22. Vérifier leur première exécution distante, puis rejouer l’E2E avant de clore DATA-001.
 - État vérifié le 8 août : une branche Supabase `e2e`, sans données de production, est active mais signale `MIGRATIONS_FAILED`. Ne pas la réparer, la réinitialiser ni y restaurer de données sans un lot explicite ; elle ne remplit donc pas encore le prérequis de cible isolée du runbook.
 - Pour l’exercice OPS-001, le propriétaire doit désigner une cible isolée saine (branche réparée ou nouveau projet), préciser si un export réel peut y être restauré et autoriser l’opération. Aucune donnée familiale ne doit être copiée dans le dépôt ni dans une branche de test sans cet accord.
 - Créer une session de démonstration sans données familiales réelles pour les tests UI mobile, tablette et desktop.

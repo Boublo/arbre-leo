@@ -27,6 +27,8 @@ jobs:
 
       - run: npm run arbre:test-qualite
 
+      - run: npm run arbre:verifier
+
       - run: npm run build
 
   e2e-mobile:

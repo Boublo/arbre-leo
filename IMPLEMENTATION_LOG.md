@@ -239,6 +239,15 @@
 | Garde-fou | Seul le démarrage du test est ajusté : les assertions de géométrie, de qualité et de rappels restent inchangées. |
 | Vérifications | Les 14 garde-fous de l’arbre, géométrie, éclaté, rappels, rapport qualité, typecheck et lint ont été rejoués avec succès. |
 
+## Lot ROADMAP-CI-001 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Faire rejouer les garde-fous de l’arbre par le contrôle général Node 22. |
+| Correction | Après le rapport qualité fictif, la CI exécute maintenant les 14 garde-fous de l’arbre avant la construction applicative. |
+| Garde-fou | La CI conserve les variables Supabase factices ; elle ne reçoit aucune donnée ni identifiant familial. |
+| Suite | Vérifier le premier passage distant après publication ; l’exécution locale est déjà verte. |
+
 ## Lot ROADMAP-QUALITY-002 — 8 août 2026
 
 | Champ | Détail |
