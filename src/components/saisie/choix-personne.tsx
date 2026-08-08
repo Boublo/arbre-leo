@@ -199,14 +199,12 @@ export function ChoixPersonnesMultiple({
   }, [selection, nom]);
 
   function basculer(id: string) {
-    setSelection((precedent) => {
-      const suivante = precedent.includes(id)
-        ? precedent.filter((autre) => autre !== id)
-        : [...precedent, id];
-      synchroniserChampsCaches(suivante);
-      onChoix?.(suivante);
-      return suivante;
-    });
+    const suivante = selection.includes(id)
+      ? selection.filter((autre) => autre !== id)
+      : [...selection, id];
+    setSelection(suivante);
+    synchroniserChampsCaches(suivante);
+    onChoix?.(suivante);
   }
 
   return (
