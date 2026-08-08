@@ -1,6 +1,6 @@
 # Candidat local d’assainissement
 
-**Branche :** `prep/assainissement-confidentialite`  
+**Branche :** `prep/assainissement-confidentialite`
 **Statut :** préparation locale uniquement — ne pas fusionner, pousser ou déployer.
 
 ## Portée du candidat
