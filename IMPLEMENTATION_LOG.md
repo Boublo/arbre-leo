@@ -131,3 +131,13 @@
 | Risque résiduel | Les contrôles qui dépendent des paquets non matérialisés doivent être rejoués dans Node 22 / GitHub Actions avant un lot de code. |
 | Rollback | Supprimer les trois documents de ce lot ; aucun état applicatif ou distant n’est à restaurer. |
 | Commit | `docs: établir la baseline de fiabilisation` (commit local du lot ; hash disponible dans l’historique Git). |
+
+## Lot DATA-TRACE-001 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Distinguer les filiations établies des filiations candidates dans une fiche. |
+| Correction | Chaque couple parental est conservé comme un groupe distinct. Les groupes marqués comme hypothèses sont affichés sous « Parents possibles » avec un avertissement explicite de confirmation par acte. |
+| Garde-fou | Plusieurs couples candidats ne sont plus fusionnés visuellement en une liste qui semblerait attester plusieurs parents. Une filiation établie reste affichée séparément. |
+| Impact | Présentation seulement : aucune donnée publique, règle RLS, route ou permission n’est modifiée. |
+| Vérifications | Contrôle TypeScript et lint à exécuter avant publication. |

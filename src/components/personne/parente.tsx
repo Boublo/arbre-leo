@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { GrilleLiens, LienFiche, ListePreuves, Rien, Section } from '@/components/personne/blocs';
 import { LIBELLE_EVENEMENT } from '@/components/personne/vocabulaire';
-import type { Fiche, Foyer, LienPersonne, MembreFratrie } from '@/components/personne/donnees';
+import type { Fiche, FiliationFiche, Foyer, LienPersonne, MembreFratrie } from '@/components/personne/donnees';
 
 /**
  * La parenté, reconstituée depuis les unions et les filiations.
@@ -11,7 +11,10 @@ import type { Fiche, Foyer, LienPersonne, MembreFratrie } from '@/components/per
  * demi-sœurs, nés d'une autre union d'un des deux parents.
  */
 export function ParentePersonne({ fiche }: { fiche: Fiche }) {
-  const { parents, fratrie, foyers, natureFiliation } = fiche;
+  const { parents, filiations, fratrie, foyers, natureFiliation } = fiche;
+  const filiationsPossibles = filiations.filter((filiation) => estHypotheseFiliation(filiation.nature));
+  const filiationsEtablies = filiations.filter((filiation) => !estHypotheseFiliation(filiation.nature));
+  const parentsEtablis = filiationsEtablies.flatMap((filiation) => filiation.parents);
   const vide = parents.length === 0 && fratrie.length === 0 && foyers.length === 0;
 
   return (
@@ -32,7 +35,29 @@ export function ParentePersonne({ fiche }: { fiche: Fiche }) {
               </Link>
             </p>
           )}
-          {parents.length > 0 && (
+          {parentsEtablis.length > 0 && (
+            <Groupe titre="Parents" precision={natureFiliation && `Filiation ${natureFiliation}`}>
+              <GrilleLiens>
+                {parentsEtablis.map((p) => (
+                  <li key={p.id}>
+                    <LienFiche personne={p} />
+                  </li>
+                ))}
+              </GrilleLiens>
+            </Groupe>
+          )}
+
+          {filiationsPossibles.length > 0 && (
+            <Groupe titre="Parents possibles" precision="Hypothèses à confirmer par un acte">
+              <div className="flex flex-col gap-4">
+                {filiationsPossibles.map((filiation) => (
+                  <FiliationPossible key={filiation.id} filiation={filiation} />
+                ))}
+              </div>
+            </Groupe>
+          )}
+
+          {filiations.length === 0 && parents.length > 0 && (
             <Groupe titre="Parents" precision={natureFiliation && `Filiation ${natureFiliation}`}>
               <GrilleLiens>
                 {parents.map((p) => (
@@ -62,6 +87,21 @@ export function ParentePersonne({ fiche }: { fiche: Fiche }) {
         </div>
       )}
     </Section>
+  );
+}
+
+function FiliationPossible({ filiation }: { filiation: FiliationFiche }) {
+  return (
+    <div className="rounded-lg border border-bordure bg-fond-doux p-3">
+      {filiation.nature && <p className="mb-2 text-xs text-encre-douce">{filiation.nature}</p>}
+      <GrilleLiens>
+        {filiation.parents.map((parent) => (
+          <li key={parent.id}>
+            <LienFiche personne={parent} />
+          </li>
+        ))}
+      </GrilleLiens>
+    </div>
   );
 }
 
@@ -147,6 +187,10 @@ function Groupe({
 function mentionFratrie({ personne, demi }: MembreFratrie): string | undefined {
   if (!demi) return undefined;
   return motDemi(personne);
+}
+
+function estHypotheseFiliation(nature: string | null): boolean {
+  return Boolean(nature && /hypoth[eè]se|[àa] confirmer/i.test(nature));
 }
 
 function motDemi(personne: LienPersonne): string {

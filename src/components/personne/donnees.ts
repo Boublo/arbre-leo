@@ -69,6 +69,13 @@ export type EvenementFiche = {
 
 export type EnfantFiche = { personne: LienPersonne; nature: string | null };
 
+/** Un couple parental distinct : indispensable quand une filiation reste à établir. */
+export type FiliationFiche = {
+  id: string;
+  parents: LienPersonne[];
+  nature: string | null;
+};
+
 export type Foyer = {
   id: string;
   conjoint: LienPersonne | null;
@@ -156,6 +163,7 @@ export type Fiche = {
   inhumation: EvenementFiche | null;
   evenements: EvenementFiche[];
   parents: LienPersonne[];
+  filiations: FiliationFiche[];
   natureFiliation: string | null;
   fratrie: MembreFratrie[];
   foyers: Foyer[];
@@ -536,6 +544,16 @@ export async function chargerFiche(id: string): Promise<Fiche | null> {
     };
   });
 
+  // Une personne peut avoir plusieurs filiations candidates. On les conserve
+  // séparément afin de ne jamais présenter quatre parents comme un fait établi.
+  const filiations: FiliationFiche[] = unionsParentales
+    .map((union) => ({
+      id: union.id,
+      parents: liens(uniques([union.conjoint_a, union.conjoint_b]).filter((p) => p !== id)),
+      nature: preciserNature(filiationsSujet.find((f) => f.union_id === union.id)?.nature ?? null),
+    }))
+    .filter((filiation) => filiation.parents.length > 0);
+
   const fratrie: MembreFratrie[] = [
     ...liens(idsFratrie).map((personne) => ({ personne, demi: false })),
     ...liens(idsDemiFratrie)
@@ -587,7 +605,8 @@ export async function chargerFiche(id: string): Promise<Fiche | null> {
     inhumation: evenements.find((e) => e.type === 'inhumation') ?? null,
     evenements,
     parents: liens(idsParents),
-    natureFiliation: preciserNature(filiationsSujet[0]?.nature ?? null),
+    filiations,
+    natureFiliation: filiations.length === 1 ? filiations[0]?.nature ?? null : null,
     fratrie,
     foyers,
     sources,
