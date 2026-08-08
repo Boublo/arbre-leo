@@ -77,6 +77,11 @@ export function EnTetePersonne({ fiche }: { fiche: Fiche }) {
             Ce qui l’atteste
           </h2>
           <ListePreuves niveaux={personne.niveaux_preuve ?? []} />
+          {(personne.niveaux_preuve ?? []).includes('hypothese') && (
+            <p className="mt-2 text-sm text-encre-douce">
+              Certaines informations de cette fiche restent des hypothèses à confirmer par un acte.
+            </p>
+          )}
         </div>
       )}
 

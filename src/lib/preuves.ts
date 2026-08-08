@@ -43,7 +43,7 @@ export const PREUVES: Record<
   },
   hypothese: {
     libelle: 'Hypothèse',
-    explication: 'Déduction cohérente, encore à étayer.',
+    explication: 'Déduction cohérente, à confirmer par un acte ou une source équivalente.',
     ton: 'var(--alerte)',
     teinte: 'bg-alerte',
   },

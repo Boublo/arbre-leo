@@ -138,6 +138,7 @@
 | --- | --- |
 | Objet | Distinguer les filiations établies des filiations candidates dans une fiche. |
 | Correction | Chaque couple parental est conservé comme un groupe distinct. Les groupes marqués comme hypothèses sont affichés sous « Parents possibles » avec un avertissement explicite de confirmation par acte. |
+| Signalement global | Toute fiche portant le niveau « Hypothèse » rappelle désormais que certaines informations attendent une confirmation par acte ou source équivalente. |
 | Garde-fou | Plusieurs couples candidats ne sont plus fusionnés visuellement en une liste qui semblerait attester plusieurs parents. Une filiation établie reste affichée séparément. |
 | Impact | Présentation seulement : aucune donnée publique, règle RLS, route ou permission n’est modifiée. |
 | Vérifications | Contrôle TypeScript et lint à exécuter avant publication. |
