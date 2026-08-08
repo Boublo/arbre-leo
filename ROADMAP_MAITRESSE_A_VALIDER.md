@@ -79,7 +79,7 @@ Les couches `B` à `G` doivent être utilisables **sans IA**. L’IA, si elle es
 | 3 | UX-002 / UX-003 | Recherche globale et fiche orientée vers l’exploration suivante | tests UI authentifiés | livré côté code : recherche RLS et UX-003 ; tests UI authentifiés à faire |
 | 4 | ADD-001 | Prototype déterministe : ajouter un frère / une sœur avec aperçu | DATA-001, jeux synthétiques | partiel : raccourci avec parents préremplis, aperçu de lien et signal d’homonymes classé par année et lieu livrés ; aperçu complet à concevoir |
 | 5 | ADD-002 | Étendre l’ajout guidé aux parents, enfants et conjoints | ADD-001 validé | partiel : enfant rattaché à un foyer explicitement choisi, conjoint, père ou mère préremplis si aucun parent n’est connu ; raccourci sûr pour rattacher l’autre parent déjà saisi |
-| 6 | ADD-003 | Construction de branche et mode expert | ADD-002, UX de révision | à faire |
+| 6 | ADD-003 | Construction de branche et mode expert | ADD-002, UX de révision | préparé : les primitives existent ; le parcours unique reste à concevoir |
 | 7 | COP-001 | Copilote conversationnel en mode proposition locale | ADD-003, décision confidentialité | à faire |
 | 8 | COP-002 | Extraction de document / OCR optionnelle | COP-001, accord explicite fournisseur | à faire |
 | 9 | TRANS-001 | Exports, mode présentation, transmission et runbook | phases précédentes | à faire |
@@ -179,6 +179,18 @@ Après validation de `ADD-001` seulement :
 5. construire une petite branche à partir d’un couple.
 
 Chaque sous-cas est un lot distinct : pas de « moteur total » livré en une fois.
+
+#### ADD-003 : petite branche et mode expert
+
+Le modèle et les primitives existent déjà : création d’une personne, création ou réemploi d’un foyer, rattachement d’enfants existants, préremplissage depuis une fiche et aperçu explicite des liens proposés. Le lot restant est donc une **orchestration d’interface**, pas une nouvelle règle généalogique.
+
+- partir d’une fiche ou d’un foyer connu ;
+- réunir, dans un seul brouillon visible, adulte(s), enfant(s) et les rattachements proposés ;
+- laisser chaque personne incomplète tant qu’aucun fait n’est connu ;
+- afficher les contrôles de doublon et de date avant toute écriture ;
+- enregistrer seulement après validation humaine, en conservant les actions actuelles comme solution de repli.
+
+Le premier prototype n’écrira aucune branche complète en une seule opération : il préparera le brouillon et guidera l’utilisateur vers les enregistrements déjà protégés. Toute écriture groupée ou table de brouillon persistante exige une décision et une migration dédiées.
 
 ### Phase 4 — Copilote conversationnel
 

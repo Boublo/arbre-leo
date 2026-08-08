@@ -321,6 +321,15 @@
 | Garantie | Ce changement ne crée aucune permission, ne retire aucune vérification et ne change pas les résultats autorisés ; il optimise uniquement le plan d’exécution. |
 | Prérequis | Créer une migration dédiée, vérifier les policies avant/après et relancer les advisors sur une cible isolée ou après accord explicite pour la production. |
 
+## Lot ROADMAP-ADD-003 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Requalifier le périmètre réel de la construction guidée de petite branche. |
+| Constat | Les actions déterministes sont déjà présentes : fiche, foyer, conjoint, enfants, préremplissage depuis la fiche et aperçu des liens proposés. |
+| Décision | Le lot restant est un parcours de brouillon et de révision qui orchestre ces primitives ; il ne doit pas inventer une nouvelle règle de parenté ni une écriture automatique. |
+| Suite | Concevoir un seul scénario de brouillon, sans table persistante et sans écriture groupée, avant toute extension vers un mode expert. |
+
 ## Lot ROADMAP-QUALITY-002 — 8 août 2026
 
 | Champ | Détail |
