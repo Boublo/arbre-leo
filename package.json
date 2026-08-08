@@ -26,7 +26,7 @@
     "arbre:diag": "node scripts/diagnostic.mjs",
     "arbre:rappels": "node scripts/rappels-anniversaires.mjs",
     "arbre:test-rappels": "npx tsx scripts/test-rappels-anniversaires.ts",
-    "arbre:test-qualite": "npx tsx scripts/test-rapport-qualite.ts",
+    "arbre:test-qualite": "node --require ./scripts/tsx-windows-preload.cjs ./node_modules/tsx/dist/cli.mjs scripts/test-rapport-qualite.ts",
     "test": "npm run typecheck && npm run arbre:verifier",
     "typecheck": "next typegen && tsc --noEmit"
   },

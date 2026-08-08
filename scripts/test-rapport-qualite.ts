@@ -1,7 +1,7 @@
 /**
  * Jeu de données fictif du rapport de qualité.
  *
- * Exécution : npx tsx scripts/test-rapport-qualite.ts
+ * Exécution : npm run arbre:test-qualite
  *
  * Les noms, dates et identifiants ci-dessous sont inventés. Ce test vérifie
  * que les alertes restent de simples signaux lisibles, jamais des corrections.
@@ -155,7 +155,7 @@ const resume = resumerQualite(rapport, {
   genereLe: '2026-08-07T00:00:00.000Z',
   source: 'ci-fictive',
 });
-if (resume.couverture.naissanceConnue !== 8 || resume.couverture.preuveActeOuAnom !== 1) {
+if (resume.couverture.naissanceConnue !== 9 || resume.couverture.preuveActeOuAnom !== 1) {
   throw new Error('La couverture agrégée devrait compter les naissances et preuves fictives.');
 }
 if (resume.statut !== 'bloquant') {

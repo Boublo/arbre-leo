@@ -194,6 +194,15 @@
 | Garde-fou | Seules les sources qui attestent explicitement être des copies intégrales ont été requalifiées ; aucune relation familiale n’a été modifiée. |
 | Impact | Données privées uniquement ; aucune identité familiale n’est ajoutée au dépôt public. |
 
+## Lot ROADMAP-QUALITY-002 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Exécuter réellement le jeu de données fictif du rapport de qualité sous Windows. |
+| Correction | Le lancement du test évite désormais l’appel au profil Unix absent sous Windows ; l’assertion de couverture correspond aux neuf naissances connues du jeu fictif. |
+| Vérifications | Test qualité : réussi (14 alertes attendues, 1 doublon potentiel). Typecheck et lint : réussis. |
+| Suite | La validation CI/E2E sous Node 22 et l’exercice de restauration isolé restent des prérequis de clôture. |
+
 ## Lot ROADMAP-QUALITY-001 — 8 août 2026
 
 | Champ | Détail |
