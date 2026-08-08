@@ -184,6 +184,15 @@
 | Correction | Les copies du même extrait, auparavant étiquetées « mémoire familiale », sont désormais classées « acte » et la fiche concernée reflète ce niveau de preuve. |
 | Garde-fou | Seul le lien explicitement cité par l’extrait est confirmé ; les filiations concurrentes d’autres personnes restent des hypothèses jusqu’à lecture de leur propre acte. |
 | Impact | Données privées uniquement ; aucune identité familiale n’est ajoutée au dépôt public. |
+
+## Lot PROOF-ALIGNMENT-002 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Vérifier les sources explicitement décrites comme copies intégrales d’actes. |
+| Correction | Les copies intégrales concernées, précédemment étiquetées « mémoire familiale », sont maintenant classées « acte » et leurs fiches reflètent ce niveau. |
+| Garde-fou | Seules les sources qui attestent explicitement être des copies intégrales ont été requalifiées ; aucune relation familiale n’a été modifiée. |
+| Impact | Données privées uniquement ; aucune identité familiale n’est ajoutée au dépôt public. |
 | Garde-fou | Plusieurs couples candidats ne sont plus fusionnés visuellement en une liste qui semblerait attester plusieurs parents. Une filiation établie reste affichée séparément. |
 | Impact | Présentation seulement : aucune donnée publique, règle RLS, route ou permission n’est modifiée. |
 | Vérifications | Contrôle TypeScript et lint à exécuter avant publication. |
