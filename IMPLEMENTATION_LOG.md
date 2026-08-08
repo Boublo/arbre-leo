@@ -221,6 +221,24 @@
 | Garde-fou | Les scénarios authentifiés, RLS, médias et écritures ne sont pas déclarés validés ; leur préparation exige une cible isolée saine et des comptes inventés. |
 | Preuve | [Protocole de démonstration](docs/TESTS_DEMONSTRATION.md). |
 
+## Lot ROADMAP-PERF-001 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Rendre reproductible la première mesure de performance avant toute optimisation du graphe. |
+| Constat | Des gardes-fous statiques de chargement existent, mais aucun relevé chiffré de référence n’est encore consigné. |
+| Garde-fou | Le protocole ne contient aucun seuil arbitraire ni donnée familiale ; les sorties potentiellement privées du diagnostic restent hors Git. |
+| Preuve | [Protocole de baseline](docs/MESURE_PERFORMANCE.md). |
+
+## Lot ROADMAP-TEST-002 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Rendre exécutable la suite de garde-fous de l’arbre sur le poste Windows courant. |
+| Correction | Les tests TypeScript locaux et les vérificateurs qui les appellent passent par le lanceur `tsx` déclaré, compatible avec cet environnement. |
+| Garde-fou | Seul le démarrage du test est ajusté : les assertions de géométrie, de qualité et de rappels restent inchangées. |
+| Vérifications | Les 14 garde-fous de l’arbre, géométrie, éclaté, rappels, rapport qualité, typecheck et lint ont été rejoués avec succès. |
+
 ## Lot ROADMAP-QUALITY-002 — 8 août 2026
 
 | Champ | Détail |

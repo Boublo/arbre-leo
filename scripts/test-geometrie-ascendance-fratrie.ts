@@ -1,7 +1,7 @@
 /**
  * Test ascendance : focus + fratrie + parent(s) — traits qui touchent les cartes.
  *
- *   npx tsx scripts/test-geometrie-ascendance-fratrie.ts
+ *   npm run arbre:tsx -- scripts/test-geometrie-ascendance-fratrie.ts
  *
  * Régression août 2026 (Mathias / Loïck / Sandrine) : le trait de filiation
  * flottait au-dessus du parent sans le toucher, et le parent restait sous

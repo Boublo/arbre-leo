@@ -1,7 +1,7 @@
 /**
  * Test géométrie mode « Tout » (éclaté) — pedigree partiel + couples (AUDIT M3).
  *
- *   npx tsx scripts/test-geometrie-eclate.ts
+ *   npm run arbre:tsx -- scripts/test-geometrie-eclate.ts
  */
 import type { DonneesArbre, PersonneArbre } from '../src/lib/arbre';
 import { disposerArbre } from '../src/lib/layout-arbre';

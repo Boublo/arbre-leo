@@ -62,7 +62,12 @@ if (!geo.includes('yHautParents')) {
   process.exit(1);
 }
 
-const test = spawnSync('npx', ['--yes', 'tsx', 'scripts/test-geometrie-laura.ts'], {
+const test = spawnSync(process.execPath, [
+  '--require',
+  join(racine, 'scripts', 'tsx-windows-preload.cjs'),
+  join(racine, 'node_modules', 'tsx', 'dist', 'cli.mjs'),
+  'scripts/test-geometrie-laura.ts',
+], {
   cwd: racine,
   encoding: 'utf8',
   stdio: 'pipe',

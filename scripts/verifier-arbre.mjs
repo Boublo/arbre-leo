@@ -34,7 +34,17 @@ const echecs = [];
 
 for (const { cmd, label } of ETAPES) {
   process.stdout.write(`→ ${label}… `);
-  const result = spawnSync(cmd[0], cmd.slice(1), {
+  const estTestTsx = cmd[0] === 'npx' && cmd[1] === '--yes' && cmd[2] === 'tsx';
+  const programme = estTestTsx ? process.execPath : cmd[0];
+  const args = estTestTsx
+    ? [
+        '--require',
+        join(racine, 'scripts', 'tsx-windows-preload.cjs'),
+        join(racine, 'node_modules', 'tsx', 'dist', 'cli.mjs'),
+        cmd[3],
+      ]
+    : cmd.slice(1);
+  const result = spawnSync(programme, args, {
     cwd: racine,
     encoding: 'utf8',
     stdio: 'pipe',

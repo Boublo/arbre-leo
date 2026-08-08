@@ -1,6 +1,6 @@
 /**
  * Test unitaire léger — rappels et lieux de commémoration.
- *   npx tsx scripts/test-rappels-anniversaires.ts
+ *   npm run arbre:tsx -- scripts/test-rappels-anniversaires.ts
  */
 import type { PersonneArbre } from '../src/lib/arbre';
 import { genererHtmlRappelAnniversaire } from '../src/lib/email-rappel-anniversaire';

@@ -1,7 +1,7 @@
 /**
  * Test géométrique Laura / Léo / Julie — exécute le vrai layout TypeScript.
  *
- *   npx tsx scripts/test-geometrie-laura.ts
+ *   npm run arbre:tsx -- scripts/test-geometrie-laura.ts
  */
 import type { DonneesArbre, PersonneArbre } from '../src/lib/arbre';
 import { disposerArbre } from '../src/lib/layout-arbre';

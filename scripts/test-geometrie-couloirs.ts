@@ -2,7 +2,7 @@
  * Plusieurs unions sur une même rangée d'enfants : couloirs pedigree bornés
  * et réutilisés quand les groupes sont horizontalement disjoints.
  *
- *   npx tsx scripts/test-geometrie-couloirs.ts
+ *   npm run arbre:tsx -- scripts/test-geometrie-couloirs.ts
  */
 import type { DonneesArbre, PersonneArbre } from '../src/lib/arbre';
 import { ESPACEMENT_Y, HAUTEUR_NOEUD, LARGEUR_NOEUD, type NoeudArbre } from '../src/lib/layout-arbre';

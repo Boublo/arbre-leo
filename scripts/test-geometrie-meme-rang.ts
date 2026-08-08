@@ -2,7 +2,7 @@
  * Liens parent/enfant sur la même rangée (mode éclaté) : le connecteur
  * passe sous les cartes, pas à travers.
  *
- *   npx tsx scripts/test-geometrie-meme-rang.ts
+ *   npm run arbre:tsx -- scripts/test-geometrie-meme-rang.ts
  */
 import { HAUTEUR_NOEUD, type NoeudArbre } from '../src/lib/layout-arbre';
 import { segmentOrthogonal } from '../src/lib/geometrie-liens';

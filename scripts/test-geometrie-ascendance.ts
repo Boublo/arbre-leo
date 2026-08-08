@@ -1,7 +1,7 @@
 /**
  * Test ascendance profonde — chaîne d'ancêtres + piège sous-graphe BFS.
  *
- *   npx tsx scripts/test-geometrie-ascendance.ts
+ *   npm run arbre:tsx -- scripts/test-geometrie-ascendance.ts
  *
  * Prouve pourquoi /arbre doit envoyer le graphe complet : un sous-graphe
  * à profondeur 4 tronque la 5ᵉ génération et réduit rangMax.
