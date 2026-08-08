@@ -274,6 +274,15 @@
 | Garde-fou | Ce contrôle ne tolère pas de nouvel ajout sensible et ne prétend pas résoudre les données historiques déjà identifiées par le P0. |
 | Vérification | À rejouer dans la CI distante après publication ; le mode différentiel est vérifié localement sur une révision sans ajout sensible. |
 
+## Lot ROADMAP-GOV-005 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Préparer la réconciliation du P0 avec l’historique réellement appliqué en production. |
+| Constat | La production enregistre déjà les migrations de rattachement concernées et partage son projet avec une autre application. |
+| Garde-fou | L’inventaire opérationnel reste privé, ne contient aucune donnée familiale et ne lit aucune ligne de table ; aucune action Supabase n’a été exécutée. |
+| Suite | Préparer une copie Git assainie et une réconciliation du seul schéma `arbre`, sans pousser ni appliquer de migration. |
+
 ## Lot ROADMAP-QUALITY-002 — 8 août 2026
 
 | Champ | Détail |
