@@ -16,6 +16,10 @@ restent exclusivement dans les systèmes privés autorisés.
    `npm run typecheck`, `npm run lint` et `npm run arbre:verifier` pour l’arbre.
 5. Pour tout accès Supabase, travailler dans le schéma privé prévu par
    l’application, vérifier RLS et ne jamais réinitialiser un projet partagé.
+6. Pour une réunion familiale, un export ou le passage à un proche, suivre le
+   [runbook de transmission](RUNBOOK_TRANSMISSION.md), puis le
+   [runbook de sauvegarde et restauration](RUNBOOK_SAUVEGARDE_RESTAURATION.md)
+   si une copie doit être vérifiée ou restaurée.
 
 ## Contributions de données
 

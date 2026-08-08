@@ -82,7 +82,7 @@ Les couches `B` à `G` doivent être utilisables **sans IA**. L’IA, si elle es
 | 6 | ADD-003 | Construction de branche et mode expert | ADD-002, UX de révision | partiel : parcours guidé sans écriture groupée livré ; brouillon persistant et mode expert restent à faire |
 | 7 | COP-001 | Copilote conversationnel en mode proposition locale | ADD-003, décision confidentialité | partiel : guide local déterministe livré ; conversation libre et proposition structurée restent à faire |
 | 8 | COP-002 | Extraction de document / OCR optionnelle | COP-001, accord explicite fournisseur | à faire |
-| 9 | TRANS-001 | Exports, mode présentation, transmission et runbook | phases précédentes | partiel : exports, impression et premier lecteur de présentation livrés ; runbook de transmission à compléter |
+| 9 | TRANS-001 | Exports, mode présentation, transmission et runbook | phases précédentes | livré côté code et documentation : exports, impression, lecteur de présentation et runbook de transmission ; exercice familial à mener |
 
 ### Phase 0 — Gouvernance et qualité
 
@@ -278,6 +278,7 @@ Les identifiants réels sont résolus après l’extraction, exclusivement par l
 - [IMMERSIVE_GENEALOGY_VISION.md](IMMERSIVE_GENEALOGY_VISION.md) et [IMMERSIVE_ROADMAP.md](IMMERSIVE_ROADMAP.md) : transmission historique et vérité des sources.
 - [UX_UI_INTERACTION_AUDIT.md](UX_UI_INTERACTION_AUDIT.md) et [UX_NAVIGATION_MAP.md](UX_NAVIGATION_MAP.md) : parcours, interfaces et navigation.
 - [IMPLEMENTATION_LOG.md](IMPLEMENTATION_LOG.md) : décisions et lots effectivement livrés.
+- [runbook de transmission](docs/RUNBOOK_TRANSMISSION.md) : réunion familiale, partage prudent et passation privée.
 
 ## Approbation
 
