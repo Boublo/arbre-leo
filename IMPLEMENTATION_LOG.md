@@ -311,6 +311,16 @@
 | Suite | Optimiser les politiques RLS d’abord ; ajouter les index après mesure des requêtes ; ne supprimer aucun index sur le seul signal d’absence d’usage. |
 | Impact | Lecture seule : aucune donnée, permission, migration ou table de production n’est modifiée. |
 
+## Lot ROADMAP-PERF-003 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Préparer la correction des politiques RLS signalées par l’advisor, sans modifier Supabase. |
+| Constat | Les 29 alertes visées proviennent d’appels d’identité ou de contrôles de rôle constants évalués à chaque ligne. |
+| Correction préparée | Encapsuler seulement les expressions constantes dans un `select`, afin qu’elles soient évaluées une fois par requête. Les prédicats dépendant de la ligne, notamment ceux utilisant l’identifiant de la personne consultée, restent tels quels. |
+| Garantie | Ce changement ne crée aucune permission, ne retire aucune vérification et ne change pas les résultats autorisés ; il optimise uniquement le plan d’exécution. |
+| Prérequis | Créer une migration dédiée, vérifier les policies avant/après et relancer les advisors sur une cible isolée ou après accord explicite pour la production. |
+
 ## Lot ROADMAP-QUALITY-002 — 8 août 2026
 
 | Champ | Détail |

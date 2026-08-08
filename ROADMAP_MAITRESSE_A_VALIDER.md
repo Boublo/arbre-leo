@@ -102,6 +102,7 @@ Les couches `B` à `G` doivent être utilisables **sans IA**. L’IA, si elle es
 - Le périmètre actuel des fumées E2E et la préparation de cette session sont décrits dans le [protocole de démonstration](docs/TESTS_DEMONSTRATION.md). Ne pas présenter les fumées non authentifiées comme une validation RLS ou métier.
 - Mesurer les requêtes et le poids du graphe avant toute optimisation de performance, selon le [protocole de baseline](docs/MESURE_PERFORMANCE.md). Aucun seuil ne doit être inventé avant le premier relevé synthétique.
 - Contrôle Supabase du 8 août : la seule alerte de sécurité du schéma `arbre` concerne `rappels_envoyes`, volontairement sans policy et réservée au service serveur. Les prochaines améliorations sont les 29 politiques RLS à optimiser, puis les 26 clés étrangères sans index ; les 17 index non utilisés ne doivent pas être supprimés sans mesures réelles.
+- La correction RLS est préparée en lecture seule : encapsuler les appels constants d'identité et de rôle dans un `select` pour les évaluer une seule fois par requête, sans modifier les droits. Les contrôles qui dépendent de la ligne consultée restent inchangés. Cette correction exige une migration dédiée et un accord explicite avant application sur Supabase.
 
 **Critère de sortie :** un agent peut exécuter les tests prévus, expliquer les limites restantes et revenir en arrière sans données de production.
 
