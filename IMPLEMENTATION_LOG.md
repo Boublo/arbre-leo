@@ -1,5 +1,14 @@
 # Journal d’exécution
 
+## Lot TRANS-001 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Ouvrir un premier mode de présentation destiné à une réunion familiale. |
+| Correction | Une page dédiée parcourt au clavier les premiers repères datés de l’arbre, propose le plein écran et renvoie toujours vers la fiche détaillée. |
+| Garde-fou | Le lecteur ne crée ni lien, ni interprétation, ni export supplémentaire ; il ne reçoit que les données déjà autorisées par les politiques de lecture et rappelle la primauté des sources. |
+| Suite | Préparer le runbook de transmission et choisir, avec le propriétaire, les règles d’un futur parcours éditorial sélectionné manuellement. |
+
 ## Lot MAP-CONTEXT-001 — 8 août 2026
 
 | Champ | Détail |

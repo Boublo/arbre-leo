@@ -82,7 +82,7 @@ Les couches `B` à `G` doivent être utilisables **sans IA**. L’IA, si elle es
 | 6 | ADD-003 | Construction de branche et mode expert | ADD-002, UX de révision | partiel : parcours guidé sans écriture groupée livré ; brouillon persistant et mode expert restent à faire |
 | 7 | COP-001 | Copilote conversationnel en mode proposition locale | ADD-003, décision confidentialité | partiel : guide local déterministe livré ; conversation libre et proposition structurée restent à faire |
 | 8 | COP-002 | Extraction de document / OCR optionnelle | COP-001, accord explicite fournisseur | à faire |
-| 9 | TRANS-001 | Exports, mode présentation, transmission et runbook | phases précédentes | à faire |
+| 9 | TRANS-001 | Exports, mode présentation, transmission et runbook | phases précédentes | partiel : exports, impression et premier lecteur de présentation livrés ; runbook de transmission à compléter |
 
 ### Phase 0 — Gouvernance et qualité
 

@@ -181,6 +181,22 @@ export default async function PageExport() {
           </article>
         </section>
 
+        <section aria-labelledby="presentation-titre" className="mt-10">
+          <h2 id="presentation-titre" className="text-xl">Présenter l’histoire familiale</h2>
+          <article className="carte mt-4 flex flex-col gap-4 p-6 sm:p-7">
+            <p className="leading-relaxed text-encre-douce">
+              Pour raconter l’arbre à plusieurs sans manipuler le schéma, ouvrez le mode présentation.
+              Il propose une lecture chronologique de repères déjà connus, avec navigation au clavier et
+              plein écran. Chaque carte renvoie vers sa fiche : une belle histoire ne remplace jamais une source.
+            </p>
+            <p>
+              <Link href="/presentation" className="inline-flex rounded-[var(--rayon-petit)] bg-accent px-4 py-2.5 font-medium text-accent-contraste transition hover:brightness-110">
+                Ouvrir le mode présentation
+              </Link>
+            </p>
+          </article>
+        </section>
+
         <aside className="carte mt-10 p-5 text-sm leading-relaxed text-encre-douce">
           <h2 className="text-base text-encre">Ce qui n’est pas exporté à tout le monde</h2>
           <p className="mt-2">
