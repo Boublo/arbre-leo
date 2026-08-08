@@ -13,6 +13,8 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlc3QiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY0NTk5NTIwMCwiZXhwIjoxOTYxNTcxMjAwfQ.fake
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -20,6 +22,15 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      - name: Vérifier les ajouts sensibles
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            REVISION="${{ github.event.pull_request.base.sha }}"
+          else
+            REVISION="${{ github.event.before }}"
+          fi
+          node scripts/verifier-avant-commit.mjs --diff "$REVISION" --redact
 
       - run: npm run typecheck
 

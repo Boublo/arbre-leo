@@ -2,6 +2,7 @@
  * Filet de sécurité pré-commit pour « L'arbre de Léo ».
  *
  *   node scripts/verifier-avant-commit.mjs
+ *   node scripts/verifier-avant-commit.mjs --diff <révision> --redact
  *
  * Ce dépôt est public : rien de familial ne doit y entrer. Le `.gitignore` en
  * bloque déjà l'essentiel, ce script complète en relisant la version indexée
@@ -19,7 +20,9 @@
  *      base ou service portant un mot de passe en clair, clé API tierce.
  *
  * Le script sort en code 1 en cas de violation, en pointant le fichier et la
- * ligne. Sans staging, il ne fait rien.
+ * ligne. Sans staging, il ne fait rien. Le mode `--diff` analyse seulement
+ * les lignes ajoutées depuis une révision : il est prévu pour la CI et ne
+ * résout pas les données historiques déjà présentes dans le dépôt.
  *
  * Il peut être branché comme crochet git :
  *
@@ -139,6 +142,58 @@ function fichiersEnStaging() {
   }
 }
 
+/** Fichiers ajoutés, copiés ou modifiés depuis une révision Git. */
+function fichiersDepuis(revision) {
+  try {
+    const sortie = execFileSync(
+      'git',
+      ['diff', '--name-only', '--diff-filter=ACMR', revision, 'HEAD'],
+      { encoding: 'utf8' }
+    );
+    return sortie.split(/\r?\n/).filter(Boolean);
+  } catch (err) {
+    console.error("Impossible de lire le diff Git : " + (err.message ?? err));
+    process.exit(2);
+  }
+}
+
+/** Lignes ajoutées depuis une révision, groupées par fichier. */
+function lignesAjouteesDepuis(revision) {
+  let sortie;
+  try {
+    sortie = execFileSync(
+      'git',
+      ['diff', '--unified=0', '--no-ext-diff', '--diff-filter=ACMR', revision, 'HEAD', '--'],
+      { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 }
+    );
+  } catch (err) {
+    console.error("Impossible de lire les ajouts Git : " + (err.message ?? err));
+    process.exit(2);
+  }
+
+  const lignesParFichier = new Map();
+  let chemin = null;
+  let prochaineLigne = 1;
+
+  for (const ligne of sortie.split(/\r?\n/)) {
+    if (ligne.startsWith('+++ b/')) {
+      chemin = ligne.slice('+++ b/'.length);
+      if (!lignesParFichier.has(chemin)) lignesParFichier.set(chemin, []);
+      continue;
+    }
+    if (ligne.startsWith('@@')) {
+      const correspondance = /\+(\d+)(?:,\d+)?/.exec(ligne);
+      prochaineLigne = correspondance ? Number(correspondance[1]) : 1;
+      continue;
+    }
+    if (!chemin || !ligne.startsWith('+') || ligne.startsWith('+++')) continue;
+    lignesParFichier.get(chemin).push({ numero: prochaineLigne, texte: ligne.slice(1) });
+    prochaineLigne++;
+  }
+
+  return lignesParFichier;
+}
+
 /**
  * Lit la version *indexée* d'un fichier (celle qui va vraiment être commitée),
  * pas la copie de travail : entre `git add` et `git commit`, l'utilisateur a
@@ -160,8 +215,9 @@ function lireStaging(chemin) {
 // ---------------------------------------------------------------------------
 
 class Violations {
-  constructor() {
+  constructor({ redact = false } = {}) {
     this.liste = [];
+    this.redact = redact;
   }
   ajouter(chemin, ligne, message) {
     this.liste.push({ chemin, ligne, message });
@@ -172,7 +228,10 @@ class Violations {
   afficher() {
     for (const v of this.liste) {
       const position = v.ligne ? ':' + v.ligne : '';
-      console.error('  ' + v.chemin + position + '  ' + v.message);
+      console.error(
+        '  ' + v.chemin + position + '  ' +
+          (this.redact ? 'contenu sensible détecté' : v.message)
+      );
     }
   }
 }
@@ -207,14 +266,11 @@ function extrait(ligne, index, longueur = 60) {
 }
 
 /** Détection ligne par ligne. */
-function verifierContenu(chemin, contenu, violations) {
+function verifierLignes(chemin, lignes, violations) {
   const cheminNorm = chemin.replace(/\\/g, '/');
   const autorise = AUTORISES.has(cheminNorm);
-  const lignes = contenu.split(/\r?\n/);
 
-  for (let i = 0; i < lignes.length; i++) {
-    const ligne = lignes[i];
-    const num = i + 1;
+  for (const { numero: num, texte: ligne } of lignes) {
 
     // Secrets — jamais autorisés, y compris dans les fichiers de la liste blanche.
     if (RX_JWT.test(ligne)) {
@@ -274,12 +330,28 @@ function verifierContenu(chemin, contenu, violations) {
   }
 }
 
+function verifierContenu(chemin, contenu, violations) {
+  verifierLignes(
+    chemin,
+    contenu.split(/\r?\n/).map((texte, index) => ({ numero: index + 1, texte })),
+    violations
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Point d'entrée
 // ---------------------------------------------------------------------------
 
-const violations = new Violations();
-const fichiers = fichiersEnStaging();
+const indexDiff = process.argv.indexOf('--diff');
+const revision = indexDiff === -1 ? null : process.argv[indexDiff + 1];
+if (indexDiff !== -1 && (!revision || revision.startsWith('--'))) {
+  console.error('Usage CI : node scripts/verifier-avant-commit.mjs --diff <révision> [--redact]');
+  process.exit(2);
+}
+
+const violations = new Violations({ redact: process.argv.includes('--redact') });
+const fichiers = revision ? fichiersDepuis(revision) : fichiersEnStaging();
+const ajouts = revision ? lignesAjouteesDepuis(revision) : null;
 
 if (fichiers.length === 0) {
   console.log('Aucun fichier en staging — rien à vérifier.');
@@ -288,6 +360,10 @@ if (fichiers.length === 0) {
 
 for (const chemin of fichiers) {
   verifierChemin(chemin, violations);
+  if (revision) {
+    verifierLignes(chemin, ajouts.get(chemin) ?? [], violations);
+    continue;
+  }
   const contenu = lireStaging(chemin);
   if (contenu === null) continue;
   // Binaires : présence d'un octet nul dans les premiers ko.

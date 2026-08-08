@@ -265,6 +265,15 @@
 | Correction | La passation et la matrice de décisions renvoient maintenant explicitement au plan P0 et à son exigence d’autorisation écrite. |
 | Garde-fou | Aucun élément familial nouveau n’est recopié et aucune migration, révision Git ou donnée de production n’est modifiée. |
 
+## Lot ROADMAP-GOV-004 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Empêcher de nouvelles données sensibles d’entrer dans les changements soumis à la CI. |
+| Correction | Le filtre de confidentialité analyse maintenant les seules lignes ajoutées depuis la révision de base ; la CI masque tout détail si une alerte survient. |
+| Garde-fou | Ce contrôle ne tolère pas de nouvel ajout sensible et ne prétend pas résoudre les données historiques déjà identifiées par le P0. |
+| Vérification | À rejouer dans la CI distante après publication ; le mode différentiel est vérifié localement sur une révision sans ajout sensible. |
+
 ## Lot ROADMAP-QUALITY-002 — 8 août 2026
 
 | Champ | Détail |
