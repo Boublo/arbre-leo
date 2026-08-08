@@ -194,6 +194,15 @@
 | Garde-fou | Seules les sources qui attestent explicitement être des copies intégrales ont été requalifiées ; aucune relation familiale n’a été modifiée. |
 | Impact | Données privées uniquement ; aucune identité familiale n’est ajoutée au dépôt public. |
 
+## Lot RESEARCH-INSEE-001 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Compléter une piste de recherche au moyen d’un jeu de données public officiel. |
+| Correction | La source privée existante est maintenant reliée au jeu de données de l’Insee, et les événements qu’elle couvre portent explicitement le niveau de preuve « insee ». |
+| Garde-fou | Les données du fichier des décès précisent une identité et des dates ; elles ne prouvent ni parenté ni filiation. |
+| Impact | Données de recherche privées uniquement ; aucune identité familiale n’est ajoutée au dépôt public. |
+
 ## Lot RESEARCH-ACT-001 — 8 août 2026
 
 | Champ | Détail |
