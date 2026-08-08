@@ -139,6 +139,15 @@
 | Objet | Distinguer les filiations établies des filiations candidates dans une fiche. |
 | Correction | Chaque couple parental est conservé comme un groupe distinct. Les groupes marqués comme hypothèses sont affichés sous « Parents possibles » avec un avertissement explicite de confirmation par acte. |
 | Signalement global | Toute fiche portant le niveau « Hypothèse » rappelle désormais que certaines informations attendent une confirmation par acte ou source équivalente. |
+
+## Lot DATA-TRACE-002 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Cohérence des filiations reliées à un foyer déjà qualifié comme hypothèse. |
+| Correction | Les filiations qui portaient encore le libellé ordinaire « naturelle » alors que leur union parentale était déjà une hypothèse sont explicitement qualifiées « Hypothèse de filiation — à confirmer par un acte ». |
+| Vérification | Aucune filiation liée à une union hypothétique ne conserve désormais un libellé de filiation établie. |
+| Impact | Données privées uniquement ; aucune information familiale n’est placée dans le dépôt public. |
 | Garde-fou | Plusieurs couples candidats ne sont plus fusionnés visuellement en une liste qui semblerait attester plusieurs parents. Une filiation établie reste affichée séparément. |
 | Impact | Présentation seulement : aucune donnée publique, règle RLS, route ou permission n’est modifiée. |
 | Vérifications | Contrôle TypeScript et lint à exécuter avant publication. |
