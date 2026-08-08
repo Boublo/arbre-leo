@@ -212,6 +212,15 @@
 | Garde-fou | Aucune réparation, réinitialisation, restauration ou copie de donnée familiale n’a été exécutée. Une cible approuvée par le propriétaire et une autorisation écrite restent requises. |
 | Suite | Diagnostiquer l’échec sur un lot distinct, ou désigner une nouvelle cible isolée après validation du coût et du périmètre. |
 
+## Lot ROADMAP-TEST-001 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Rendre explicite la portée des tests E2E et la préparation d’une session de démonstration sans donnée familiale. |
+| Constat | Les fumées mobiles actuelles utilisent une configuration Supabase factice et contrôlent uniquement les écrans publics et redirections sans session. |
+| Garde-fou | Les scénarios authentifiés, RLS, médias et écritures ne sont pas déclarés validés ; leur préparation exige une cible isolée saine et des comptes inventés. |
+| Preuve | [Protocole de démonstration](docs/TESTS_DEMONSTRATION.md). |
+
 ## Lot ROADMAP-QUALITY-002 — 8 août 2026
 
 | Champ | Détail |

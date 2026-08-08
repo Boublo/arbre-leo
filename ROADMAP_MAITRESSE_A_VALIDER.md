@@ -26,7 +26,7 @@ La validation de cette roadmap autorise la préparation et les lots explicitemen
 | UX/UI | Audit, carte de navigation et premier lot photo plein écran livrés. | [audit UX](UX_UI_INTERACTION_AUDIT.md), [carte UX](UX_NAVIGATION_MAP.md), commit `bb54e63` |
 | Ajout de personne | Formulaire existant avec parents, union, conjoint, enfants, dates, lieux et preuves ; validation Zod, RLS et garde-fous de cohérence. | `src/components/saisie/formulaire-personne.tsx`, `src/components/saisie/rattachement.tsx`, `src/app/actions/personnes.ts` |
 | Assistant conversationnel | Non commencé. Aucun stockage de proposition, contrat d’API IA, fournisseur IA ni OCR n’est validé. | audit de cette consolidation |
-| Tests | Typecheck et lint passés pour les deux derniers lots. Les parcours authentifiés et E2E ne sont pas exécutés ici faute de session de démonstration. | [journal](IMPLEMENTATION_LOG.md) |
+| Tests | Typecheck et lint passés pour les deux derniers lots. Les fumées E2E existantes sont synthétiques et couvrent les écrans publics ; les parcours authentifiés attendent une session de démonstration isolée. | [protocole de démonstration](docs/TESTS_DEMONSTRATION.md), [journal](IMPLEMENTATION_LOG.md) |
 
 ## Le modèle à respecter
 
@@ -95,6 +95,7 @@ Les couches `B` à `G` doivent être utilisables **sans IA**. L’IA, si elle es
 - État vérifié le 8 août : une branche Supabase `e2e`, sans données de production, est active mais signale `MIGRATIONS_FAILED`. Ne pas la réparer, la réinitialiser ni y restaurer de données sans un lot explicite ; elle ne remplit donc pas encore le prérequis de cible isolée du runbook.
 - Pour l’exercice OPS-001, le propriétaire doit désigner une cible isolée saine (branche réparée ou nouveau projet), préciser si un export réel peut y être restauré et autoriser l’opération. Aucune donnée familiale ne doit être copiée dans le dépôt ni dans une branche de test sans cet accord.
 - Créer une session de démonstration sans données familiales réelles pour les tests UI mobile, tablette et desktop.
+- Le périmètre actuel des fumées E2E et la préparation de cette session sont décrits dans le [protocole de démonstration](docs/TESTS_DEMONSTRATION.md). Ne pas présenter les fumées non authentifiées comme une validation RLS ou métier.
 - Mesurer les requêtes et le poids du graphe avant toute optimisation de performance.
 
 **Critère de sortie :** un agent peut exécuter les tests prévus, expliquer les limites restantes et revenir en arrière sans données de production.
