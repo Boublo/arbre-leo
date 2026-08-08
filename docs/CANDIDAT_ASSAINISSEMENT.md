@@ -20,3 +20,13 @@ Les migrations `0025` à `0029` ne modifiaient pas le schéma ; elles contenaien
 2. Obtenir une autorisation explicite distincte avant toute réécriture de l’historique Git ou publication distante.
 3. Vérifier l’application avec des données fictives sur une cible isolée saine ; ne jamais utiliser la branche `e2e` actuellement en échec de migrations.
 4. Préserver les migrations et objets de l’autre application du projet Supabase partagé.
+
+## Vérification locale effectuée
+
+Le diff du candidat ne contient aucune erreur de format et le filtre de
+confidentialité ne détecte aucun ajout sensible. Les dépendances ne sont pas
+installées dans ce worktree, donc les tests applicatifs ne peuvent pas y être
+rejoués ici ; ils étaient verts sur `main` au point de départ du candidat.
+Avant toute proposition de fusion, installer les dépendances dans une copie
+isolée ou laisser la CI les installer, puis rejouer les contrôles sans lancer
+de migration ni de construction locale dans l’espace partagé.
