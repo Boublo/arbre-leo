@@ -193,6 +193,15 @@
 | Correction | Les copies intégrales concernées, précédemment étiquetées « mémoire familiale », sont maintenant classées « acte » et leurs fiches reflètent ce niveau. |
 | Garde-fou | Seules les sources qui attestent explicitement être des copies intégrales ont été requalifiées ; aucune relation familiale n’a été modifiée. |
 | Impact | Données privées uniquement ; aucune identité familiale n’est ajoutée au dépôt public. |
+
+## Lot RESEARCH-TRACE-001 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Convertir une référence d’acte non transcrite en chantier de recherche traçable. |
+| Correction | Le chantier privé précise l’acte à consulter, son objectif et sa limite : une simple référence ne confirme pas encore le lien indiqué dans les notes. |
+| Garde-fou | Aucune filiation ni niveau de preuve n’est modifié tant que l’acte n’a pas été consulté ou transcrit. |
+| Impact | Données de recherche privées uniquement ; aucune identité familiale n’est ajoutée au dépôt public. |
 | Garde-fou | Plusieurs couples candidats ne sont plus fusionnés visuellement en une liste qui semblerait attester plusieurs parents. Une filiation établie reste affichée séparément. |
 | Impact | Présentation seulement : aucune donnée publique, règle RLS, route ou permission n’est modifiée. |
 | Vérifications | Contrôle TypeScript et lint à exécuter avant publication. |
