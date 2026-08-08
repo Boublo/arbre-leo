@@ -175,6 +175,15 @@
 | Correction | Le chantier privé enregistre désormais le volume du registre et le contrôle négatif des premières images, afin que la reprise continue au bon endroit. |
 | Garde-fou | Un contrôle négatif partiel n’est jamais interprété comme une absence définitive ni comme une preuve de filiation. |
 | Impact | Données de recherche privées uniquement ; aucune information familiale n’est ajoutée au dépôt public. |
+
+## Lot PROOF-ALIGNMENT-001 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Requalifier une preuve familiale dont le contenu est un extrait d’acte d’état civil. |
+| Correction | Les copies du même extrait, auparavant étiquetées « mémoire familiale », sont désormais classées « acte » et la fiche concernée reflète ce niveau de preuve. |
+| Garde-fou | Seul le lien explicitement cité par l’extrait est confirmé ; les filiations concurrentes d’autres personnes restent des hypothèses jusqu’à lecture de leur propre acte. |
+| Impact | Données privées uniquement ; aucune identité familiale n’est ajoutée au dépôt public. |
 | Garde-fou | Plusieurs couples candidats ne sont plus fusionnés visuellement en une liste qui semblerait attester plusieurs parents. Une filiation établie reste affichée séparément. |
 | Impact | Présentation seulement : aucune donnée publique, règle RLS, route ou permission n’est modifiée. |
 | Vérifications | Contrôle TypeScript et lint à exécuter avant publication. |
