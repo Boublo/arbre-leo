@@ -203,6 +203,15 @@
 | Garde-fou | La CI ne reçoit que des variables factices ; le test ne charge aucune donnée familiale ni aucun accès Supabase réel. |
 | Suite | Vérifier le premier passage distant après publication et conserver l’exercice de restauration isolé comme prérequis distinct. |
 
+## Lot ROADMAP-OPS-001 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Vérifier si une cible Supabase isolée est déjà disponible pour l’exercice de restauration du runbook. |
+| Constat | Une branche de test sans données de production existe, mais son dernier déploiement est en échec de migrations. Elle ne constitue pas une cible saine pour une restauration. |
+| Garde-fou | Aucune réparation, réinitialisation, restauration ou copie de donnée familiale n’a été exécutée. Une cible approuvée par le propriétaire et une autorisation écrite restent requises. |
+| Suite | Diagnostiquer l’échec sur un lot distinct, ou désigner une nouvelle cible isolée après validation du coût et du périmètre. |
+
 ## Lot ROADMAP-QUALITY-002 — 8 août 2026
 
 | Champ | Détail |

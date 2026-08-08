@@ -74,7 +74,7 @@ Les couches `B` à `G` doivent être utilisables **sans IA**. L’IA, si elle es
 | Phase | ID | Sortie | Dépendances | Statut |
 | --- | --- | --- | --- | --- |
 | 0 | GOV-001 | Gouvernance, tests reproductibles et reprise agent | aucune | démarré : contrat de reprise livré |
-| 1 | OPS-001 / DATA-001 | Sauvegarde-restauration exercée et rapport de qualité non destructif | GOV-001 | partiel : QLT-001 à 010, leur jeu fictif et son exécution locale sont vérifiés ; la CI Node 22 est configurée pour les rejouer. L’exercice de restauration isolé et la première exécution distante restent à faire. |
+| 1 | OPS-001 / DATA-001 | Sauvegarde-restauration exercée et rapport de qualité non destructif | GOV-001 | partiel : QLT-001 à 010, leur jeu fictif et son exécution locale sont vérifiés ; la CI Node 22 est configurée pour les rejouer. Une branche Supabase de test existe mais son déploiement de migrations est en échec ; elle ne peut pas encore servir à l’exercice de restauration. |
 | 2 | EXP-002 / EXP-003 | Récit par génération et voyage dans le temps v0 | DATA-001 | livré côté code : générations et porte temporelle vers la chronologie de lignée |
 | 3 | UX-002 / UX-003 | Recherche globale et fiche orientée vers l’exploration suivante | tests UI authentifiés | livré côté code : recherche RLS et UX-003 ; tests UI authentifiés à faire |
 | 4 | ADD-001 | Prototype déterministe : ajouter un frère / une sœur avec aperçu | DATA-001, jeux synthétiques | partiel : raccourci avec parents préremplis, aperçu de lien et signal d’homonymes classé par année et lieu livrés ; aperçu complet à concevoir |
@@ -92,6 +92,8 @@ Les couches `B` à `G` doivent être utilisables **sans IA**. L’IA, si elle es
 - Terminer `DATA-001` : [contrat de rapport qualité](docs/CONTRAT_RAPPORT_QUALITE.md), seuils et jeux de données fictifs.
 - Rejouer CI/E2E sous Node 22 ; ne pas modifier les dépendances pour contourner un environnement local dégradé.
 - Le test qualité utilise désormais une dépendance déclarée et un lancement compatible Windows : il passe localement le 8 août et est inclus dans la CI Node 22. Vérifier sa première exécution distante, puis rejouer l’E2E avant de clore DATA-001.
+- État vérifié le 8 août : une branche Supabase `e2e`, sans données de production, est active mais signale `MIGRATIONS_FAILED`. Ne pas la réparer, la réinitialiser ni y restaurer de données sans un lot explicite ; elle ne remplit donc pas encore le prérequis de cible isolée du runbook.
+- Pour l’exercice OPS-001, le propriétaire doit désigner une cible isolée saine (branche réparée ou nouveau projet), préciser si un export réel peut y être restauré et autoriser l’opération. Aucune donnée familiale ne doit être copiée dans le dépôt ni dans une branche de test sans cet accord.
 - Créer une session de démonstration sans données familiales réelles pour les tests UI mobile, tablette et desktop.
 - Mesurer les requêtes et le poids du graphe avant toute optimisation de performance.
 
