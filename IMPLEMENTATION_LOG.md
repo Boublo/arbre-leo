@@ -330,6 +330,16 @@
 | Décision | Le lot restant est un parcours de brouillon et de révision qui orchestre ces primitives ; il ne doit pas inventer une nouvelle règle de parenté ni une écriture automatique. |
 | Suite | Concevoir un seul scénario de brouillon, sans table persistante et sans écriture groupée, avant toute extension vers un mode expert. |
 
+## Lot ROADMAP-ADD-004 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Livrer le premier parcours guidé de petite branche depuis une fiche. |
+| Correction | La barre de saisie ouvre une page qui guide les étapes foyer, enfant et relecture, puis conduit vers les formulaires existants. |
+| Garde-fou | La page ne crée aucune personne ni relation : chaque écriture reste soumise aux contrôles, aux droits RLS et à la validation humaine du formulaire. |
+| Vérifications | Typecheck, lint et les 14 garde-fous de l’arbre sont réussis. |
+| Suite | Le brouillon persistant, l’écriture groupée et le mode expert restent volontairement hors de ce premier lot. |
+
 ## Lot ROADMAP-QUALITY-002 — 8 août 2026
 
 | Champ | Détail |

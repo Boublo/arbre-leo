@@ -75,6 +75,9 @@ export async function BarreDeSaisie({
         <Link href={urlNouveauConjoint} className="lien-discret">
           Ajouter son conjoint ou sa conjointe
         </Link>
+        <Link href={`/personne/${personneId}/branche/nouvelle`} className="lien-discret">
+          Préparer une petite branche
+        </Link>
         {aucunParent && (
           <>
             <Link href={urlNouveauPere} className="lien-discret">
