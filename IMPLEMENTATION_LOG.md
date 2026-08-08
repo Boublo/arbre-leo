@@ -301,6 +301,16 @@
 | Vérifications | Garde-fous de l’arbre, géométrie, éclaté, rappels, rapport qualité, typecheck et lint rejoués avec succès ; audit différentiel à rejouer sur le commit final. |
 | Limite | Cette livraison ne réécrit pas l’historique Git et ne modifie aucune donnée Supabase. |
 
+## Lot ROADMAP-PERF-002 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Relever les avis Supabase du seul schéma `arbre`, sans modifier la production. |
+| Sécurité | L’unique information `RLS enabled, no policy` concerne `rappels_envoyes`. La migration réserve explicitement cette table au seul `service_role` : c’est une protection intentionnelle, pas un accès public. |
+| Performance | Le relevé signale 29 politiques RLS à optimiser, 26 clés étrangères sans index, 2 ensembles de policies permissives et 17 index encore non utilisés. |
+| Suite | Optimiser les politiques RLS d’abord ; ajouter les index après mesure des requêtes ; ne supprimer aucun index sur le seul signal d’absence d’usage. |
+| Impact | Lecture seule : aucune donnée, permission, migration ou table de production n’est modifiée. |
+
 ## Lot ROADMAP-QUALITY-002 — 8 août 2026
 
 | Champ | Détail |
