@@ -166,6 +166,15 @@
 | Correction | Le chantier est passé de « à faire » à « en cours » et conserve désormais la méthode vérifiée : listes nominatives consultables en ligne, classées par adresse et dépourvues d’index nominatif. |
 | Garde-fou | Aucun lien de parenté n’est créé à partir de cette seule disponibilité d’archives ; seule la lecture du registre pourra confirmer ou réfuter une hypothèse. |
 | Impact | État de recherche privé uniquement ; aucune donnée familiale n’est ajoutée au dépôt public. |
+
+## Lot RESEARCH-STATUS-002 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Préserver le périmètre exact d’un dépouillement de recensement déjà entamé. |
+| Correction | Le chantier privé enregistre désormais le volume du registre et le contrôle négatif des premières images, afin que la reprise continue au bon endroit. |
+| Garde-fou | Un contrôle négatif partiel n’est jamais interprété comme une absence définitive ni comme une preuve de filiation. |
+| Impact | Données de recherche privées uniquement ; aucune information familiale n’est ajoutée au dépôt public. |
 | Garde-fou | Plusieurs couples candidats ne sont plus fusionnés visuellement en une liste qui semblerait attester plusieurs parents. Une filiation établie reste affichée séparément. |
 | Impact | Présentation seulement : aucune donnée publique, règle RLS, route ou permission n’est modifiée. |
 | Vérifications | Contrôle TypeScript et lint à exécuter avant publication. |
