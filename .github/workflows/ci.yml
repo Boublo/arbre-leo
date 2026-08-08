@@ -25,6 +25,8 @@ jobs:
 
       - run: npm run lint
 
+      - run: npm run arbre:test-qualite
+
       - run: npm run build
 
   e2e-mobile:
