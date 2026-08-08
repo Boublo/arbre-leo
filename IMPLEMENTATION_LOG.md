@@ -283,6 +283,15 @@
 | Garde-fou | L’inventaire opérationnel reste privé, ne contient aucune donnée familiale et ne lit aucune ligne de table ; aucune action Supabase n’a été exécutée. |
 | Suite | Préparer une copie Git assainie et une réconciliation du seul schéma `arbre`, sans pousser ni appliquer de migration. |
 
+## Lot ROADMAP-GOV-006 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Préparer une copie locale assainie sans modifier `main`, le dépôt distant ou la production. |
+| Correction | Une branche locale dédiée neutralise les migrations de données identifiées et remplace la passation publique par un guide sans informations familiales. |
+| Garde-fou | Le candidat n’est ni fusionné, ni poussé, ni déployé ; la production et son historique de migrations restent intacts. |
+| Suite | Réconcilier le seul schéma `arbre` sur une cible isolée avant toute décision de publication ou de réécriture d’historique. |
+
 ## Lot ROADMAP-QUALITY-002 — 8 août 2026
 
 | Champ | Détail |
