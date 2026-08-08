@@ -79,7 +79,7 @@ Les couches `B` à `G` doivent être utilisables **sans IA**. L’IA, si elle es
 | 3 | UX-002 / UX-003 | Recherche globale et fiche orientée vers l’exploration suivante | tests UI authentifiés | livré côté code : recherche RLS et UX-003 ; tests UI authentifiés à faire |
 | 4 | ADD-001 | Prototype déterministe : ajouter un frère / une sœur avec aperçu | DATA-001, jeux synthétiques | partiel : raccourci avec parents préremplis, homonymes classés et aperçu dynamique des liens livrés ; le brouillon persistant reste à concevoir |
 | 5 | ADD-002 | Étendre l’ajout guidé aux parents, enfants et conjoints | ADD-001 validé | partiel : enfant rattaché à un foyer explicitement choisi, conjoint, père ou mère préremplis si aucun parent n’est connu ; raccourci sûr pour rattacher l’autre parent déjà saisi |
-| 6 | ADD-003 | Construction de branche et mode expert | ADD-002, UX de révision | partiel : parcours guidé sans écriture groupée livré ; brouillon persistant et mode expert restent à faire |
+| 6 | ADD-003 | Construction de branche et mode expert | ADD-002, UX de révision | partiel : parcours guidé et brouillon limité à l’onglet livrés, sans écriture groupée ; brouillon persistant et mode expert restent à faire |
 | 7 | COP-001 | Copilote conversationnel en mode proposition locale | ADD-003, décision confidentialité | partiel : guide local déterministe livré ; conversation libre et proposition structurée restent à faire |
 | 8 | COP-002 | Extraction de document / OCR optionnelle | COP-001, accord explicite fournisseur | à faire |
 | 9 | TRANS-001 | Exports, mode présentation, transmission et runbook | phases précédentes | livré côté code et documentation : exports, impression, lecteur de présentation et runbook de transmission ; exercice familial à mener |
@@ -195,6 +195,8 @@ Le modèle et les primitives existent déjà : création d’une personne, créa
 Le premier prototype n’écrira aucune branche complète en une seule opération : il préparera le brouillon et guidera l’utilisateur vers les enregistrements déjà protégés. Toute écriture groupée ou table de brouillon persistante exige une décision et une migration dédiées.
 
 Le parcours guidé est disponible depuis une fiche : il présente les étapes foyer, enfant et relecture, sans créer de relation par lui-même. Chaque lien mène vers le formulaire existant, qui conserve les contrôles de cohérence et la validation humaine.
+
+Le brouillon de petite branche est maintenant conservé uniquement dans l’onglet actif : il mémorise la relecture des étapes et des notes de préparation, sans requête, serveur ou écriture généalogique. Il est effaçable et ne remplace pas un futur brouillon persistant révisable.
 
 ### Phase 4 — Copilote conversationnel
 

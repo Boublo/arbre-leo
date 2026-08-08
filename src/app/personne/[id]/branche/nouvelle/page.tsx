@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { Navigation } from '@/components/navigation';
 import { Alerte } from '@/components/ui/champs';
 import { chargerNomPersonne } from '@/components/personne/donnees';
+import { BrouillonBranche } from '@/components/saisie/brouillon-branche';
 import { chargerFoyersPourNouvelEnfant, lireDroitsSaisie } from '@/components/saisie/donnees';
 
 export const dynamic = 'force-dynamic';
@@ -56,6 +57,7 @@ export default async function PageNouvelleBranche({
         </div>
 
         {droits.peutContribuer ? (
+          <>
           <ol className="mt-8 flex flex-col gap-4">
             <Etape numero="1" titre="Constituer ou compléter le foyer">
               <p>Ajoutez un conjoint ou une conjointe seulement si cette relation est connue.</p>
@@ -96,6 +98,8 @@ export default async function PageNouvelleBranche({
               </p>
             </Etape>
           </ol>
+          <BrouillonBranche personneId={id} />
+          </>
         ) : (
           <div className="mt-8">
             <Alerte ton="info">

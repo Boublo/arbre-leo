@@ -1,5 +1,14 @@
 # Journal d’exécution
 
+## Lot ADD-006 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Donner un repère de progression à la préparation d’une petite branche, sans créer de table de brouillon. |
+| Correction | La page de branche conserve dans l’onglet actif les trois étapes de relecture et des notes courtes, avec un effacement visible. |
+| Garde-fou | Aucune requête, écriture serveur, création de personne ou relation ne découle de ce brouillon ; il est volontairement limité à la session navigateur. |
+| Suite | Le brouillon persistant partagé et l’écriture groupée restent hors périmètre : ils exigent une décision métier, une migration et une révision dédiée. |
+
 ## Lot TRANS-001 — 8 août 2026
 
 | Champ | Détail |
