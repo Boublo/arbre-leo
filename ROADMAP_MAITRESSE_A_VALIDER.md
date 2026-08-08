@@ -80,7 +80,7 @@ Les couches `B` à `G` doivent être utilisables **sans IA**. L’IA, si elle es
 | 4 | ADD-001 | Prototype déterministe : ajouter un frère / une sœur avec aperçu | DATA-001, jeux synthétiques | partiel : raccourci avec parents préremplis, homonymes classés et aperçu dynamique des liens livrés ; le brouillon persistant reste à concevoir |
 | 5 | ADD-002 | Étendre l’ajout guidé aux parents, enfants et conjoints | ADD-001 validé | partiel : enfant rattaché à un foyer explicitement choisi, conjoint, père ou mère préremplis si aucun parent n’est connu ; raccourci sûr pour rattacher l’autre parent déjà saisi |
 | 6 | ADD-003 | Construction de branche et mode expert | ADD-002, UX de révision | partiel : parcours guidé sans écriture groupée livré ; brouillon persistant et mode expert restent à faire |
-| 7 | COP-001 | Copilote conversationnel en mode proposition locale | ADD-003, décision confidentialité | à faire |
+| 7 | COP-001 | Copilote conversationnel en mode proposition locale | ADD-003, décision confidentialité | partiel : guide local déterministe livré ; conversation libre et proposition structurée restent à faire |
 | 8 | COP-002 | Extraction de document / OCR optionnelle | COP-001, accord explicite fournisseur | à faire |
 | 9 | TRANS-001 | Exports, mode présentation, transmission et runbook | phases précédentes | à faire |
 
@@ -199,6 +199,8 @@ Le parcours guidé est disponible depuis une fiche : il présente les étapes fo
 ### Phase 4 — Copilote conversationnel
 
 **But :** laisser raconter ce que l’on sait, puis transformer ce récit en propositions compréhensibles.
+
+Premier jalon livré : le guide local permet de choisir une personne et le type de lien recherché, puis ouvre le formulaire approprié avec les seuls champs sûrs préremplis. Il ne transmet aucun texte hors de l’application, n’interprète aucun récit et n’écrit aucune donnée.
 
 Préconditions non négociables :
 

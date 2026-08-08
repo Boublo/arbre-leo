@@ -110,6 +110,9 @@ export default async function PageNouvellePersonne({ searchParams }: PageProps<'
           Un enfant qui vient de naître, un conjoint, un aïeul retrouvé aux archives. Ce que vous
           ignorez peut rester vide : une fiche se complète à plusieurs, et sur des années.
         </p>
+        <p className="mt-3 text-sm text-encre-douce">
+          Vous hésitez sur le bon lien ? <Link href="/ajout-guide" className="lien-discret">Utiliser le guide local</Link>.
+        </p>
 
         <div className="mt-8">
           {droits.peutContribuer ? (

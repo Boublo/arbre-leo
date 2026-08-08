@@ -349,6 +349,15 @@
 | Garde-fou | L’aperçu vit uniquement dans le navigateur et ne crée aucune relation ; il rappelle qu’une proposition ne remplace pas une preuve. |
 | Vérifications | Typecheck, lint et les 14 garde-fous de l’arbre sont réussis. |
 
+## Lot ROADMAP-COP-001 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Livrer le premier jalon local du guide d’ajout, sans IA ni transmission externe. |
+| Correction | Le guide demande la personne de départ et le lien recherché, puis prépare le formulaire enfant, fratrie, parent ou conjoint adapté. |
+| Garde-fou | Aucune conversation libre, donnée familiale transmise, déduction de parenté ou écriture automatique n’est introduite. Un rôle parental inconnu n’est jamais inventé. |
+| Vérifications | Typecheck, lint et les 14 garde-fous de l’arbre sont réussis. |
+
 ## Lot ROADMAP-QUALITY-002 — 8 août 2026
 
 | Champ | Détail |
