@@ -7,6 +7,7 @@ import { ChoixPersonne } from '@/components/saisie/choix-personne';
 import type { OptionPersonne } from '@/components/saisie/donnees';
 
 type Relation = 'enfant' | 'fratrie' | 'parent' | 'conjoint';
+type Qualification = 'fait_a_confirmer' | 'memoire_familiale' | 'hypothese';
 
 const RELATIONS: Array<{ valeur: Relation; libelle: string; aide: string }> = [
   { valeur: 'enfant', libelle: 'Un enfant', aide: 'Préremplit le parent connu, sans inventer l’autre parent.' },
@@ -19,6 +20,8 @@ export function GuideAjout({ personnes }: { personnes: OptionPersonne[] }) {
   const [relation, setRelation] = useState<Relation>('enfant');
   const [personneId, setPersonneId] = useState('');
   const [roleParent, setRoleParent] = useState<'M' | 'F'>('M');
+  const [qualification, setQualification] = useState<Qualification>('hypothese');
+  const [observation, setObservation] = useState('');
   const personne = personnes.find((candidate) => candidate.id === personneId) ?? null;
 
   return (
@@ -67,7 +70,84 @@ export function GuideAjout({ personnes }: { personnes: OptionPersonne[] }) {
       )}
 
       <Destination relation={relation} personne={personne} roleParent={roleParent} />
+      <PropositionLocale
+        relation={relation}
+        personne={personne}
+        qualification={qualification}
+        observation={observation}
+        onQualification={setQualification}
+        onObservation={setObservation}
+      />
     </div>
+  );
+}
+
+/** Une proposition locale oblige à distinguer récit, hypothèse et fait à vérifier. */
+function PropositionLocale({
+  relation,
+  personne,
+  qualification,
+  observation,
+  onQualification,
+  onObservation,
+}: {
+  relation: Relation;
+  personne: OptionPersonne | null;
+  qualification: Qualification;
+  observation: string;
+  onQualification: (valeur: Qualification) => void;
+  onObservation: (valeur: string) => void;
+}) {
+  const relationLibelle = RELATIONS.find((option) => option.valeur === relation)?.libelle.toLowerCase() ?? 'ce lien';
+  const qualificationLibelle: Record<Qualification, string> = {
+    fait_a_confirmer: 'fait à confirmer par une source',
+    memoire_familiale: 'mémoire familiale',
+    hypothese: 'hypothèse de recherche',
+  };
+
+  return (
+    <section aria-labelledby="proposition-locale" className="rounded-[var(--rayon)] border border-bordure bg-fond-doux p-4">
+      <h2 id="proposition-locale" className="text-base font-medium text-encre">Proposition à relire</h2>
+      <p className="mt-1 text-sm leading-6 text-encre-douce">
+        Cette carte organise ce que vous savez avant la saisie. Elle reste dans cette page et ne crée aucune fiche, relation ou source.
+      </p>
+
+      <fieldset className="mt-4 flex flex-col gap-2">
+        <legend className="text-sm font-medium text-encre">Quel est son statut ?</legend>
+        {([
+          ['fait_a_confirmer', 'Un fait à confirmer par un acte ou une source'],
+          ['memoire_familiale', 'Une mémoire familiale à préserver comme telle'],
+          ['hypothese', 'Une hypothèse à rechercher, sans la présenter comme établie'],
+        ] as Array<[Qualification, string]>).map(([valeur, libelle]) => (
+          <label key={valeur} className="flex cursor-pointer items-start gap-2 text-sm text-encre">
+            <input type="radio" name="qualification-proposition" checked={qualification === valeur} onChange={() => onQualification(valeur)} className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--accent)]" />
+            <span>{libelle}</span>
+          </label>
+        ))}
+      </fieldset>
+
+      <label className="mt-4 block text-sm font-medium text-encre" htmlFor="observation-proposition">
+        Ce que vous voulez vérifier (facultatif)
+        <textarea
+          id="observation-proposition"
+          value={observation}
+          onChange={(evenement) => onObservation(evenement.target.value.slice(0, 1000))}
+          maxLength={1000}
+          rows={3}
+          placeholder="Ex. une date entendue dans la famille, une référence d’acte à retrouver…"
+          className="mt-2 w-full rounded-[var(--rayon-petit)] border border-bordure bg-fond px-3 py-2 font-normal leading-6 text-encre"
+        />
+      </label>
+
+      {personne ? (
+        <div className="mt-4 rounded-[var(--rayon-petit)] border border-accent/30 bg-fond p-3 text-sm leading-6 text-encre">
+          <p><span className="font-medium">Lien à préparer :</span> {relationLibelle} à partir de {personne.nomComplet}.</p>
+          <p><span className="font-medium">Qualification :</span> {qualificationLibelle[qualification]}.</p>
+          {observation.trim() && <p><span className="font-medium">Note :</span> {observation.trim()}</p>}
+          <p className="mt-2 text-encre-douce">Relisez ce résumé puis utilisez le formulaire préparé ci-dessus. Rien n’est transmis ni enregistré par cette proposition.</p>
+        </div>
+      ) : <p className="mt-4 text-sm text-encre-douce">Choisissez d’abord la personne de départ pour produire un résumé à relire.</p>}
+    </section>
   );
 }
 

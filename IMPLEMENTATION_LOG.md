@@ -1,5 +1,14 @@
 # Journal d’exécution
 
+## Lot COP-002 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Ajouter une première proposition structurée sans fournisseur IA ni écriture. |
+| Correction | Le guide local demande maintenant de qualifier explicitement l’information comme fait à confirmer, mémoire familiale ou hypothèse et affiche un résumé avant l’ouverture du formulaire existant. |
+| Garde-fou | Le récit reste uniquement dans l’interface en cours ; aucune relation n’est déduite, aucun identifiant n’est inventé et aucune donnée n’est envoyée hors de l’application. |
+| Suite | Une conversation libre et toute extraction assistée restent conditionnées à une décision de confidentialité et à un contrat de données distinct. |
+
 ## Lot ADD-006 — 8 août 2026
 
 | Champ | Détail |
