@@ -194,6 +194,15 @@
 | Garde-fou | Seules les sources qui attestent explicitement être des copies intégrales ont été requalifiées ; aucune relation familiale n’a été modifiée. |
 | Impact | Données privées uniquement ; aucune identité familiale n’est ajoutée au dépôt public. |
 
+## Lot RESEARCH-ACT-002 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Trancher une filiation concurrente par la lecture de l’acte de naissance identifié. |
+| Correction | La filiation explicitement désignée par le registre devient établie au niveau « acte » ; le seul rattachement concurrent incompatible est retiré. |
+| Garde-fou | Les hypothèses historiques sont conservées dans la traçabilité privée comme pistes écartées, mais ne sont plus affichées comme des liens possibles. |
+| Impact | Données généalogiques privées uniquement ; aucune identité familiale n’est ajoutée au dépôt public. |
+
 ## Lot RESEARCH-INSEE-001 — 8 août 2026
 
 | Champ | Détail |
