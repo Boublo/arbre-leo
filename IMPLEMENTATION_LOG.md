@@ -157,6 +157,15 @@
 | Correction | Les seuls liens concernés sont maintenant affichés comme hypothèses à confirmer par un acte ; les filiations déjà documentées dans les registres restent inchangées. |
 | Vérification | Aucun rattachement directement qualifié d’hypothétique par son foyer ne conserve un libellé de filiation établie. |
 | Impact | Données privées uniquement ; le dépôt public ne contient aucun nom, date ni acte familial. |
+
+## Lot RESEARCH-STATUS-001 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Synchroniser un chantier de recensement avec la consultation du portail d’archives officiel. |
+| Correction | Le chantier est passé de « à faire » à « en cours » et conserve désormais la méthode vérifiée : listes nominatives consultables en ligne, classées par adresse et dépourvues d’index nominatif. |
+| Garde-fou | Aucun lien de parenté n’est créé à partir de cette seule disponibilité d’archives ; seule la lecture du registre pourra confirmer ou réfuter une hypothèse. |
+| Impact | État de recherche privé uniquement ; aucune donnée familiale n’est ajoutée au dépôt public. |
 | Garde-fou | Plusieurs couples candidats ne sont plus fusionnés visuellement en une liste qui semblerait attester plusieurs parents. Une filiation établie reste affichée séparément. |
 | Impact | Présentation seulement : aucune donnée publique, règle RLS, route ou permission n’est modifiée. |
 | Vérifications | Contrôle TypeScript et lint à exécuter avant publication. |
