@@ -194,6 +194,15 @@
 | Garde-fou | Seules les sources qui attestent explicitement être des copies intégrales ont été requalifiées ; aucune relation familiale n’a été modifiée. |
 | Impact | Données privées uniquement ; aucune identité familiale n’est ajoutée au dépôt public. |
 
+## Lot ROADMAP-QUALITY-001 — 8 août 2026
+
+| Champ | Détail |
+| --- | --- |
+| Objet | Rendre rejouable le test fictif du rapport de qualité prévu par la roadmap. |
+| Correction | L’exécuteur TypeScript requis par le script est désormais une dépendance de développement déclarée, plutôt qu’un téléchargement implicite. |
+| Vérifications | Typecheck et lint réussissent. Le test qualité ne peut pas encore être validé sur ce poste : l’exécuteur échoue avant les assertions sur une erreur système Node liée au profil utilisateur. |
+| Suite | Rejouer ce test dans une CI ou un environnement Node 22 sain ; aucune règle métier ni donnée familiale n’est modifiée. |
+
 ## Lot RESEARCH-ACT-002 — 8 août 2026
 
 | Champ | Détail |
